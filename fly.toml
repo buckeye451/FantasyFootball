@@ -1,39 +1,32 @@
-# fly.toml — Fly.io deploy config for the BMCF League app.
+# fly.toml app configuration file generated for bmcf-league on 2026-07-20T18:06:43Z
 #
-# `app` must be globally unique across Fly. If "bmcf-league" is taken, change it
-# here (or let `fly launch` pick a name). Everything else can stay as-is.
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "bmcf-league"
-primary_region = "ord"   # Chicago; change to a region near you (fly platform regions)
+app = 'bmcf-league'
+primary_region = 'ams'
 
 [build]
 
 [env]
-  # Your Sleeper league id (the number in your league URL). Public, not secret.
-  SLEEPER_LEAGUE_ID = "1382410388192120832"
-  # The running server re-pulls from Sleeper on this cadence while it's awake.
-  AUTO_SYNC = "true"
-  AUTO_SYNC_MINUTES = "180"
-  # SQLite DB + player cache live on the mounted volume (see [[mounts]]).
-  DB_PATH = "/data/league.db"
-  NODE_ENV = "production"
+  AUTO_SYNC = 'true'
+  AUTO_SYNC_MINUTES = '180'
+  DB_PATH = '/data/league.db'
+  NODE_ENV = 'production'
+  SLEEPER_LEAGUE_ID = '1382410388192120832'
+
+[[mounts]]
+  source = 'bmcf_data'
+  destination = '/data'
 
 [http_service]
-  internal_port = 3000
+  internal_port = 8080
   force_https = true
-  # Scale to zero when idle to keep it free/cheap; the next visitor wakes it and
-  # gets a fresh sync. Set min_machines_running = 1 if you want it always warm.
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
-
-# Persistent disk for the SQLite database. Create it once with:
-#   fly volumes create bmcf_data --size 1 --region ord
-[[mounts]]
-  source = "bmcf_data"
-  destination = "/data"
+  size = 'shared-cpu-1x'
+  memory = '512mb'
