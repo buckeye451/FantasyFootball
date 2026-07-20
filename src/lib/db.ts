@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', 'league.db');
+export const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', 'league.db');
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS league (

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { getDb } from './db';
+import { getDb, DB_PATH } from './db';
 import { sleeper } from './sleeper';
 import type {
   SleeperLeague,
@@ -10,7 +10,8 @@ import type {
   SleeperUser,
 } from './types';
 
-const PLAYERS_CACHE = path.join(process.cwd(), 'data', 'players-cache.json');
+// Keep the player-dump cache next to the DB so it lands on the same volume.
+const PLAYERS_CACHE = path.join(path.dirname(DB_PATH), 'players-cache.json');
 const PLAYERS_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // Sleeper asks for ≤ 1 fetch/day
 
 export function upsertLeague(league: SleeperLeague): void {

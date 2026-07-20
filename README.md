@@ -78,11 +78,67 @@ scripts/             CLI sync + demo seed
 data/                SQLite database + player cache (gitignored)
 ```
 
-## Deploying for the league
+## Deploy to Fly.io (share it with the league)
 
-Any Node 22.13+ host that can keep a process and a disk file works (Railway,
-Fly.io, Render, a Raspberry Pi…): `npm run build && npm run start`, set
-`SLEEPER_LEAGUE_ID` and `AUTO_SYNC=true`, and share the URL with the league.
-Serverless platforms without a persistent filesystem (e.g. Vercel's default
-setup) won't persist the SQLite file between deploys — prefer a host with a
-volume.
+This repo ships everything Fly needs: a `Dockerfile`, a `.dockerignore`, an
+entrypoint (`scripts/docker-entrypoint.sh`), and a `fly.toml` with the league id
+already filled in. Fly is a good fit because the SQLite database lives on a
+persistent **volume** — data survives restarts and deploys.
+
+### One-time setup
+
+```bash
+# 1. Install flyctl and sign in (https://fly.io/docs/flyctl/install/)
+curl -L https://fly.io/install.sh | sh
+fly auth signup        # or: fly auth login
+
+# 2. From the repo root, create the app from the committed fly.toml.
+#    If the name "bmcf-league" is taken, edit `app` in fly.toml first
+#    (or run `fly launch --copy-config --no-deploy` and let it pick a name).
+fly apps create bmcf-league
+
+# 3. Create the 1 GB volume the database lives on (match the region in fly.toml).
+fly volumes create bmcf_data --size 1 --region ord
+
+# 4. Deploy.
+fly deploy
+```
+
+That's it — `fly deploy` builds the image on Fly's remote builders (no local
+Docker needed) and boots the app. Open it with `fly open`, and share that URL
+with your league.
+
+### What happens on deploy
+
+- The container starts the web server immediately and, in the background, runs
+  an initial sync from Sleeper into the volume — the dashboard fills in within a
+  few seconds of the first boot.
+- `AUTO_SYNC=true` (in `fly.toml`) makes the running app re-pull from Sleeper
+  every `AUTO_SYNC_MINUTES` (default 180) while it's awake, so scores update on
+  their own during the season.
+- The app **scales to zero when idle** to stay cheap/free; the next visitor
+  wakes it and triggers a fresh sync. Want it always warm (no cold starts)? Set
+  `min_machines_running = 1` in `fly.toml` and redeploy.
+
+### Config knobs (`fly.toml` → `[env]`)
+
+| Var | Purpose |
+|---|---|
+| `SLEEPER_LEAGUE_ID` | Your league (already set to `1382410388192120832`). |
+| `AUTO_SYNC` | `true` to auto-refresh from Sleeper while running. |
+| `AUTO_SYNC_MINUTES` | Minutes between auto-syncs. |
+| `DB_PATH` | DB location — points at the mounted volume (`/data/league.db`). |
+
+Force a data refresh any time without redeploying:
+
+```bash
+fly ssh console -C "npm run sync"     # or hit https://<your-app>.fly.dev/api/sync
+```
+
+### Other hosts
+
+Any Node 22.13+ host with a persistent disk works the same way (Railway,
+Render, a Raspberry Pi…): `npm run build && npm run start`, set
+`SLEEPER_LEAGUE_ID` + `AUTO_SYNC=true`, and point `DB_PATH` at durable storage.
+Avoid serverless platforms without a persistent filesystem (e.g. Vercel's
+default setup) — they won't keep the SQLite file between requests/deploys.
