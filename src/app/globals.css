@@ -1,0 +1,506 @@
+/* BMCF League — committed dark theme.
+   Palette: validated dark-mode steps (categorical slots 1–4 used for chart
+   selection; status good/critical reserved for W/L and bench warnings). */
+:root {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #212120;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --baseline: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --series-1: #3987e5;
+  --series-2: #008300;
+  --series-3: #d55181;
+  --series-4: #c98500;
+  --context-line: #3f3f3b;
+  --good: #0ca30c;
+  --critical: #d03b3b;
+  --critical-wash: rgba(208, 59, 59, 0.14);
+  --accent-wash: rgba(57, 135, 229, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---------- shell ---------- */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.site-header-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.brand-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 0 6px;
+}
+
+.brand {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.brand-season {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.team-nav {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scrollbar-width: thin;
+}
+
+.team-nav a {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.team-nav a:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.team-nav a.active {
+  background: var(--accent-wash);
+  border-color: rgba(57, 135, 229, 0.45);
+  color: var(--ink);
+}
+
+main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 26px 20px 60px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 2px;
+}
+
+.page-subtitle {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin: 0 0 22px;
+}
+
+/* ---------- cards & grids ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.card + .card,
+section + section {
+  margin-top: 22px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 650;
+  margin: 0 0 4px;
+}
+
+.card-note {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin: 0 0 14px;
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.tile-label {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.tile-value {
+  font-size: 27px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.tile-sub {
+  color: var(--ink-2);
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+@media (max-width: 900px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- tables ---------- */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13.5px;
+}
+
+th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--baseline);
+  white-space: nowrap;
+}
+
+td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--grid);
+  white-space: nowrap;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+td.num,
+th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.team-cell {
+  font-weight: 650;
+}
+
+.team-cell a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sub {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 12px;
+}
+
+/* movement + result badges: color never alone — always paired with a glyph */
+.up {
+  color: var(--good);
+}
+
+.down {
+  color: var(--critical);
+}
+
+.flat {
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-block;
+  min-width: 22px;
+  text-align: center;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 6px;
+}
+
+.badge.w {
+  color: var(--good);
+  background: rgba(12, 163, 12, 0.14);
+}
+
+.badge.l {
+  color: var(--critical);
+  background: var(--critical-wash);
+}
+
+.badge.t {
+  color: var(--ink-2);
+  background: var(--surface-2);
+}
+
+/* ---------- lineup tables ---------- */
+.slot-tag {
+  display: inline-block;
+  width: 44px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.pos-team {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+tr.benched-row td {
+  background: var(--critical-wash);
+  box-shadow: inset 3px 0 0 var(--critical);
+}
+
+.benched-tag {
+  color: var(--critical);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bench-header td {
+  color: var(--muted);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--surface-2);
+}
+
+/* ---------- chips (chart legend / selection controls) ---------- */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--baseline);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.chip.selected {
+  color: var(--ink);
+  border-color: var(--chip-color, var(--series-1));
+  background: color-mix(in srgb, var(--chip-color, var(--series-1)) 16%, transparent);
+}
+
+.chip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--chip-color, var(--baseline));
+}
+
+.chip-hint {
+  color: var(--muted);
+  font-size: 12px;
+  align-self: center;
+  margin-left: 4px;
+}
+
+/* ---------- chart card extras ---------- */
+.chart-box {
+  width: 100%;
+  height: 380px;
+}
+
+details.table-view {
+  margin-top: 10px;
+}
+
+details.table-view summary {
+  color: var(--muted);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+details.table-view[open] summary {
+  margin-bottom: 8px;
+}
+
+/* ---------- position cards ---------- */
+.pos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.pos-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.pos-card h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.pos-card ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pos-card li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--grid);
+  font-size: 13.5px;
+}
+
+.pos-card li:last-child {
+  border-bottom: none;
+}
+
+.pos-rank {
+  color: var(--muted);
+  width: 16px;
+  flex: none;
+}
+
+.pos-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-pts {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+/* ---------- week selector pills ---------- */
+.week-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 18px;
+}
+
+.week-pills a {
+  padding: 4px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--baseline);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.week-pills a:hover {
+  background: var(--surface-2);
+}
+
+.week-pills a.active {
+  background: var(--accent-wash);
+  border-color: rgba(57, 135, 229, 0.45);
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.matchup-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.matchup-score {
+  font-size: 21px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.vs {
+  color: var(--muted);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--ink-2);
+}
+
+.empty-state code {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 13px;
+}

@@ -1,0 +1,320 @@
+/**
+ * Seed the database with the real BMCF 2024 season (weeks 1–14).
+ *
+ * Team-level data — weekly scores, schedule, and therefore records and
+ * standings — is the league's actual 2024 season, transcribed from the
+ * BMCF24League spreadsheet. Player-level data (rosters and per-player weekly
+ * points) is generated: starter points are scaled so every team's weekly total
+ * matches the real score exactly. Run `npm run sync` against your Sleeper
+ * league id to replace all of this with the real thing.
+ *
+ * Usage: npm run seed:demo
+ */
+import { upsertLeague, upsertMatchups, upsertPlayers, upsertRosters, upsertUsers } from '../src/lib/sync';
+import { getDb } from '../src/lib/db';
+import type { SleeperMatchup, SleeperPlayer } from '../src/lib/types';
+
+const LEAGUE_ID = 'demo-bmcf-2024';
+const SEASON = '2024';
+const MANAGERS = ['Sam', 'Cam', 'Lapel', 'Parker', 'Evan', 'Colin', 'Jack', 'Keith', 'Preston', 'Chris'];
+
+// Real weekly scores, weeks 1–14 (from the BMCF24League sheet).
+const SCORES: Record<string, number[]> = {
+  Sam:     [112.08, 93.46, 136.52, 72.6, 112.04, 119, 142.62, 124.92, 126.1, 126.1, 132.68, 102.62, 154.72, 198.68],
+  Cam:     [108.38, 108.86, 65.68, 70.24, 114.16, 89.6, 94.86, 118.16, 113.88, 68.94, 138.98, 104.78, 126.66, 110.92],
+  Lapel:   [116.88, 114.44, 143.88, 91.26, 104.9, 95.86, 109.3, 106.38, 103.86, 111.04, 103.1, 94, 124.08, 127.42],
+  Parker:  [77.16, 114.56, 111.46, 126.38, 135.78, 141.02, 105.64, 106.36, 133.62, 100.92, 98.66, 118.88, 92.46, 136.16],
+  Evan:    [104.16, 159.62, 66.08, 116.1, 104.46, 92.42, 99.36, 112.8, 122.4, 88.44, 126.34, 84.52, 90.6, 94.18],
+  Colin:   [83.04, 120.74, 137.18, 92.8, 136.24, 108.4, 87.08, 123.32, 98.76, 165.54, 100.64, 127.86, 105.04, 111.9],
+  Jack:    [124.52, 86.32, 95.44, 114.82, 121.96, 112.86, 105.16, 105.64, 112.8, 114.48, 87.14, 104.46, 98.42, 90.32],
+  Keith:   [128.86, 122, 92.9, 103.22, 105.02, 124.66, 58.04, 111.4, 91.66, 60.78, 110.44, 105.3, 137.94, 89.32],
+  Preston: [139.8, 101.5, 94.92, 122.38, 102.2, 86.8, 156.6, 108.1, 117.1, 89.94, 110.55, 131.46, 102.4, 100.2],
+  Chris:   [120.62, 113.58, 78.38, 125.54, 117.62, 112.02, 95.54, 144.66, 100.1, 106.9, 112.08, 102.18, 121.68, 70.72],
+};
+
+// Real weekly opponents, weeks 1–14 (from the sheet).
+const SCHEDULE: Record<string, string[]> = {
+  Sam:     ['Cam', 'Evan', 'Keith', 'Jack', 'Lapel', 'Parker', 'Chris', 'Preston', 'Colin', 'Cam', 'Evan', 'Keith', 'Jack', 'Lapel'],
+  Cam:     ['Sam', 'Jack', 'Evan', 'Lapel', 'Keith', 'Colin', 'Parker', 'Chris', 'Preston', 'Sam', 'Jack', 'Evan', 'Lapel', 'Keith'],
+  Lapel:   ['Parker', 'Chris', 'Preston', 'Cam', 'Sam', 'Evan', 'Colin', 'Keith', 'Jack', 'Parker', 'Chris', 'Preston', 'Cam', 'Sam'],
+  Parker:  ['Lapel', 'Preston', 'Chris', 'Keith', 'Jack', 'Sam', 'Cam', 'Colin', 'Evan', 'Lapel', 'Preston', 'Chris', 'Keith', 'Jack'],
+  Evan:    ['Colin', 'Sam', 'Cam', 'Chris', 'Preston', 'Lapel', 'Keith', 'Jack', 'Parker', 'Colin', 'Sam', 'Cam', 'Chris', 'Preston'],
+  Colin:   ['Evan', 'Keith', 'Jack', 'Preston', 'Chris', 'Cam', 'Lapel', 'Parker', 'Sam', 'Evan', 'Keith', 'Jack', 'Preston', 'Chris'],
+  Jack:    ['Keith', 'Cam', 'Colin', 'Sam', 'Parker', 'Chris', 'Preston', 'Evan', 'Lapel', 'Keith', 'Cam', 'Colin', 'Sam', 'Parker'],
+  Keith:   ['Jack', 'Colin', 'Sam', 'Parker', 'Cam', 'Preston', 'Evan', 'Lapel', 'Chris', 'Jack', 'Colin', 'Sam', 'Parker', 'Cam'],
+  Preston: ['Chris', 'Parker', 'Lapel', 'Colin', 'Evan', 'Keith', 'Jack', 'Sam', 'Cam', 'Chris', 'Parker', 'Lapel', 'Colin', 'Evan'],
+  Chris:   ['Preston', 'Lapel', 'Parker', 'Evan', 'Colin', 'Jack', 'Sam', 'Cam', 'Keith', 'Preston', 'Lapel', 'Parker', 'Evan', 'Colin'],
+};
+
+// Final records from the sheet — the seed asserts it reproduces these exactly.
+const EXPECTED_RECORDS: Record<string, [number, number]> = {
+  Sam: [10, 4], Parker: [9, 5], Colin: [8, 6], Preston: [7, 7], Lapel: [7, 7],
+  Keith: [7, 7], Chris: [6, 8], Evan: [6, 8], Cam: [6, 8], Jack: [4, 10],
+};
+
+const WEEKS = 14;
+const ROSTER_POSITIONS = ['QB', 'RB', 'RB', 'WR', 'WR', 'TE', 'FLEX', 'K', 'DEF', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN'];
+
+// ---- Player pool (2024 season, ordered roughly by fantasy talent) ----------
+type PoolEntry = [name: string, team: string];
+const POOL: Record<string, PoolEntry[]> = {
+  QB: [
+    ['Josh Allen', 'BUF'], ['Lamar Jackson', 'BAL'], ['Jalen Hurts', 'PHI'], ['Joe Burrow', 'CIN'],
+    ['Jayden Daniels', 'WAS'], ['Baker Mayfield', 'TB'], ['Patrick Mahomes', 'KC'], ['Jared Goff', 'DET'],
+    ['Sam Darnold', 'MIN'], ['Brock Purdy', 'SF'], ['Justin Herbert', 'LAC'], ['C.J. Stroud', 'HOU'],
+    ['Kyler Murray', 'ARI'], ['Jordan Love', 'GB'], ['Caleb Williams', 'CHI'], ['Geno Smith', 'SEA'],
+    ['Bo Nix', 'DEN'], ['Tua Tagovailoa', 'MIA'], ['Matthew Stafford', 'LAR'], ['Dak Prescott', 'DAL'],
+  ],
+  RB: [
+    ['Saquon Barkley', 'PHI'], ['Derrick Henry', 'BAL'], ['Bijan Robinson', 'ATL'], ['Jahmyr Gibbs', 'DET'],
+    ['Josh Jacobs', 'GB'], ['Kyren Williams', 'LAR'], ['James Cook', 'BUF'], ['Breece Hall', 'NYJ'],
+    ["De'Von Achane", 'MIA'], ['Jonathan Taylor', 'IND'], ['Chase Brown', 'CIN'], ['Kenneth Walker III', 'SEA'],
+    ['Aaron Jones', 'MIN'], ['Alvin Kamara', 'NO'], ['Joe Mixon', 'HOU'], ['David Montgomery', 'DET'],
+    ['Bucky Irving', 'TB'], ['Chuba Hubbard', 'CAR'], ['Tony Pollard', 'TEN'], ['Najee Harris', 'PIT'],
+    ['Rhamondre Stevenson', 'NE'], ["D'Andre Swift", 'CHI'], ['Rachaad White', 'TB'], ['Brian Robinson Jr.', 'WAS'],
+    ['Javonte Williams', 'DEN'], ['Zack Moss', 'CIN'], ['Austin Ekeler', 'WAS'], ['Nick Chubb', 'CLE'],
+    ['James Conner', 'ARI'], ['Isiah Pacheco', 'KC'], ['Christian McCaffrey', 'SF'], ['Travis Etienne', 'JAX'],
+    ['Rico Dowdle', 'DAL'], ['J.K. Dobbins', 'LAC'], ['Tyrone Tracy Jr.', 'NYG'], ['Jaylen Warren', 'PIT'],
+    ['Tyjae Spears', 'TEN'], ['Jerome Ford', 'CLE'], ['Ray Davis', 'BUF'], ['Justice Hill', 'BAL'],
+  ],
+  WR: [
+    ["Ja'Marr Chase", 'CIN'], ['Justin Jefferson', 'MIN'], ['CeeDee Lamb', 'DAL'], ['Amon-Ra St. Brown', 'DET'],
+    ['Puka Nacua', 'LAR'], ['Malik Nabers', 'NYG'], ['Brian Thomas Jr.', 'JAX'], ['Drake London', 'ATL'],
+    ['A.J. Brown', 'PHI'], ['Terry McLaurin', 'WAS'], ['Mike Evans', 'TB'], ['Tyreek Hill', 'MIA'],
+    ['Davante Adams', 'NYJ'], ['Garrett Wilson', 'NYJ'], ['Nico Collins', 'HOU'], ['Jaxon Smith-Njigba', 'SEA'],
+    ['DK Metcalf', 'SEA'], ['Zay Flowers', 'BAL'], ['DJ Moore', 'CHI'], ['Jordan Addison', 'MIN'],
+    ['Tee Higgins', 'CIN'], ['Courtland Sutton', 'DEN'], ['Ladd McConkey', 'LAC'], ['George Pickens', 'PIT'],
+    ['Jerry Jeudy', 'CLE'], ['Marvin Harrison Jr.', 'ARI'], ['Xavier Worthy', 'KC'], ['Chris Godwin', 'TB'],
+    ['Stefon Diggs', 'HOU'], ['DeVonta Smith', 'PHI'], ['Amari Cooper', 'BUF'], ['Calvin Ridley', 'TEN'],
+    ['Rome Odunze', 'CHI'], ['Keenan Allen', 'CHI'], ['Cooper Kupp', 'LAR'], ['Jakobi Meyers', 'LV'],
+    ['Khalil Shakir', 'BUF'], ['Deebo Samuel', 'SF'], ['Brandon Aiyuk', 'SF'], ['Christian Kirk', 'JAX'],
+    ['Michael Pittman Jr.', 'IND'], ['Jaylen Waddle', 'MIA'], ['Tank Dell', 'HOU'], ['Josh Downs', 'IND'],
+    ['Adam Thielen', 'CAR'], ['Jauan Jennings', 'SF'], ['Darnell Mooney', 'ATL'], ["Wan'Dale Robinson", 'NYG'],
+    ['Quentin Johnston', 'LAC'], ['Cedric Tillman', 'CLE'],
+  ],
+  TE: [
+    ['Brock Bowers', 'LV'], ['Trey McBride', 'ARI'], ['George Kittle', 'SF'], ['Travis Kelce', 'KC'],
+    ['Sam LaPorta', 'DET'], ['T.J. Hockenson', 'MIN'], ['David Njoku', 'CLE'], ['Evan Engram', 'JAX'],
+    ['Jonnu Smith', 'MIA'], ['Mark Andrews', 'BAL'], ['Dallas Goedert', 'PHI'], ['Jake Ferguson', 'DAL'],
+    ['Tucker Kraft', 'GB'], ['Cade Otton', 'TB'], ['Pat Freiermuth', 'PIT'], ['Kyle Pitts', 'ATL'],
+    ['Dalton Kincaid', 'BUF'], ['Cole Kmet', 'CHI'], ['Zach Ertz', 'WAS'], ['Hunter Henry', 'NE'],
+  ],
+  K: [
+    ['Brandon Aubrey', 'DAL'], ['Jake Bates', 'DET'], ['Chris Boswell', 'PIT'], ['Cameron Dicker', 'LAC'],
+    ['Justin Tucker', 'BAL'], ['Harrison Butker', 'KC'], ['Tyler Bass', 'BUF'], ['Jake Elliott', 'PHI'],
+    ['Younghoe Koo', 'ATL'], ["Ka'imi Fairbairn", 'HOU'],
+  ],
+  DEF: [
+    ['Ravens D/ST', 'BAL'], ['Steelers D/ST', 'PIT'], ['Broncos D/ST', 'DEN'], ['Eagles D/ST', 'PHI'],
+    ['Vikings D/ST', 'MIN'], ['Packers D/ST', 'GB'], ['Texans D/ST', 'HOU'], ['Chiefs D/ST', 'KC'],
+    ['Seahawks D/ST', 'SEA'], ['Bills D/ST', 'BUF'],
+  ],
+};
+
+// Expected weekly points by position for the Nth-best player at that position,
+// used to make generated scores plausible. [base, dropPerTier, noiseSd]
+const POSITION_CURVE: Record<string, [number, number, number]> = {
+  QB: [22, 0.45, 5],
+  RB: [17, 0.28, 5.5],
+  WR: [16.5, 0.22, 5.5],
+  TE: [13, 0.4, 4.5],
+  K: [9.5, 0.25, 3],
+  DEF: [9, 0.35, 5],
+};
+
+// Deterministic PRNG so the demo is reproducible.
+function mulberry32(seed: number) {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rand = mulberry32(20240905);
+const gauss = () => {
+  // Box–Muller
+  const u = Math.max(rand(), 1e-9);
+  const v = rand();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+};
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+interface Player {
+  id: string;
+  name: string;
+  nfl: string;
+  position: string;
+  tier: number; // index in the position pool; lower = better
+}
+
+// Snake-draft each position group across the ten teams, with a different
+// starting team per group so no one team hoards every top pick.
+function draftRosters(): Map<string, Player[]> {
+  const rosters = new Map<string, Player[]>(MANAGERS.map((m) => [m, []]));
+  const perTeam: Record<string, number> = { QB: 2, RB: 4, WR: 5, TE: 2, K: 1, DEF: 1 };
+  const startOffset: Record<string, number> = { QB: 0, RB: 3, WR: 6, TE: 9, K: 2, DEF: 5 };
+  let nextId = 1;
+  for (const [pos, pool] of Object.entries(POOL)) {
+    const rounds = perTeam[pos];
+    let pick = 0;
+    for (let round = 0; round < rounds; round++) {
+      for (let seat = 0; seat < MANAGERS.length; seat++) {
+        const forward = round % 2 === 0;
+        const seatIdx = forward ? seat : MANAGERS.length - 1 - seat;
+        const mgr = MANAGERS[(seatIdx + startOffset[pos]) % MANAGERS.length];
+        const [name, nfl] = pool[pick];
+        rosters.get(mgr)!.push({ id: `D${String(nextId++).padStart(3, '0')}`, name, nfl, position: pos, tier: pick });
+        pick++;
+      }
+    }
+  }
+  return rosters;
+}
+
+function rawWeekPoints(p: Player): number {
+  const [base, drop, sd] = POSITION_CURVE[p.position];
+  const pts = base - p.tier * drop + gauss() * sd;
+  // Everyone has a dud sometimes; nobody scores negative in this demo.
+  return Math.max(0, round2(pts));
+}
+
+/** Pick the lineup the manager "set" — best by reputation (tier), sometimes wrong. */
+function chooseStarters(roster: Player[]): Player[] {
+  const byPos = (pos: string) => roster.filter((p) => p.position === pos).sort((a, b) => a.tier - b.tier);
+  const maybeSwap = (list: Player[], idx: number) =>
+    // 18% of the time the manager plays a hunch and starts the next guy down.
+    list.length > idx + 1 && rand() < 0.18 ? list[idx + 1] : list[idx];
+
+  const qb = maybeSwap(byPos('QB'), 0);
+  const rbs = byPos('RB');
+  const wrs = byPos('WR');
+  const te = maybeSwap(byPos('TE'), 0);
+  const rb1 = maybeSwap(rbs, 0);
+  const rb2 = rbs.find((p) => p !== rb1) ?? rbs[1];
+  const wr1 = maybeSwap(wrs, 0);
+  const wr2 = wrs.find((p) => p !== wr1) ?? wrs[1];
+  const used = new Set([qb, rb1, rb2, te, wr1, wr2]);
+  const flexPool = roster
+    .filter((p) => ['RB', 'WR', 'TE'].includes(p.position) && !used.has(p))
+    .sort((a, b) => a.tier - b.tier);
+  const flex = maybeSwap(flexPool, 0);
+  return [qb, rb1, rb2, wr1, wr2, te, flex, byPos('K')[0], byPos('DEF')[0]];
+}
+
+function main() {
+  const db = getDb();
+  for (const table of ['matchups', 'players', 'rosters', 'users', 'league']) {
+    db.exec(`DELETE FROM ${table}`);
+  }
+
+  upsertLeague({
+    league_id: LEAGUE_ID,
+    name: 'BMCF League',
+    season: SEASON,
+    status: 'complete',
+    total_rosters: 10,
+    roster_positions: ROSTER_POSITIONS,
+    scoring_settings: {},
+    settings: { playoff_week_start: 15 },
+  });
+
+  upsertUsers(
+    LEAGUE_ID,
+    MANAGERS.map((m, i) => ({
+      user_id: `demo-u${i + 1}`,
+      display_name: m,
+      avatar: null,
+      metadata: { team_name: `Team ${m}` },
+    }))
+  );
+
+  const rosters = draftRosters();
+  upsertRosters(
+    LEAGUE_ID,
+    MANAGERS.map((m, i) => ({
+      roster_id: i + 1,
+      owner_id: `demo-u${i + 1}`,
+      league_id: LEAGUE_ID,
+      players: rosters.get(m)!.map((p) => p.id),
+    }))
+  );
+
+  const playerDump: Record<string, SleeperPlayer> = {};
+  for (const list of rosters.values()) {
+    for (const p of list) {
+      playerDump[p.id] = {
+        player_id: p.id,
+        full_name: p.name,
+        position: p.position,
+        team: p.nfl,
+        fantasy_positions: [p.position],
+      };
+    }
+  }
+  upsertPlayers(playerDump);
+
+  for (let week = 1; week <= WEEKS; week++) {
+    // Pair up the week's matchups from the real schedule.
+    const matchupIds = new Map<string, number>();
+    let nextMatchup = 1;
+    for (const mgr of MANAGERS) {
+      if (matchupIds.has(mgr)) continue;
+      const opp = SCHEDULE[mgr][week - 1];
+      matchupIds.set(mgr, nextMatchup);
+      matchupIds.set(opp, nextMatchup);
+      nextMatchup++;
+    }
+
+    const rows: SleeperMatchup[] = MANAGERS.map((mgr, i) => {
+      const roster = rosters.get(mgr)!;
+      const target = SCORES[mgr][week - 1];
+      const starters = chooseStarters(roster);
+      const starterIds = new Set(starters.map((p) => p.id));
+
+      const points: Record<string, number> = {};
+      for (const p of roster) points[p.id] = rawWeekPoints(p);
+
+      // Scale the started nine so they sum to the real weekly total exactly.
+      const rawSum = starters.reduce((s, p) => s + points[p.id], 0);
+      const factor = rawSum > 0 ? target / rawSum : 0;
+      for (const p of starters) points[p.id] = round2(points[p.id] * factor);
+      const adjusted = starters.reduce((s, p) => s + points[p.id], 0);
+      const anchor = starters.reduce((a, b) => (points[a.id] >= points[b.id] ? a : b));
+      points[anchor.id] = round2(points[anchor.id] + (target - adjusted));
+
+      return {
+        roster_id: i + 1,
+        matchup_id: matchupIds.get(mgr)!,
+        points: target,
+        starters: starters.map((p) => p.id),
+        players: roster.map((p) => p.id),
+        players_points: points,
+      };
+    });
+    upsertMatchups(LEAGUE_ID, week, rows);
+  }
+
+  // Sanity check: the seeded schedule + scores must reproduce the sheet's records.
+  const failures: string[] = [];
+  for (const mgr of MANAGERS) {
+    let w = 0;
+    let l = 0;
+    for (let week = 1; week <= WEEKS; week++) {
+      const opp = SCHEDULE[mgr][week - 1];
+      if (SCORES[mgr][week - 1] > SCORES[opp][week - 1]) w++;
+      else if (SCORES[mgr][week - 1] < SCORES[opp][week - 1]) l++;
+    }
+    const [ew, el] = EXPECTED_RECORDS[mgr];
+    const ok = w === ew && l === el;
+    if (!ok) failures.push(`${mgr}: computed ${w}-${l}, sheet says ${ew}-${el}`);
+    console.log(`${ok ? '✓' : '✗'} ${mgr.padEnd(8)} ${w}-${l}`);
+  }
+  if (failures.length) {
+    throw new Error(`Seeded records do not match the sheet:\n${failures.join('\n')}`);
+  }
+  console.log(`\nSeeded ${MANAGERS.length} teams × ${WEEKS} weeks into the database.`);
+}
+
+main();
