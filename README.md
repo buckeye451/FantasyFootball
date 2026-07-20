@@ -85,16 +85,41 @@ entrypoint (`scripts/docker-entrypoint.sh`), and a `fly.toml` with the league id
 already filled in. Fly is a good fit because the SQLite database lives on a
 persistent **volume** — data survives restarts and deploys.
 
-### One-time setup
+### Option A — deploy from the browser via GitHub Actions (no install needed)
+
+Best when you can't (or don't want to) install anything locally — e.g. on a work
+computer. `flyctl` runs inside GitHub's servers, so you only ever use two
+websites: **fly.io** and **github.com**. This repo already includes the workflow
+at `.github/workflows/fly-deploy.yml`, which creates the app + volume and deploys
+for you.
+
+1. **Make a Fly account** at [fly.io](https://fly.io) and add a payment method
+   (Fly requires a card on file even though a scale-to-zero app like this costs
+   pennies — often nothing).
+2. **Create a Fly access token** in the dashboard: click your account (top-right)
+   → **Tokens** (or **Access Tokens**) → create a token → copy it. A personal
+   access token or an org deploy token both work.
+3. **Add the token to GitHub**: in this repo, go to **Settings → Secrets and
+   variables → Actions → New repository secret**. Name it exactly
+   `FLY_API_TOKEN`, paste the token, save.
+4. **Deploy**: go to the **Actions** tab → **Deploy to Fly.io** → **Run
+   workflow** (pick this branch) → **Run**. The run creates the app, creates the
+   1 GB database volume, builds the image on Fly's servers, and boots it. When
+   it finishes, the job summary prints your URL (`https://bmcf-league.fly.dev`).
+
+After that, every push to the default branch redeploys automatically, and you
+can re-run it any time from the Actions tab. If the app name `bmcf-league` is
+already taken on Fly, edit the `app = ` line in `fly.toml` (the workflow reads
+the name from there) and re-run.
+
+### Option B — deploy with the flyctl CLI (if you can install it)
 
 ```bash
 # 1. Install flyctl and sign in (https://fly.io/docs/flyctl/install/)
 curl -L https://fly.io/install.sh | sh
 fly auth signup        # or: fly auth login
 
-# 2. From the repo root, create the app from the committed fly.toml.
-#    If the name "bmcf-league" is taken, edit `app` in fly.toml first
-#    (or run `fly launch --copy-config --no-deploy` and let it pick a name).
+# 2. From the repo root, create the app (rename in fly.toml first if taken).
 fly apps create bmcf-league
 
 # 3. Create the 1 GB volume the database lives on (match the region in fly.toml).
@@ -104,9 +129,8 @@ fly volumes create bmcf_data --size 1 --region ord
 fly deploy
 ```
 
-That's it — `fly deploy` builds the image on Fly's remote builders (no local
-Docker needed) and boots the app. Open it with `fly open`, and share that URL
-with your league.
+`fly deploy` builds the image on Fly's remote builders (no local Docker needed)
+and boots the app. Open it with `fly open`, and share that URL with your league.
 
 ### What happens on deploy
 
@@ -135,10 +159,19 @@ Force a data refresh any time without redeploying:
 fly ssh console -C "npm run sync"     # or hit https://<your-app>.fly.dev/api/sync
 ```
 
-### Other hosts
+### Option C — Render or Railway (fully click-through, no tokens)
 
-Any Node 22.13+ host with a persistent disk works the same way (Railway,
-Render, a Raspberry Pi…): `npm run build && npm run start`, set
-`SLEEPER_LEAGUE_ID` + `AUTO_SYNC=true`, and point `DB_PATH` at durable storage.
-Avoid serverless platforms without a persistent filesystem (e.g. Vercel's
-default setup) — they won't keep the SQLite file between requests/deploys.
+If you'd rather avoid the token/secret setup entirely, [Render](https://render.com)
+and [Railway](https://railway.app) both deploy straight from a GitHub repo in the
+browser and reuse the same `Dockerfile`:
+
+1. Sign in with GitHub and create a new **Web Service** (Render) / project
+   (Railway) from this repo. It auto-detects the `Dockerfile`.
+2. Add a **persistent disk / volume** mounted at `/data` (1 GB is plenty).
+3. Set environment variables: `SLEEPER_LEAGUE_ID=1382410388192120832`,
+   `AUTO_SYNC=true`, `DB_PATH=/data/league.db`.
+4. Create the service — it builds and gives you a public URL.
+
+Any Node 22.13+ host with a persistent disk works on the same principle. Avoid
+serverless platforms without a persistent filesystem (e.g. Vercel's default
+setup) — they won't keep the SQLite file between requests/deploys.
