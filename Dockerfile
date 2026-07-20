@@ -11,8 +11,10 @@ RUN npm run build
 # ---- Runtime stage ----
 FROM node:22-slim AS runner
 WORKDIR /app
+# Listen on 8080 — Fly.io routes to this port by default, and fly.toml's
+# internal_port matches. Next.js `next start` binds whatever $PORT says.
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=8080
 ENV HOSTNAME=0.0.0.0
 
 # Production dependencies only. tsx is a runtime dependency here because the
@@ -29,5 +31,5 @@ COPY scripts ./scripts
 # Mount point for the Fly volume that holds the SQLite DB + player cache.
 RUN mkdir -p /data
 
-EXPOSE 3000
+EXPOSE 8080
 ENTRYPOINT ["/bin/sh", "scripts/docker-entrypoint.sh"]
