@@ -16,6 +16,17 @@ into a local SQLite database automatically, and the site serves:
   List one Sleeper league id per season in `SLEEPER_LEAGUE_ID`; the app also
   follows each league's previous-season chain, so a new season appears
   automatically once it starts.
+- **A hamburger menu** grouping navigation into **Players** (each manager's
+  team), **Weekly Scores** (a per-week breakdown of every matchup), and
+  **Playoffs** (bracket + per-round breakdowns).
+- **Weekly / playoff matchup breakdowns** — each matchup shows, per team:
+  *Win % vs League* (share of the other teams that score would beat),
+  *Performance %* (score ÷ projected points), *Manager Score* (score ÷
+  best-possible lineup, capped at 100%), and *Best Lineup Wins?* (whether the
+  optimal lineup would have flipped a loss into a win). Playoff rounds use the
+  same layout, scoped to the teams still alive.
+- **Playoff bracket** built from Sleeper's `winners_bracket` / `losers_bracket`,
+  with each round's scores and the champion highlighted.
 
 ## Quick start
 

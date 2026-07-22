@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { defaultSeason, getSeasons, getTeams } from '@/lib/stats';
+import { defaultSeason, getSeasons, getTeams, playoffRounds, regularSeasonWeeks } from '@/lib/stats';
 import { ensureAutoSync } from '@/lib/autosync';
 import { SiteHeader, type HeaderSeason } from '@/components/SiteHeader';
 import './globals.css';
@@ -20,6 +20,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     seasons = getSeasons().map((s) => ({
       ...s,
       teams: getTeams(s.leagueId).map((t) => ({ slug: t.slug, name: t.displayName })),
+      weeks: regularSeasonWeeks(s.leagueId),
+      playoffRounds: playoffRounds(s.leagueId).map((r) => ({ round: r.round, name: r.name })),
     }));
   } catch {
     // fresh checkout with no database yet — render the shell anyway

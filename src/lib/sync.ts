@@ -3,9 +3,11 @@ import path from 'node:path';
 import { getDb, DB_PATH } from './db';
 import { sleeper } from './sleeper';
 import type {
+  SleeperBracketMatch,
   SleeperLeague,
   SleeperMatchup,
   SleeperPlayer,
+  SleeperProjection,
   SleeperRoster,
   SleeperUser,
 } from './types';
@@ -123,6 +125,48 @@ export function upsertPlayers(players: Record<string, SleeperPlayer>, onlyIds?: 
   }
 }
 
+export function upsertProjections(
+  season: string,
+  week: number,
+  projections: SleeperProjection[]
+): void {
+  const db = getDb();
+  const stmt = db.prepare(
+    `INSERT INTO projections (season, week, player_id, pts_std, pts_half, pts_ppr)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(season, week, player_id) DO UPDATE SET
+       pts_std = excluded.pts_std, pts_half = excluded.pts_half, pts_ppr = excluded.pts_ppr`
+  );
+  for (const p of projections) {
+    if (!p.player_id) continue;
+    const s = p.stats ?? {};
+    stmt.run(
+      season,
+      week,
+      p.player_id,
+      s.pts_std ?? null,
+      s.pts_half_ppr ?? null,
+      s.pts_ppr ?? null
+    );
+  }
+}
+
+function hasProjections(season: string, week: number): boolean {
+  const row = getDb()
+    .prepare('SELECT COUNT(*) AS c FROM projections WHERE season = ? AND week = ?')
+    .get(season, week) as { c: number };
+  return row.c > 0;
+}
+
+export function upsertBracket(leagueId: string, type: string, matches: SleeperBracketMatch[]): void {
+  getDb()
+    .prepare(
+      `INSERT INTO brackets (league_id, bracket_type, data) VALUES (?, ?, ?)
+       ON CONFLICT(league_id, bracket_type) DO UPDATE SET data = excluded.data`
+    )
+    .run(leagueId, type, JSON.stringify(matches ?? []));
+}
+
 function logSync(scope: string, detail: string): void {
   getDb()
     .prepare('INSERT INTO sync_log (ran_at, scope, detail) VALUES (?, ?, ?)')
@@ -149,7 +193,7 @@ async function fetchPlayersDump(): Promise<Record<string, SleeperPlayer>> {
  * users, rosters, every scored week's matchups, and metadata for every player
  * that appears in the league. Idempotent — safe to run on a schedule.
  */
-export async function syncLeague(leagueId: string): Promise<string> {
+export async function syncLeague(leagueId: string, full = false): Promise<string> {
   const league = await sleeper.league(leagueId);
   upsertLeague(league);
 
@@ -180,9 +224,33 @@ export async function syncLeague(leagueId: string): Promise<string> {
       for (const id of m.players ?? []) referenced.add(id);
       for (const id of m.starters ?? []) referenced.add(id);
     }
+    // Projected points for Performance %. Shared across leagues for the same
+    // NFL season/week, so fetch each week's projections at most once (unless
+    // forcing a full re-import). Optional — Performance % degrades to "—".
+    if (full || !hasProjections(league.season, week)) {
+      try {
+        const proj = await sleeper.projections(league.season, week);
+        upsertProjections(league.season, week, proj);
+      } catch {
+        // projections endpoint is undocumented and may be unavailable
+      }
+    }
   }
   for (const r of rosters) {
     for (const id of r.players ?? []) referenced.add(id);
+  }
+
+  // Playoff brackets (empty before the postseason starts — ignore failures).
+  for (const type of ['winners', 'losers'] as const) {
+    try {
+      const bracket =
+        type === 'winners'
+          ? await sleeper.winnersBracket(leagueId)
+          : await sleeper.losersBracket(leagueId);
+      upsertBracket(leagueId, type, bracket);
+    } catch {
+      // no bracket yet
+    }
   }
 
   // Store metadata only for players this league has ever rostered — keeps the
@@ -275,7 +343,7 @@ export async function syncAll(leagueIds: string[], opts: { full?: boolean } = {}
       continue;
     }
     try {
-      details.push(await syncLeague(id));
+      details.push(await syncLeague(id, full));
     } catch (err) {
       details.push(`league=${id} FAILED: ${String(err)}`);
     }

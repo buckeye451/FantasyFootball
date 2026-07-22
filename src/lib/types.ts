@@ -58,6 +58,32 @@ export interface SleeperPlayer {
   fantasy_positions?: string[] | null;
 }
 
+// A slot in a playoff bracket match: a resolved roster id, or a pointer to the
+// winner/loser of an earlier match (before that match has been decided).
+export type SleeperBracketSlot = number | { w: number } | { l: number } | null;
+
+export interface SleeperBracketMatch {
+  r: number; // round (1 = first playoff round)
+  m: number; // match id within the bracket
+  t1: SleeperBracketSlot;
+  t2: SleeperBracketSlot;
+  w: number | null; // winning roster id, once decided
+  l: number | null; // losing roster id, once decided
+  t1_from?: { w?: number; l?: number } | null;
+  t2_from?: { w?: number; l?: number } | null;
+  p?: number; // placement this match decides (1 = championship, 3 = third place, …)
+}
+
+export interface SleeperProjection {
+  player_id?: string;
+  stats?: {
+    pts_std?: number;
+    pts_half_ppr?: number;
+    pts_ppr?: number;
+    [k: string]: number | undefined;
+  };
+}
+
 // App-level read models
 
 export interface TeamInfo {

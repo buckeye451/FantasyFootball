@@ -1,6 +1,14 @@
 import { getDb } from './db';
 import { optimalLineup, round2, startingSlots, type OptimalResult } from './optimal';
-import type { MatchupRow, PlayerMeta, Standing, TeamInfo, WeekResult } from './types';
+import type {
+  MatchupRow,
+  PlayerMeta,
+  SleeperBracketMatch,
+  SleeperBracketSlot,
+  Standing,
+  TeamInfo,
+  WeekResult,
+} from './types';
 
 export interface LeagueInfo {
   leagueId: string;
@@ -454,6 +462,343 @@ export function teamSeason(leagueId: string, rosterId: number): TeamSeason | nul
     totalPointsLost: round2(weeks.reduce((s, w) => s + w.benchPointsLost, 0)),
     efficiency: totalOptimal ? round2((pf / totalOptimal) * 100) : 100,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Weekly score breakdowns + per-team advanced metrics
+// ---------------------------------------------------------------------------
+
+export type ScoringFormat = 'ppr' | 'half_ppr' | 'std';
+
+/** Infer the league's scoring format from its reception points. */
+export function scoringFormat(leagueId: string): ScoringFormat {
+  const row = getDb()
+    .prepare('SELECT scoring_settings FROM league WHERE league_id = ?')
+    .get(leagueId) as { scoring_settings: string } | undefined;
+  const rec = row ? Number(JSON.parse(row.scoring_settings || '{}').rec ?? 0) : 0;
+  if (rec >= 1) return 'ppr';
+  if (rec >= 0.5) return 'half_ppr';
+  return 'std';
+}
+
+interface Proj {
+  std: number | null;
+  half: number | null;
+  ppr: number | null;
+}
+
+function weekProjections(season: string, week: number): Map<string, Proj> {
+  const rows = getDb()
+    .prepare('SELECT player_id, pts_std, pts_half, pts_ppr FROM projections WHERE season = ? AND week = ?')
+    .all(season, week) as Array<Record<string, unknown>>;
+  const map = new Map<string, Proj>();
+  for (const r of rows) {
+    map.set(r.player_id as string, {
+      std: (r.pts_std as number) ?? null,
+      half: (r.pts_half as number) ?? null,
+      ppr: (r.pts_ppr as number) ?? null,
+    });
+  }
+  return map;
+}
+
+function projValue(p: Proj | undefined, fmt: ScoringFormat): number | null {
+  if (!p) return null;
+  const v = fmt === 'ppr' ? p.ppr : fmt === 'half_ppr' ? p.half : p.std;
+  return v ?? null;
+}
+
+/** Sum of projected points for the starters a team played (null if too sparse). */
+function projectedTotal(starters: string[], proj: Map<string, Proj>, fmt: ScoringFormat): number | null {
+  let sum = 0;
+  let have = 0;
+  let total = 0;
+  for (const pid of starters) {
+    if (!pid || pid === '0') continue;
+    total++;
+    const v = projValue(proj.get(pid), fmt);
+    if (v != null) {
+      sum += v;
+      have++;
+    }
+  }
+  if (total === 0 || have < Math.ceil(total * 0.6)) return null;
+  return round2(sum);
+}
+
+export interface TeamWeekStat {
+  team: TeamInfo;
+  score: number;
+  optimal: number;
+  projected: number | null;
+  /** score ÷ projected × 100 */
+  performancePct: number | null;
+  /** % of the other teams this score would beat */
+  winPctVsLeague: number;
+  /** score ÷ best-possible-lineup × 100, capped at 100 */
+  managerScorePct: number;
+  /** 'yes' = would have won with the optimal lineup; 'no' = still would have lost; null = already won */
+  bestLineupWins: 'yes' | 'no' | null;
+  result: 'W' | 'L' | 'T' | null;
+  opponentScore: number | null;
+}
+
+export interface MatchupBreakdown {
+  matchupId: number | null;
+  teams: TeamWeekStat[];
+}
+
+function computeTeamWeekStat(
+  m: MatchupRow,
+  opponentScore: number | null,
+  otherScores: number[],
+  rosterPositions: string[],
+  meta: Map<string, PlayerMeta>,
+  fmt: ScoringFormat,
+  proj: Map<string, Proj>,
+  team: TeamInfo
+): TeamWeekStat {
+  const optimal = optimalLineup(rosterPositions, m.starters, m.playersPoints, meta).optimalTotal;
+  const projected = projectedTotal(m.starters, proj, fmt);
+  const beat = otherScores.filter((s) => m.points > s).length;
+  const winPct = otherScores.length ? round2((beat / otherScores.length) * 100) : 0;
+  const managerScore = optimal > 0 ? Math.min(100, round2((m.points / optimal) * 100)) : 100;
+  const performance = projected && projected > 0 ? round2((m.points / projected) * 100) : null;
+  const result =
+    opponentScore == null ? null : m.points > opponentScore ? 'W' : m.points < opponentScore ? 'L' : 'T';
+  let best: 'yes' | 'no' | null = null;
+  if (opponentScore != null) {
+    if (m.points > opponentScore) best = null; // already won
+    else best = optimal > opponentScore ? 'yes' : 'no';
+  }
+  return {
+    team,
+    score: round2(m.points),
+    optimal: round2(optimal),
+    projected,
+    performancePct: performance,
+    winPctVsLeague: winPct,
+    managerScorePct: managerScore,
+    bestLineupWins: best,
+    result,
+    opponentScore: opponentScore == null ? null : round2(opponentScore),
+  };
+}
+
+/** Every matchup in a week with each team's advanced metrics. Winner listed first. */
+export function weekBreakdown(leagueId: string, week: number): MatchupBreakdown[] {
+  const league = getLeagueInfo(leagueId);
+  if (!league) return [];
+  const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
+  const weekRows = getMatchups(leagueId).filter((m) => m.week === week);
+  const meta = getPlayerMeta();
+  const fmt = scoringFormat(leagueId);
+  const proj = weekProjections(league.season, week);
+
+  const statFor = (m: MatchupRow): TeamWeekStat => {
+    const opp = opponentOf(m, weekRows);
+    const others = weekRows.filter((x) => x.rosterId !== m.rosterId).map((x) => x.points);
+    return computeTeamWeekStat(
+      m,
+      opp?.points ?? null,
+      others,
+      league.rosterPositions,
+      meta,
+      fmt,
+      proj,
+      teams.get(m.rosterId)!
+    );
+  };
+
+  const byMatch = new Map<number, MatchupRow[]>();
+  const solo: MatchupRow[] = [];
+  for (const m of weekRows) {
+    if (m.matchupId == null) {
+      solo.push(m);
+      continue;
+    }
+    if (!byMatch.has(m.matchupId)) byMatch.set(m.matchupId, []);
+    byMatch.get(m.matchupId)!.push(m);
+  }
+
+  const out: MatchupBreakdown[] = [];
+  for (const [mid, rows] of [...byMatch.entries()].sort((a, b) => a[0] - b[0])) {
+    const stats = rows.map(statFor).sort((a, b) => b.score - a.score);
+    out.push({ matchupId: mid, teams: stats });
+  }
+  for (const m of solo) out.push({ matchupId: null, teams: [statFor(m)] });
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Playoff brackets
+// ---------------------------------------------------------------------------
+
+export interface BracketTeam {
+  rosterId: number | null;
+  team: TeamInfo | null;
+  score: number | null;
+  label: string;
+}
+
+export interface BracketMatch {
+  round: number;
+  matchId: number;
+  week: number | null;
+  placement?: number;
+  winnerRosterId: number | null;
+  teams: [BracketTeam, BracketTeam];
+}
+
+export interface BracketRound {
+  round: number;
+  week: number | null;
+  name: string;
+  matches: BracketMatch[];
+}
+
+function roundName(round: number, totalRounds: number): string {
+  if (round === totalRounds) return 'Championship';
+  if (round === totalRounds - 1) return 'Semifinals';
+  if (round === totalRounds - 2) return 'Quarterfinals';
+  return `Round ${round}`;
+}
+
+function rawBracket(leagueId: string, type: string): SleeperBracketMatch[] {
+  const row = getDb()
+    .prepare('SELECT data FROM brackets WHERE league_id = ? AND bracket_type = ?')
+    .get(leagueId, type) as { data: string } | undefined;
+  return row ? (JSON.parse(row.data) as SleeperBracketMatch[]) : [];
+}
+
+function resolveSlot(
+  slot: SleeperBracketSlot,
+  matches: SleeperBracketMatch[]
+): { rosterId: number | null; label: string } {
+  if (slot == null) return { rosterId: null, label: 'TBD' };
+  if (typeof slot === 'number') return { rosterId: slot, label: '' };
+  // pointer to the winner/loser of an earlier match
+  const isW = 'w' in slot;
+  const refId = isW ? slot.w : slot.l;
+  const ref = matches.find((mm) => mm.m === refId);
+  const rosterId = ref ? (isW ? ref.w : ref.l) : null;
+  return { rosterId, label: rosterId == null ? `${isW ? 'Winner' : 'Loser'} of Game ${refId}` : '' };
+}
+
+/** Assemble a bracket into rounds, with team info and each team's score for the round's week. */
+export function getBracket(leagueId: string, type: 'winners' | 'losers' = 'winners'): BracketRound[] {
+  const league = getLeagueInfo(leagueId);
+  const matches = rawBracket(leagueId, type);
+  if (!league || matches.length === 0) return [];
+
+  const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
+  const matchups = getMatchups(leagueId);
+  const rounds = [...new Set(matches.map((m) => m.r))].sort((a, b) => a - b);
+  const totalRounds = rounds.length;
+  const playoffStart = league.playoffWeekStart;
+
+  const scoreOf = (rosterId: number | null, week: number | null): number | null => {
+    if (rosterId == null || week == null) return null;
+    const row = matchups.find((m) => m.week === week && m.rosterId === rosterId);
+    return row ? round2(row.points) : null;
+  };
+
+  return rounds.map((r, i) => {
+    const week = playoffStart != null ? playoffStart + i : null;
+    const roundMatches = matches
+      .filter((m) => m.r === r)
+      .sort((a, b) => a.m - b.m)
+      .map((m): BracketMatch => {
+        const build = (slot: SleeperBracketSlot): BracketTeam => {
+          const { rosterId, label } = resolveSlot(slot, matches);
+          const team = rosterId != null ? teams.get(rosterId) ?? null : null;
+          return { rosterId, team, score: scoreOf(rosterId, week), label: team?.displayName ?? label };
+        };
+        return {
+          round: r,
+          matchId: m.m,
+          week,
+          placement: m.p,
+          winnerRosterId: m.w ?? null,
+          teams: [build(m.t1), build(m.t2)],
+        };
+      });
+    return { round: r, week, name: roundName(r, totalRounds), matches: roundMatches };
+  });
+}
+
+export function playoffRounds(leagueId: string): Array<{ round: number; week: number | null; name: string }> {
+  // "Round 1", "Round 2", … for the menu and round pages. The bracket view keeps
+  // the descriptive names (Quarterfinals/Semifinals/Championship) on its columns.
+  return getBracket(leagueId, 'winners').map((r) => ({
+    round: r.round,
+    week: r.week,
+    name: `Round ${r.round}`,
+  }));
+}
+
+export function hasPlayoffs(leagueId: string): boolean {
+  return rawBracket(leagueId, 'winners').length > 0;
+}
+
+/**
+ * Playoff-round breakdown that mirrors the weekly breakdown, but scoped to the
+ * teams still alive in that round (win % is measured against the other teams
+ * playing that round, not the whole league).
+ */
+export function playoffRoundBreakdown(leagueId: string, round: number): MatchupBreakdown[] {
+  const league = getLeagueInfo(leagueId);
+  if (!league) return [];
+  const bracket = getBracket(leagueId, 'winners');
+  const rd = bracket.find((r) => r.round === round);
+  if (!rd || rd.week == null) return [];
+
+  const week = rd.week;
+  const weekRows = getMatchups(leagueId).filter((m) => m.week === week);
+  const rowByRoster = new Map(weekRows.map((m) => [m.rosterId, m]));
+  const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
+  const meta = getPlayerMeta();
+  const fmt = scoringFormat(leagueId);
+  const proj = weekProjections(league.season, week);
+
+  // All roster ids alive in this round.
+  const participants: number[] = [];
+  for (const mt of rd.matches) {
+    for (const t of mt.teams) if (t.rosterId != null) participants.push(t.rosterId);
+  }
+  const scoreByRoster = new Map(
+    participants.map((rid) => [rid, rowByRoster.get(rid)?.points ?? 0])
+  );
+
+  const out: MatchupBreakdown[] = [];
+  for (const mt of rd.matches) {
+    const teamStats: TeamWeekStat[] = [];
+    for (const t of mt.teams) {
+      if (t.rosterId == null) continue;
+      const row = rowByRoster.get(t.rosterId);
+      if (!row) continue;
+      const oppSlot = mt.teams.find((x) => x.rosterId !== t.rosterId);
+      const oppScore = oppSlot?.rosterId != null ? scoreByRoster.get(oppSlot.rosterId) ?? null : null;
+      const others = participants
+        .filter((rid) => rid !== t.rosterId)
+        .map((rid) => scoreByRoster.get(rid) ?? 0);
+      teamStats.push(
+        computeTeamWeekStat(
+          row,
+          oppScore ?? null,
+          others,
+          league.rosterPositions,
+          meta,
+          fmt,
+          proj,
+          teams.get(t.rosterId)!
+        )
+      );
+    }
+    teamStats.sort((a, b) => b.score - a.score);
+    out.push({ matchupId: mt.matchId, teams: teamStats });
+  }
+  return out;
 }
 
 /** League median score per week — context line for the team chart. */

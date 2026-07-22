@@ -10,9 +10,17 @@
  *
  * Usage: npm run seed:demo
  */
-import { upsertLeague, upsertMatchups, upsertPlayers, upsertRosters, upsertUsers } from '../src/lib/sync';
+import {
+  upsertBracket,
+  upsertLeague,
+  upsertMatchups,
+  upsertPlayers,
+  upsertProjections,
+  upsertRosters,
+  upsertUsers,
+} from '../src/lib/sync';
 import { getDb } from '../src/lib/db';
-import type { SleeperMatchup, SleeperPlayer } from '../src/lib/types';
+import type { SleeperBracketMatch, SleeperMatchup, SleeperPlayer } from '../src/lib/types';
 
 const MANAGERS = ['Sam', 'Cam', 'Lapel', 'Parker', 'Evan', 'Colin', 'Jack', 'Keith', 'Preston', 'Chris'];
 
@@ -265,6 +273,24 @@ function seedSeason(cfg: SeasonConfig): void {
   }
   upsertPlayers(playerDump);
 
+  // Projected points per player for each week (drives Performance %). A player's
+  // projection is their tier's baseline with light noise, so actual vs projected
+  // varies around 100%.
+  const storeProjections = (week: number) => {
+    const projections: Array<{
+      player_id: string;
+      stats: { pts_std: number; pts_half_ppr: number; pts_ppr: number };
+    }> = [];
+    for (const list of rosters.values()) {
+      for (const p of list) {
+        const [base, drop] = POSITION_CURVE[p.position];
+        const v = Math.max(0, round2(base - p.tier * drop + gauss() * 1.5));
+        projections.push({ player_id: p.id, stats: { pts_std: v, pts_half_ppr: v, pts_ppr: v } });
+      }
+    }
+    upsertProjections(cfg.season, week, projections);
+  };
+
   for (let week = 1; week <= WEEKS; week++) {
     const matchupIds = new Map<string, number>();
     let nextMatchup = 1;
@@ -302,7 +328,76 @@ function seedSeason(cfg: SeasonConfig): void {
       };
     });
     upsertMatchups(cfg.leagueId, week, rows);
+    storeProjections(week);
   }
+
+  // ---- Playoffs: top-6 bracket over weeks 15–17 ----
+  const rid = (mgr: string) => MANAGERS.indexOf(mgr) + 1;
+  const seedOrder = MANAGERS.map((mgr) => {
+    let w = 0;
+    let pf = 0;
+    for (let wk = 0; wk < WEEKS; wk++) {
+      const s = scoreOf(mgr, wk, cfg.rotate);
+      const o = scoreOf(SCHEDULE[mgr][wk], wk, cfg.rotate);
+      if (s > o) w++;
+      pf += s;
+    }
+    return { mgr, w, pf };
+  }).sort((a, b) => b.w - a.w || b.pf - a.pf);
+  const seed = (n: number) => rid(seedOrder[n - 1].mgr);
+
+  const PLAYOFF_WEEKS = [15, 16, 17];
+  const scoreAt: Record<number, Record<number, number>> = {};
+  for (const week of PLAYOFF_WEEKS) {
+    scoreAt[week] = {};
+    const rows: SleeperMatchup[] = MANAGERS.map((mgr, i) => {
+      const roster = rosters.get(mgr)!;
+      const starters = chooseStarters(roster);
+      const points: Record<string, number> = {};
+      for (const p of roster) points[p.id] = rawWeekPoints(p);
+      const total = round2(starters.reduce((s, p) => s + points[p.id], 0));
+      scoreAt[week][i + 1] = total;
+      return {
+        roster_id: i + 1,
+        matchup_id: Math.floor(i / 2) + 1,
+        points: total,
+        starters: starters.map((p) => p.id),
+        players: roster.map((p) => p.id),
+        players_points: points,
+      };
+    });
+    upsertMatchups(cfg.leagueId, week, rows);
+    storeProjections(week);
+  }
+
+  const winnerOf = (week: number, a: number, b: number) => (scoreAt[week][a] >= scoreAt[week][b] ? a : b);
+  const loserOf = (week: number, a: number, b: number) => (scoreAt[week][a] >= scoreAt[week][b] ? b : a);
+
+  // Round 1 (week 15): 3v6, 4v5 (seeds 1–2 get a bye).
+  const w1 = winnerOf(15, seed(3), seed(6));
+  const l1 = loserOf(15, seed(3), seed(6));
+  const w2 = winnerOf(15, seed(4), seed(5));
+  const l2 = loserOf(15, seed(4), seed(5));
+  // Round 2 (week 16): 1 vs winner(m2), 2 vs winner(m1).
+  const w3 = winnerOf(16, seed(1), w2);
+  const l3 = loserOf(16, seed(1), w2);
+  const w4 = winnerOf(16, seed(2), w1);
+  const l4 = loserOf(16, seed(2), w1);
+  // Round 3 (week 17): championship + third place.
+  const champ = winnerOf(17, w3, w4);
+  const runner = loserOf(17, w3, w4);
+  const third = winnerOf(17, l3, l4);
+  const fourth = loserOf(17, l3, l4);
+
+  const bracket: SleeperBracketMatch[] = [
+    { r: 1, m: 1, t1: seed(3), t2: seed(6), w: w1, l: l1 },
+    { r: 1, m: 2, t1: seed(4), t2: seed(5), w: w2, l: l2 },
+    { r: 2, m: 3, t1: seed(1), t2: { w: 2 }, w: w3, l: l3 },
+    { r: 2, m: 4, t1: seed(2), t2: { w: 1 }, w: w4, l: l4 },
+    { r: 3, m: 5, t1: { w: 3 }, t2: { w: 4 }, w: champ, l: runner, p: 1 },
+    { r: 3, m: 6, t1: { l: 3 }, t2: { l: 4 }, w: third, l: fourth, p: 3 },
+  ];
+  upsertBracket(cfg.leagueId, 'winners', bracket);
 
   if (cfg.assert) {
     // The real 2024 schedule + scores must reproduce the sheet's records.
