@@ -29,11 +29,37 @@ export default function DashboardPage() {
   }
 
   const standings = currentStandings();
+  const teams = getTeams().map((t) => ({ slug: t.slug, name: t.displayName }));
+
+  // League is connected but no scored games yet (pre-draft / offseason, or the
+  // very first sync is still running). Show a friendly holding page instead of
+  // trying to render standings that don't exist yet.
+  if (standings.length === 0) {
+    return (
+      <div className="empty-state">
+        <h1>{league.name} is connected</h1>
+        <p>
+          {teams.length > 0
+            ? `${teams.length} teams are set up, but there aren't any scored games yet.`
+            : "The league is set up, but there aren't any teams or scored games yet."}
+          {' '}Standings, charts, and player stats will appear here automatically once
+          the {league.season} season has played weeks.
+        </p>
+        <p className="page-subtitle">
+          {league.lastSyncedAt
+            ? `Last checked Sleeper ${new Date(league.lastSyncedAt).toLocaleString()}.`
+            : 'Syncing from Sleeper…'}{' '}
+          Want to see last season instead? Point <code>SLEEPER_LEAGUE_ID</code> at your
+          previous season&apos;s league.
+        </p>
+      </div>
+    );
+  }
+
   const weeks = regularSeasonWeeks();
   const latestWeek = weeks[weeks.length - 1];
   const scoreData = weeklyScoreSeries();
   const rankData = weeklyRankSeries();
-  const teams = getTeams().map((t) => ({ slug: t.slug, name: t.displayName }));
   const pow = playersOfWeek(latestWeek);
   const topPlayers = topSeasonPlayersByPosition(5);
 
