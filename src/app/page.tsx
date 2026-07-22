@@ -5,17 +5,24 @@ import {
   playersOfWeek,
   regularSeasonWeeks,
   resolveActiveLeague,
+  standingsThroughWeek,
   topSeasonPlayersByPosition,
+  weekBreakdown,
   weeklyRankSeries,
   weeklyScoreSeries,
 } from '@/lib/stats';
 import { LeagueChartsBoard } from '@/components/FocusCharts';
 import { PlayersOfWeek, TopSeasonPlayers } from '@/components/PlayerCards';
 import { StandingsTable } from '@/components/StandingsTable';
+import { WeekSelect } from '@/components/WeekSelect';
 
 export const dynamic = 'force-dynamic';
 
-export default function DashboardPage({ searchParams }: { searchParams: { season?: string } }) {
+export default function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { season?: string; week?: string };
+}) {
   const league = resolveActiveLeague(searchParams.season);
   if (!league) {
     return (
@@ -31,12 +38,11 @@ export default function DashboardPage({ searchParams }: { searchParams: { season
 
   const leagueId = league.leagueId;
   const season = league.season;
-  const standings = currentStandings(leagueId);
   const teams = getTeams(leagueId).map((t) => ({ slug: t.slug, name: t.displayName }));
 
   // League is connected but no scored games yet (pre-draft / offseason, or the
   // very first sync is still running). Show a friendly holding page.
-  if (standings.length === 0) {
+  if (currentStandings(leagueId).length === 0) {
     const otherWithGames = getSeasons().find((s) => s.hasGames);
     return (
       <div className="empty-state">
@@ -62,56 +68,72 @@ export default function DashboardPage({ searchParams }: { searchParams: { season
   const latestWeek = weeks[weeks.length - 1];
   const scoreData = weeklyScoreSeries(leagueId);
   const rankData = weeklyRankSeries(leagueId);
-  const pow = playersOfWeek(leagueId, latestWeek);
   const topPlayers = topSeasonPlayersByPosition(leagueId, 5);
 
-  const leader = standings[0];
-  const bestWeek = scoreData.reduce(
-    (best, row) => {
-      for (const t of teams) {
-        const v = row[t.slug];
-        if (v != null && v > best.points) best = { points: v, team: t.name, week: row.week };
-      }
-      return best;
-    },
-    { points: 0, team: '', week: 0 }
+  // The week selector rewinds the three sections below (standings, the four
+  // tiles, players-of-the-week); charts and season leaders stay full-season.
+  const requestedWeek = Number(searchParams.week);
+  const selectedWeek = weeks.includes(requestedWeek) ? requestedWeek : latestWeek;
+
+  const standings = standingsThroughWeek(leagueId, selectedWeek);
+  const pow = playersOfWeek(leagueId, selectedWeek);
+
+  // Single-week leaders for the stat tiles.
+  const weekTeams = weekBreakdown(leagueId, selectedWeek).flatMap((m) => m.teams);
+  const highestScoring = weekTeams.reduce<(typeof weekTeams)[number] | null>(
+    (best, t) => (best == null || t.score > best.score ? t : best),
+    null
   );
-  const mostPF = [...standings].sort((a, b) => b.pointsFor - a.pointsFor)[0];
+  const perfTeams = weekTeams.filter((t) => t.performancePct != null);
+  const highestPerf = perfTeams.reduce<(typeof weekTeams)[number] | null>(
+    (best, t) => (best == null || t.performancePct! > best.performancePct! ? t : best),
+    null
+  );
+  const bestManager = weekTeams.reduce<(typeof weekTeams)[number] | null>(
+    (best, t) => (best == null || t.managerScorePct > best.managerScorePct ? t : best),
+    null
+  );
 
   return (
     <>
       <h1 className="page-title">{season} dashboard</h1>
-      <p className="page-subtitle">
-        {league.name} · through week {latestWeek} · {standings.length} teams
-        {league.lastSyncedAt ? ` · data updated ${new Date(league.lastSyncedAt).toLocaleString()}` : ''}
-      </p>
+      <div className="dash-controls">
+        <p className="page-subtitle">
+          {league.name} · {standings.length} teams
+          {league.lastSyncedAt ? ` · data updated ${new Date(league.lastSyncedAt).toLocaleString()}` : ''}
+        </p>
+        <WeekSelect weeks={weeks} selected={selectedWeek} season={season} />
+      </div>
 
       <div className="tile-grid">
         <div className="tile">
-          <div className="tile-label">{league.status === 'complete' ? 'Champion (reg. season)' : 'League leader'}</div>
-          <div className="tile-value">{leader.team.displayName}</div>
+          <div className="tile-label">Highest Scoring Team</div>
+          <div className="tile-value">{highestScoring?.team.displayName ?? '—'}</div>
           <div className="tile-sub">
-            {leader.wins}-{leader.losses}
-            {leader.ties ? `-${leader.ties}` : ''} · {leader.pointsFor.toFixed(1)} PF
+            {highestScoring ? `${highestScoring.score.toFixed(1)} pts · week ${selectedWeek}` : ''}
           </div>
         </div>
         <div className="tile">
-          <div className="tile-label">Most points</div>
-          <div className="tile-value">{mostPF.pointsFor.toFixed(1)}</div>
+          <div className="tile-label">Highest Performance</div>
+          <div className="tile-value">
+            {highestPerf?.performancePct != null ? `${highestPerf.performancePct.toFixed(1)}%` : '—'}
+          </div>
           <div className="tile-sub">
-            {mostPF.team.displayName} · {mostPF.avgPoints.toFixed(1)} per week
+            {highestPerf ? `${highestPerf.team.displayName} · ${highestPerf.score.toFixed(1)} pts` : 'no projections'}
           </div>
         </div>
         <div className="tile">
-          <div className="tile-label">Best single week</div>
-          <div className="tile-value">{bestWeek.points.toFixed(1)}</div>
+          <div className="tile-label">Best Manager</div>
+          <div className="tile-value">
+            {bestManager ? `${bestManager.managerScorePct.toFixed(1)}%` : '—'}
+          </div>
           <div className="tile-sub">
-            {bestWeek.team} · week {bestWeek.week}
+            {bestManager ? `${bestManager.team.displayName} · ${bestManager.score.toFixed(1)} of ${bestManager.optimal.toFixed(1)}` : ''}
           </div>
         </div>
         {pow.mvp && (
           <div className="tile">
-            <div className="tile-label">Week {latestWeek} MVP</div>
+            <div className="tile-label">Week {selectedWeek} MVP</div>
             <div className="tile-value">{pow.mvp.points.toFixed(1)}</div>
             <div className="tile-sub">
               {pow.mvp.player.name} ({pow.mvp.player.position}) · {pow.mvp.manager}
@@ -122,7 +144,9 @@ export default function DashboardPage({ searchParams }: { searchParams: { season
 
       <section className="card">
         <h2 className="card-title">Standings</h2>
-        <p className="card-note">Regular season through week {latestWeek}. Arrows show movement since last week.</p>
+        <p className="card-note">
+          Regular season through week {selectedWeek}. Arrows show movement since the prior week.
+        </p>
         <StandingsTable standings={standings} season={season} />
       </section>
 
@@ -130,8 +154,8 @@ export default function DashboardPage({ searchParams }: { searchParams: { season
 
       <section>
         <h2 className="card-title">Players of the week</h2>
-        <p className="card-note">Top fantasy performance at each position in week {latestWeek}, across all rosters.</p>
-        <PlayersOfWeek byPosition={pow.byPosition} week={latestWeek} />
+        <p className="card-note">Top fantasy performance at each position in week {selectedWeek}, across all rosters.</p>
+        <PlayersOfWeek byPosition={pow.byPosition} week={selectedWeek} />
       </section>
 
       <section>
