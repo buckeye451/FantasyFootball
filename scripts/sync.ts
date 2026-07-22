@@ -1,12 +1,18 @@
-// CLI sync: `npm run sync` (uses SLEEPER_LEAGUE_ID) or
-// `npm run sync -- <league_id> [<league_id> ...]` to sync specific seasons.
+// CLI sync:
+//   npm run sync                       sync configured seasons (skips cached completed ones)
+//   npm run sync -- --full             force a complete re-import of every season
+//   npm run sync -- <league_id> ...    sync specific league id(s)
 import { requireLeagueIds, syncAll } from '../src/lib/sync';
 
 async function main() {
   const args = process.argv.slice(2);
-  const leagueIds = args.length ? args : requireLeagueIds();
-  console.log(`Syncing ${leagueIds.length} league id(s) from Sleeper (plus prior seasons)…`);
-  const detail = await syncAll(leagueIds);
+  const full = args.includes('--full');
+  const ids = args.filter((a) => a !== '--full');
+  const leagueIds = ids.length ? ids : requireLeagueIds();
+  console.log(
+    `Syncing ${leagueIds.length} league id(s) from Sleeper${full ? ' (full re-import)' : ''}…`
+  );
+  const detail = await syncAll(leagueIds, { full });
   console.log(`Done: ${detail}`);
 }
 

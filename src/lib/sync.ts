@@ -195,12 +195,40 @@ export async function syncLeague(leagueId: string): Promise<string> {
   return detail;
 }
 
+interface StoredLeague {
+  status: string | null;
+  previousLeagueId: string | null;
+  games: number;
+}
+
+function storedLeague(leagueId: string): StoredLeague | null {
+  const row = getDb()
+    .prepare(
+      `SELECT l.status AS status, l.previous_league_id AS prev,
+              (SELECT COUNT(*) FROM matchups m WHERE m.league_id = l.league_id) AS games
+       FROM league l WHERE l.league_id = ?`
+    )
+    .get(leagueId) as { status: string | null; prev: string | null; games: number } | undefined;
+  return row ? { status: row.status, previousLeagueId: row.prev, games: row.games } : null;
+}
+
+/**
+ * A completed season already in the database never changes, so periodic syncs
+ * can skip re-fetching it entirely. (A `full` sync ignores this.)
+ */
+function isCached(leagueId: string): boolean {
+  const s = storedLeague(leagueId);
+  return !!s && s.status === 'complete' && s.games > 0;
+}
+
 /**
  * Expand the configured league id(s) into the full set of seasons to sync by
  * walking each league's `previous_league_id` chain back through prior years.
- * Deduplicates, and caps the walk so a cycle can't loop forever.
+ * Deduplicates, and caps the walk so a cycle can't loop forever. For seasons
+ * already stored, it reads the previous-season link from the database instead
+ * of calling Sleeper — so walking a chain of cached seasons costs no API calls.
  */
-async function expandSeasons(startIds: string[]): Promise<string[]> {
+async function expandSeasons(startIds: string[], full: boolean): Promise<string[]> {
   const seen = new Set<string>();
   const ordered: string[] = [];
   for (const start of startIds) {
@@ -210,6 +238,11 @@ async function expandSeasons(startIds: string[]): Promise<string[]> {
       seen.add(current);
       ordered.push(current);
       hops++;
+      const stored = storedLeague(current);
+      if (stored && !full) {
+        current = stored.previousLeagueId; // use the cached chain link, no API call
+        continue;
+      }
       try {
         const league = await sleeper.league(current);
         current = league.previous_league_id ?? null;
@@ -226,18 +259,28 @@ async function expandSeasons(startIds: string[]): Promise<string[]> {
  * league ids (comma-separated in SLEEPER_LEAGUE_ID) and also follows each
  * league's previous-season chain, so setting just the current year's id pulls
  * the whole history automatically.
+ *
+ * By default, completed seasons already stored are skipped (their data is
+ * immutable) — only the active/unfinished season is re-pulled, so a routine
+ * sync makes just the API calls it needs. Pass `{ full: true }` to force a
+ * complete re-import of every season (e.g. to correct historical data).
  */
-export async function syncAll(leagueIds: string[]): Promise<string> {
-  const all = await expandSeasons(leagueIds);
+export async function syncAll(leagueIds: string[], opts: { full?: boolean } = {}): Promise<string> {
+  const full = opts.full ?? false;
+  const all = await expandSeasons(leagueIds, full);
   const details: string[] = [];
   for (const id of all) {
+    if (!full && isCached(id)) {
+      details.push(`league=${id} cached (complete)`);
+      continue;
+    }
     try {
       details.push(await syncLeague(id));
     } catch (err) {
       details.push(`league=${id} FAILED: ${String(err)}`);
     }
   }
-  const detail = `synced ${all.length} season(s): ${details.join(' | ')}`;
+  const detail = `synced ${all.length} season(s)${full ? ' [full]' : ''}: ${details.join(' | ')}`;
   logSync('all', detail);
   return detail;
 }
