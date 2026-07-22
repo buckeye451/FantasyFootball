@@ -78,7 +78,7 @@ export function SiteHeader({
             <span />
             <span />
           </button>
-          <Link href={withSeason('/')} className="brand">
+          <Link href={withSeason('/dashboard')} className="brand">
             {active?.name ?? 'BMCF League'}
           </Link>
           {seasons.length > 0 && (
@@ -86,7 +86,7 @@ export function SiteHeader({
               <span className="season-picker-label">Season</span>
               <select
                 value={activeSeason}
-                onChange={(e) => router.push(`/?season=${e.target.value}`)}
+                onChange={(e) => router.push(`/dashboard?season=${e.target.value}`)}
                 aria-label="Select season"
               >
                 {seasons.map((s) => (
@@ -109,7 +109,7 @@ export function SiteHeader({
           <span className="drawer-season">{activeSeason}</span>
         </div>
 
-        <Link href={withSeason('/')} className="drawer-link">
+        <Link href={withSeason('/dashboard')} className="drawer-link">
           Dashboard
         </Link>
 

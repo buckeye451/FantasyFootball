@@ -19,7 +19,7 @@ export function WeekSelect({
       <span className="week-select-label">As of</span>
       <select
         value={selected}
-        onChange={(e) => router.push(`/?season=${season}&week=${e.target.value}`)}
+        onChange={(e) => router.push(`/dashboard?season=${season}&week=${e.target.value}`)}
         aria-label="Show dashboard as of week"
       >
         {weeks.map((w) => (
