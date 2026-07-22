@@ -27,6 +27,8 @@ COPY --from=build /app/.next ./.next
 COPY next.config.mjs tsconfig.json ./
 COPY src ./src
 COPY scripts ./scripts
+# Static assets (hero images, logo) served by `next start` from /public.
+COPY public ./public
 
 # Mount point for the Fly volume that holds the SQLite DB + player cache.
 RUN mkdir -p /data
