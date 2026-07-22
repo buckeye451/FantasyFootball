@@ -14,8 +14,6 @@ import { upsertLeague, upsertMatchups, upsertPlayers, upsertRosters, upsertUsers
 import { getDb } from '../src/lib/db';
 import type { SleeperMatchup, SleeperPlayer } from '../src/lib/types';
 
-const LEAGUE_ID = 'demo-bmcf-2024';
-const SEASON = '2024';
 const MANAGERS = ['Sam', 'Cam', 'Lapel', 'Parker', 'Evan', 'Colin', 'Jack', 'Keith', 'Preston', 'Chris'];
 
 // Real weekly scores, weeks 1–14 (from the BMCF24League sheet).
@@ -203,42 +201,54 @@ function chooseStarters(roster: Player[]): Player[] {
   return [qb, rb1, rb2, wr1, wr2, te, flex, byPos('K')[0], byPos('DEF')[0]];
 }
 
-function main() {
-  const db = getDb();
-  for (const table of ['matchups', 'players', 'rosters', 'users', 'league']) {
-    db.exec(`DELETE FROM ${table}`);
-  }
+interface SeasonConfig {
+  leagueId: string;
+  season: string;
+  previousLeagueId: string | null;
+  /** Shift applied to the score columns so each season's data differs (0 = real 2024). */
+  rotate: number;
+  /** Verify the computed records match the sheet (only meaningful when rotate === 0). */
+  assert: boolean;
+}
 
+/** A manager's weekly score, optionally rotated onto a different manager's column. */
+function scoreOf(mgr: string, weekIdx: number, rotate: number): number {
+  const idx = MANAGERS.indexOf(mgr);
+  const src = MANAGERS[(idx + rotate) % MANAGERS.length];
+  return SCORES[src][weekIdx];
+}
+
+function seedSeason(cfg: SeasonConfig): void {
   upsertLeague({
-    league_id: LEAGUE_ID,
+    league_id: cfg.leagueId,
     name: 'BMCF League',
-    season: SEASON,
+    season: cfg.season,
     status: 'complete',
     total_rosters: 10,
     roster_positions: ROSTER_POSITIONS,
+    previous_league_id: cfg.previousLeagueId,
     scoring_settings: {},
     settings: { playoff_week_start: 15 },
   });
 
-  upsertUsers(
-    LEAGUE_ID,
-    MANAGERS.map((m, i) => ({
-      user_id: `demo-u${i + 1}`,
-      display_name: m,
-      avatar: null,
-      metadata: { team_name: `Team ${m}` },
-    }))
-  );
+  const users = MANAGERS.map((m, i) => ({
+    user_id: `demo-u${i + 1}`,
+    display_name: m,
+    avatar: null,
+    metadata: { team_name: `Team ${m}` },
+  }));
+  upsertUsers(cfg.leagueId, users);
 
   const rosters = draftRosters();
   upsertRosters(
-    LEAGUE_ID,
+    cfg.leagueId,
     MANAGERS.map((m, i) => ({
       roster_id: i + 1,
       owner_id: `demo-u${i + 1}`,
-      league_id: LEAGUE_ID,
+      league_id: cfg.leagueId,
       players: rosters.get(m)!.map((p) => p.id),
-    }))
+    })),
+    users
   );
 
   const playerDump: Record<string, SleeperPlayer> = {};
@@ -256,7 +266,6 @@ function main() {
   upsertPlayers(playerDump);
 
   for (let week = 1; week <= WEEKS; week++) {
-    // Pair up the week's matchups from the real schedule.
     const matchupIds = new Map<string, number>();
     let nextMatchup = 1;
     for (const mgr of MANAGERS) {
@@ -269,14 +278,13 @@ function main() {
 
     const rows: SleeperMatchup[] = MANAGERS.map((mgr, i) => {
       const roster = rosters.get(mgr)!;
-      const target = SCORES[mgr][week - 1];
+      const target = scoreOf(mgr, week - 1, cfg.rotate);
       const starters = chooseStarters(roster);
-      const starterIds = new Set(starters.map((p) => p.id));
 
       const points: Record<string, number> = {};
       for (const p of roster) points[p.id] = rawWeekPoints(p);
 
-      // Scale the started nine so they sum to the real weekly total exactly.
+      // Scale the started nine so they sum to the weekly total exactly.
       const rawSum = starters.reduce((s, p) => s + points[p.id], 0);
       const factor = rawSum > 0 ? target / rawSum : 0;
       for (const p of starters) points[p.id] = round2(points[p.id] * factor);
@@ -293,28 +301,71 @@ function main() {
         players_points: points,
       };
     });
-    upsertMatchups(LEAGUE_ID, week, rows);
+    upsertMatchups(cfg.leagueId, week, rows);
   }
 
-  // Sanity check: the seeded schedule + scores must reproduce the sheet's records.
-  const failures: string[] = [];
-  for (const mgr of MANAGERS) {
-    let w = 0;
-    let l = 0;
-    for (let week = 1; week <= WEEKS; week++) {
-      const opp = SCHEDULE[mgr][week - 1];
-      if (SCORES[mgr][week - 1] > SCORES[opp][week - 1]) w++;
-      else if (SCORES[mgr][week - 1] < SCORES[opp][week - 1]) l++;
+  if (cfg.assert) {
+    // The real 2024 schedule + scores must reproduce the sheet's records.
+    const failures: string[] = [];
+    for (const mgr of MANAGERS) {
+      let w = 0;
+      let l = 0;
+      for (let week = 1; week <= WEEKS; week++) {
+        const opp = SCHEDULE[mgr][week - 1];
+        if (SCORES[mgr][week - 1] > SCORES[opp][week - 1]) w++;
+        else if (SCORES[mgr][week - 1] < SCORES[opp][week - 1]) l++;
+      }
+      const [ew, el] = EXPECTED_RECORDS[mgr];
+      const ok = w === ew && l === el;
+      if (!ok) failures.push(`${mgr}: computed ${w}-${l}, sheet says ${ew}-${el}`);
+      console.log(`  ${ok ? '✓' : '✗'} ${mgr.padEnd(8)} ${w}-${l}`);
     }
-    const [ew, el] = EXPECTED_RECORDS[mgr];
-    const ok = w === ew && l === el;
-    if (!ok) failures.push(`${mgr}: computed ${w}-${l}, sheet says ${ew}-${el}`);
-    console.log(`${ok ? '✓' : '✗'} ${mgr.padEnd(8)} ${w}-${l}`);
+    if (failures.length) {
+      throw new Error(`Seeded ${cfg.season} records do not match the sheet:\n${failures.join('\n')}`);
+    }
   }
-  if (failures.length) {
-    throw new Error(`Seeded records do not match the sheet:\n${failures.join('\n')}`);
+  console.log(`Seeded ${cfg.season} (${cfg.leagueId}).`);
+}
+
+function main() {
+  const db = getDb();
+  for (const table of ['matchups', 'players', 'rosters', 'users', 'league']) {
+    db.exec(`DELETE FROM ${table}`);
   }
-  console.log(`\nSeeded ${MANAGERS.length} teams × ${WEEKS} weeks into the database.`);
+
+  // Two completed seasons: 2024 is the real sheet data; 2025 is a rotated
+  // variant so the seasons have visibly different standings to switch between.
+  console.log('Seeding 2024 (real BMCF season)…');
+  seedSeason({ leagueId: 'demo-2024', season: '2024', previousLeagueId: null, rotate: 0, assert: true });
+  console.log('Seeding 2025 (variant)…');
+  seedSeason({ leagueId: 'demo-2025', season: '2025', previousLeagueId: 'demo-2024', rotate: 3, assert: false });
+
+  // Upcoming season: teams exist but no games yet — exercises the holding page.
+  upsertLeague({
+    league_id: 'demo-2026',
+    name: 'BMCF League',
+    season: '2026',
+    status: 'pre_draft',
+    total_rosters: 10,
+    roster_positions: ROSTER_POSITIONS,
+    previous_league_id: 'demo-2025',
+    scoring_settings: {},
+    settings: { playoff_week_start: 15 },
+  });
+  const users2026 = MANAGERS.map((m, i) => ({
+    user_id: `demo-u${i + 1}`,
+    display_name: m,
+    avatar: null,
+    metadata: { team_name: `Team ${m}` },
+  }));
+  upsertUsers('demo-2026', users2026);
+  upsertRosters(
+    'demo-2026',
+    MANAGERS.map((m, i) => ({ roster_id: i + 1, owner_id: `demo-u${i + 1}`, league_id: 'demo-2026', players: [] })),
+    users2026
+  );
+
+  console.log('\nSeeded seasons 2024, 2025, and an upcoming 2026.');
 }
 
 main();

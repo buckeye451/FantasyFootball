@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
-  getLeague,
   getPlayerMeta,
   getTeamBySlug,
-  getWeeks,
+  resolveActiveLeague,
   teamSeason,
   teamWeekDetail,
   weeklyMedians,
@@ -19,33 +18,39 @@ export default function TeamPage({
   searchParams,
 }: {
   params: { slug: string };
-  searchParams: { week?: string };
+  searchParams: { week?: string; season?: string };
 }) {
-  const league = getLeague();
-  const team = getTeamBySlug(params.slug);
+  const league = resolveActiveLeague(searchParams.season);
+  const team = league ? getTeamBySlug(league.leagueId, params.slug) : null;
   if (!league || !team) notFound();
 
-  const season = teamSeason(team.rosterId);
+  const leagueId = league.leagueId;
+  const seasonYear = league.season;
+  const season = teamSeason(leagueId, team.rosterId);
   if (!season || season.weeks.length === 0) notFound();
 
-  const weeks = getWeeks();
+  const weeks = season.weeks.map((w) => w.week);
   const requested = Number(searchParams.week);
   const selectedWeek = weeks.includes(requested) ? requested : weeks[weeks.length - 1];
-  const detail = teamWeekDetail(team.rosterId, selectedWeek);
+  const detail = teamWeekDetail(leagueId, team.rosterId, selectedWeek);
   const meta = getPlayerMeta();
 
-  const medians = new Map(weeklyMedians().map((m) => [m.week, m.median]));
+  const medians = new Map(weeklyMedians(leagueId).map((m) => [m.week, m.median]));
   const chartData = season.weeks.map((w) => ({
     week: w.week,
     points: w.points,
     median: medians.get(w.week) ?? 0,
   }));
 
+  // Helpers that preserve the selected season across links.
+  const sq = `?season=${seasonYear}`;
+  const weekHref = (w: number) => `/team/${team.slug}?week=${w}&season=${seasonYear}#week-detail`;
+
   return (
     <>
       <h1 className="page-title">{team.teamName}</h1>
       <p className="page-subtitle">
-        Managed by {team.displayName}
+        {seasonYear} · managed by {team.displayName}
         {season.rank ? ` · #${season.rank} in the league` : ''}
       </p>
 
@@ -105,7 +110,7 @@ export default function TeamPage({
                   <td>W{w.week}</td>
                   <td className="team-cell">
                     {w.opponent ? (
-                      <Link href={`/team/${w.opponent.slug}`}>{w.opponent.displayName}</Link>
+                      <Link href={`/team/${w.opponent.slug}${sq}`}>{w.opponent.displayName}</Link>
                     ) : (
                       <span className="sub">bye</span>
                     )}
@@ -122,7 +127,7 @@ export default function TeamPage({
                     )}
                   </td>
                   <td>
-                    <Link className="sub" href={`/team/${team.slug}?week=${w.week}#week-detail`}>
+                    <Link className="sub" href={weekHref(w.week)}>
                       view lineup →
                     </Link>
                   </td>
@@ -137,11 +142,7 @@ export default function TeamPage({
         <h2 className="card-title">Week {selectedWeek} lineup</h2>
         <div className="week-pills">
           {weeks.map((w) => (
-            <Link
-              key={w}
-              href={`/team/${team.slug}?week=${w}#week-detail`}
-              className={w === selectedWeek ? 'active' : ''}
-            >
+            <Link key={w} href={weekHref(w)} className={w === selectedWeek ? 'active' : ''}>
               {w}
             </Link>
           ))}
@@ -157,7 +158,7 @@ export default function TeamPage({
                   <span className="vs">vs</span>
                   <span className="matchup-score">{detail.opponentPoints?.toFixed(2)}</span>
                   <span className="team-cell">
-                    <Link href={`/team/${detail.opponent.slug}`}>{detail.opponent.displayName}</Link>
+                    <Link href={`/team/${detail.opponent.slug}${sq}`}>{detail.opponent.displayName}</Link>
                   </span>
                 </>
               )}

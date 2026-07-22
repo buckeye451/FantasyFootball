@@ -1,4 +1,4 @@
-import { requireLeagueId, syncLeague } from './sync';
+import { requireLeagueIds, syncAll } from './sync';
 
 // With AUTO_SYNC=true, the first page request after boot starts a background
 // interval that re-pulls the league from Sleeper, so weekly data collects
@@ -15,7 +15,7 @@ export function ensureAutoSync(): void {
   const minutes = Number(process.env.AUTO_SYNC_MINUTES ?? 60) || 60;
   const run = async () => {
     try {
-      const detail = await syncLeague(requireLeagueId());
+      const detail = await syncAll(requireLeagueIds());
       console.log(`[auto-sync] ${new Date().toISOString()} ${detail}`);
     } catch (err) {
       console.error('[auto-sync] failed:', err);

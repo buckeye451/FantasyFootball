@@ -15,6 +15,7 @@ export interface SleeperLeague {
   status: string; // pre_draft | drafting | in_season | complete
   total_rosters: number;
   roster_positions: string[]; // e.g. ["QB","RB","RB","WR","WR","TE","FLEX","K","DEF","BN",...]
+  previous_league_id: string | null; // links to the prior season's league
   scoring_settings: Record<string, number>;
   settings: {
     playoff_week_start?: number;

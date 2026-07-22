@@ -17,12 +17,13 @@ const PLAYERS_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // Sleeper asks for ≤ 1 fetc
 export function upsertLeague(league: SleeperLeague): void {
   getDb()
     .prepare(
-      `INSERT INTO league (league_id, name, season, status, total_rosters, roster_positions, scoring_settings, settings, last_synced_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO league (league_id, name, season, status, total_rosters, roster_positions, scoring_settings, settings, previous_league_id, last_synced_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(league_id) DO UPDATE SET
          name = excluded.name, season = excluded.season, status = excluded.status,
          total_rosters = excluded.total_rosters, roster_positions = excluded.roster_positions,
          scoring_settings = excluded.scoring_settings, settings = excluded.settings,
+         previous_league_id = excluded.previous_league_id,
          last_synced_at = excluded.last_synced_at`
     )
     .run(
@@ -34,6 +35,7 @@ export function upsertLeague(league: SleeperLeague): void {
       JSON.stringify(league.roster_positions),
       JSON.stringify(league.scoring_settings ?? {}),
       JSON.stringify(league.settings ?? {}),
+      league.previous_league_id ?? null,
       new Date().toISOString()
     );
 }
@@ -52,14 +54,25 @@ export function upsertUsers(leagueId: string, users: SleeperUser[]): void {
   }
 }
 
-export function upsertRosters(leagueId: string, rosters: SleeperRoster[]): void {
+/**
+ * Store rosters with the manager + team name denormalized per league, so a
+ * team's identity is correct for the season being viewed even if the manager
+ * renamed their team in a later year.
+ */
+export function upsertRosters(leagueId: string, rosters: SleeperRoster[], users: SleeperUser[]): void {
   const db = getDb();
+  const byId = new Map(users.map((u) => [u.user_id, u]));
   const stmt = db.prepare(
-    `INSERT INTO rosters (league_id, roster_id, owner_id) VALUES (?, ?, ?)
-     ON CONFLICT(league_id, roster_id) DO UPDATE SET owner_id = excluded.owner_id`
+    `INSERT INTO rosters (league_id, roster_id, owner_id, display_name, team_name)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(league_id, roster_id) DO UPDATE SET
+       owner_id = excluded.owner_id, display_name = excluded.display_name,
+       team_name = excluded.team_name`
   );
   for (const r of rosters) {
-    stmt.run(leagueId, r.roster_id, r.owner_id ?? null);
+    const u = r.owner_id ? byId.get(r.owner_id) : undefined;
+    const display = u?.display_name ?? `Team ${r.roster_id}`;
+    stmt.run(leagueId, r.roster_id, r.owner_id ?? null, display, u?.metadata?.team_name ?? null);
   }
 }
 
@@ -146,7 +159,7 @@ export async function syncLeague(leagueId: string): Promise<string> {
     sleeper.state(),
   ]);
   upsertUsers(leagueId, users);
-  upsertRosters(leagueId, rosters);
+  upsertRosters(leagueId, rosters, users);
 
   // Which weeks exist? For the season in progress, sync through the current
   // week; for a finished (or archived) season, walk every possible week and
@@ -177,18 +190,71 @@ export async function syncLeague(leagueId: string): Promise<string> {
   const dump = await fetchPlayersDump();
   upsertPlayers(dump, referenced);
 
-  const detail = `league=${leagueId} weeks=${storedWeeks} players=${referenced.size}`;
+  const detail = `league=${leagueId} season=${league.season} weeks=${storedWeeks} players=${referenced.size}`;
   logSync('full', detail);
   return detail;
 }
 
-export function requireLeagueId(): string {
-  const id = process.env.SLEEPER_LEAGUE_ID;
-  if (!id) {
+/**
+ * Expand the configured league id(s) into the full set of seasons to sync by
+ * walking each league's `previous_league_id` chain back through prior years.
+ * Deduplicates, and caps the walk so a cycle can't loop forever.
+ */
+async function expandSeasons(startIds: string[]): Promise<string[]> {
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  for (const start of startIds) {
+    let current: string | null = start;
+    let hops = 0;
+    while (current && !seen.has(current) && hops < 25) {
+      seen.add(current);
+      ordered.push(current);
+      hops++;
+      try {
+        const league = await sleeper.league(current);
+        current = league.previous_league_id ?? null;
+      } catch {
+        current = null; // stop this chain on a fetch error
+      }
+    }
+  }
+  return ordered;
+}
+
+/**
+ * Sync every configured season into the database. Accepts one or more Sleeper
+ * league ids (comma-separated in SLEEPER_LEAGUE_ID) and also follows each
+ * league's previous-season chain, so setting just the current year's id pulls
+ * the whole history automatically.
+ */
+export async function syncAll(leagueIds: string[]): Promise<string> {
+  const all = await expandSeasons(leagueIds);
+  const details: string[] = [];
+  for (const id of all) {
+    try {
+      details.push(await syncLeague(id));
+    } catch (err) {
+      details.push(`league=${id} FAILED: ${String(err)}`);
+    }
+  }
+  const detail = `synced ${all.length} season(s): ${details.join(' | ')}`;
+  logSync('all', detail);
+  return detail;
+}
+
+/** Configured Sleeper league id(s), comma-separated in SLEEPER_LEAGUE_ID. */
+export function requireLeagueIds(): string[] {
+  const raw = process.env.SLEEPER_LEAGUE_ID;
+  const ids = (raw ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (ids.length === 0) {
     throw new Error(
       'SLEEPER_LEAGUE_ID is not set. Copy .env.example to .env and add your league id ' +
-        '(it is the number in your league URL at sleeper.com).'
+        '(the number in your league URL at sleeper.com). You can list several seasons ' +
+        'comma-separated, e.g. SLEEPER_LEAGUE_ID=<2026id>,<2025id>,<2024id>.'
     );
   }
-  return id;
+  return ids;
 }

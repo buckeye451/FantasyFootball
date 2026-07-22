@@ -12,6 +12,10 @@ into a local SQLite database automatically, and the site serves:
   they set each week, and the **optimal lineup** for that week with every
   should-have-started player they left on the bench highlighted in red, plus a
   season-long "lineup efficiency" score.
+- **A season dropdown** — switch between every season the league has played.
+  List one Sleeper league id per season in `SLEEPER_LEAGUE_ID`; the app also
+  follows each league's previous-season chain, so a new season appears
+  automatically once it starts.
 
 ## Quick start
 
@@ -54,14 +58,17 @@ during the season:
    app.
 3. **Manual** — `npm run sync` whenever you feel like it.
 
-## Demo season
+## Demo seasons
 
-`npm run seed:demo` loads the league's real 2024 season: the actual weekly
-scores, schedule, records, and standings for all ten teams (transcribed from the
-BMCF24League spreadsheet — the seed asserts the computed records match the
-sheet). Player-level rosters and per-player weekly points are generated, with
-starter points scaled so each team's weekly total matches the real score
-exactly. Running `npm run sync` against a real league id replaces the demo data.
+`npm run seed:demo` loads three demo seasons so you can try the season dropdown:
+the real **2024** season (actual weekly scores, schedule, records, and standings
+for all ten teams, transcribed from the BMCF24League spreadsheet — the seed
+asserts the computed records match the sheet), a **2025** variant with different
+standings, and an **upcoming 2026** with teams but no games yet (which shows the
+"season hasn't started" holding page). Player-level rosters and per-player weekly
+points are generated, with starter points scaled so each team's weekly total
+matches its score exactly. Running `npm run sync` against your real league ids
+replaces all of it.
 
 ## Project layout
 
@@ -148,7 +155,7 @@ and boots the app. Open it with `fly open`, and share that URL with your league.
 
 | Var | Purpose |
 |---|---|
-| `SLEEPER_LEAGUE_ID` | Your league (already set to `1382410388192120832`). |
+| `SLEEPER_LEAGUE_ID` | Your league(s), comma-separated — one id per season (already set to the 2026, 2025, and 2024 leagues). |
 | `AUTO_SYNC` | `true` to auto-refresh from Sleeper while running. |
 | `AUTO_SYNC_MINUTES` | Minutes between auto-syncs. |
 | `DB_PATH` | DB location — points at the mounted volume (`/data/league.db`). |

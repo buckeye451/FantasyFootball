@@ -1,9 +1,10 @@
 import {
   currentStandings,
-  getLeague,
+  getSeasons,
   getTeams,
   playersOfWeek,
   regularSeasonWeeks,
+  resolveActiveLeague,
   topSeasonPlayersByPosition,
   weeklyRankSeries,
   weeklyScoreSeries,
@@ -14,54 +15,55 @@ import { StandingsTable } from '@/components/StandingsTable';
 
 export const dynamic = 'force-dynamic';
 
-export default function DashboardPage() {
-  const league = getLeague();
+export default function DashboardPage({ searchParams }: { searchParams: { season?: string } }) {
+  const league = resolveActiveLeague(searchParams.season);
   if (!league) {
     return (
       <div className="empty-state">
         <h1>No league data yet</h1>
         <p>
           Set <code>SLEEPER_LEAGUE_ID</code> in <code>.env</code> and run <code>npm run sync</code> —
-          or load the demo season with <code>npm run seed:demo</code>.
+          or load the demo seasons with <code>npm run seed:demo</code>.
         </p>
       </div>
     );
   }
 
-  const standings = currentStandings();
-  const teams = getTeams().map((t) => ({ slug: t.slug, name: t.displayName }));
+  const leagueId = league.leagueId;
+  const season = league.season;
+  const standings = currentStandings(leagueId);
+  const teams = getTeams(leagueId).map((t) => ({ slug: t.slug, name: t.displayName }));
 
   // League is connected but no scored games yet (pre-draft / offseason, or the
-  // very first sync is still running). Show a friendly holding page instead of
-  // trying to render standings that don't exist yet.
+  // very first sync is still running). Show a friendly holding page.
   if (standings.length === 0) {
+    const otherWithGames = getSeasons().find((s) => s.hasGames);
     return (
       <div className="empty-state">
-        <h1>{league.name} is connected</h1>
+        <h1>{league.name} · {season}</h1>
         <p>
           {teams.length > 0
             ? `${teams.length} teams are set up, but there aren't any scored games yet.`
-            : "The league is set up, but there aren't any teams or scored games yet."}
-          {' '}Standings, charts, and player stats will appear here automatically once
-          the {league.season} season has played weeks.
+            : "This season is set up, but there aren't any teams or scored games yet."}
+          {' '}Standings, charts, and player stats will appear here once the {season} season
+          plays its weeks.
         </p>
-        <p className="page-subtitle">
-          {league.lastSyncedAt
-            ? `Last checked Sleeper ${new Date(league.lastSyncedAt).toLocaleString()}.`
-            : 'Syncing from Sleeper…'}{' '}
-          Want to see last season instead? Point <code>SLEEPER_LEAGUE_ID</code> at your
-          previous season&apos;s league.
-        </p>
+        {otherWithGames && (
+          <p className="page-subtitle">
+            Use the <strong>Season</strong> menu above to view {otherWithGames.season}, which has
+            completed games.
+          </p>
+        )}
       </div>
     );
   }
 
-  const weeks = regularSeasonWeeks();
+  const weeks = regularSeasonWeeks(leagueId);
   const latestWeek = weeks[weeks.length - 1];
-  const scoreData = weeklyScoreSeries();
-  const rankData = weeklyRankSeries();
-  const pow = playersOfWeek(latestWeek);
-  const topPlayers = topSeasonPlayersByPosition(5);
+  const scoreData = weeklyScoreSeries(leagueId);
+  const rankData = weeklyRankSeries(leagueId);
+  const pow = playersOfWeek(leagueId, latestWeek);
+  const topPlayers = topSeasonPlayersByPosition(leagueId, 5);
 
   const leader = standings[0];
   const bestWeek = scoreData.reduce(
@@ -78,15 +80,15 @@ export default function DashboardPage() {
 
   return (
     <>
-      <h1 className="page-title">League dashboard</h1>
+      <h1 className="page-title">{season} dashboard</h1>
       <p className="page-subtitle">
-        Through week {latestWeek} · {standings.length} teams
+        {league.name} · through week {latestWeek} · {standings.length} teams
         {league.lastSyncedAt ? ` · data updated ${new Date(league.lastSyncedAt).toLocaleString()}` : ''}
       </p>
 
       <div className="tile-grid">
         <div className="tile">
-          <div className="tile-label">League leader</div>
+          <div className="tile-label">{league.status === 'complete' ? 'Champion (reg. season)' : 'League leader'}</div>
           <div className="tile-value">{leader.team.displayName}</div>
           <div className="tile-sub">
             {leader.wins}-{leader.losses}
@@ -121,7 +123,7 @@ export default function DashboardPage() {
       <section className="card">
         <h2 className="card-title">Standings</h2>
         <p className="card-note">Regular season through week {latestWeek}. Arrows show movement since last week.</p>
-        <StandingsTable standings={standings} />
+        <StandingsTable standings={standings} season={season} />
       </section>
 
       <LeagueChartsBoard teams={teams} scoreData={scoreData} rankData={rankData} />

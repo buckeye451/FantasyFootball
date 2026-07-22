@@ -7,7 +7,8 @@ function Movement({ delta }: { delta: number }) {
   return <span className="flat">–</span>;
 }
 
-export function StandingsTable({ standings }: { standings: Standing[] }) {
+export function StandingsTable({ standings, season }: { standings: Standing[]; season?: string }) {
+  const q = season ? `?season=${season}` : '';
   return (
     <div className="table-wrap">
       <table>
@@ -37,7 +38,7 @@ export function StandingsTable({ standings }: { standings: Standing[] }) {
                   <Movement delta={s.movement} />
                 </td>
                 <td className="team-cell">
-                  <Link href={`/team/${s.team.slug}`}>{s.team.displayName}</Link>{' '}
+                  <Link href={`/team/${s.team.slug}${q}`}>{s.team.displayName}</Link>{' '}
                   <span className="sub">{s.team.teamName !== s.team.displayName ? s.team.teamName : ''}</span>
                 </td>
                 <td>

@@ -12,11 +12,18 @@ export interface LeagueInfo {
   lastSyncedAt: string | null;
 }
 
-export function getLeague(): LeagueInfo | null {
-  const row = getDb()
-    .prepare('SELECT * FROM league ORDER BY season DESC LIMIT 1')
-    .get() as Record<string, unknown> | undefined;
-  if (!row) return null;
+export interface SeasonOption {
+  season: string;
+  leagueId: string;
+  name: string;
+  hasGames: boolean;
+}
+
+export function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+function toLeagueInfo(row: Record<string, unknown>): LeagueInfo {
   const settings = JSON.parse((row.settings as string) ?? '{}');
   return {
     leagueId: row.league_id as string,
@@ -24,23 +31,63 @@ export function getLeague(): LeagueInfo | null {
     season: row.season as string,
     status: (row.status as string) ?? null,
     rosterPositions: JSON.parse(row.roster_positions as string),
-    playoffWeekStart: typeof settings.playoff_week_start === 'number' ? settings.playoff_week_start : null,
+    playoffWeekStart:
+      typeof settings.playoff_week_start === 'number' ? settings.playoff_week_start : null,
     lastSyncedAt: (row.last_synced_at as string) ?? null,
   };
 }
 
-export function slugify(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
-
-export function getTeams(): TeamInfo[] {
+/** Every synced season, newest first, with whether it has any scored games. */
+export function getSeasons(): SeasonOption[] {
   const rows = getDb()
     .prepare(
-      `SELECT r.roster_id, r.owner_id, u.display_name, u.team_name
-       FROM rosters r LEFT JOIN users u ON u.user_id = r.owner_id
-       ORDER BY r.roster_id`
+      `SELECT l.league_id, l.season, l.name,
+              (SELECT COUNT(*) FROM matchups m WHERE m.league_id = l.league_id) AS games
+       FROM league l`
     )
     .all() as Array<Record<string, unknown>>;
+  return rows
+    .map((r) => ({
+      season: r.season as string,
+      leagueId: r.league_id as string,
+      name: r.name as string,
+      hasGames: (r.games as number) > 0,
+    }))
+    .sort((a, b) => Number(b.season) - Number(a.season));
+}
+
+/** The season to show when none is specified: newest with games, else newest. */
+export function defaultSeason(): string | null {
+  const seasons = getSeasons();
+  if (seasons.length === 0) return null;
+  return (seasons.find((s) => s.hasGames) ?? seasons[0]).season;
+}
+
+export function getLeagueInfo(leagueId: string): LeagueInfo | null {
+  const row = getDb()
+    .prepare('SELECT * FROM league WHERE league_id = ?')
+    .get(leagueId) as Record<string, unknown> | undefined;
+  return row ? toLeagueInfo(row) : null;
+}
+
+/** Resolve a `?season=` value (or the default) to that season's league. */
+export function resolveActiveLeague(seasonParam?: string): LeagueInfo | null {
+  const seasons = getSeasons();
+  if (seasons.length === 0) return null;
+  const chosen =
+    (seasonParam && seasons.find((s) => s.season === seasonParam)) ||
+    seasons.find((s) => s.hasGames) ||
+    seasons[0];
+  return getLeagueInfo(chosen.leagueId);
+}
+
+export function getTeams(leagueId: string): TeamInfo[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT roster_id, owner_id, display_name, team_name
+       FROM rosters WHERE league_id = ? ORDER BY roster_id`
+    )
+    .all(leagueId) as Array<Record<string, unknown>>;
   return rows.map((r) => {
     const display = (r.display_name as string) ?? `Team ${r.roster_id}`;
     return {
@@ -53,14 +100,14 @@ export function getTeams(): TeamInfo[] {
   });
 }
 
-export function getTeamBySlug(slug: string): TeamInfo | null {
-  return getTeams().find((t) => t.slug === slug) ?? null;
+export function getTeamBySlug(leagueId: string, slug: string): TeamInfo | null {
+  return getTeams(leagueId).find((t) => t.slug === slug) ?? null;
 }
 
-export function getMatchups(): MatchupRow[] {
+export function getMatchups(leagueId: string): MatchupRow[] {
   const rows = getDb()
-    .prepare('SELECT * FROM matchups ORDER BY week, roster_id')
-    .all() as Array<Record<string, unknown>>;
+    .prepare('SELECT * FROM matchups WHERE league_id = ? ORDER BY week, roster_id')
+    .all(leagueId) as Array<Record<string, unknown>>;
   return rows.map((r) => ({
     week: r.week as number,
     rosterId: r.roster_id as number,
@@ -87,14 +134,14 @@ export function getPlayerMeta(): Map<string, PlayerMeta> {
 }
 
 /** Weeks that have scored matchups, ascending. */
-export function getWeeks(matchups = getMatchups()): number[] {
+export function getWeeks(matchups: MatchupRow[]): number[] {
   return [...new Set(matchups.map((m) => m.week))].sort((a, b) => a - b);
 }
 
 /** Regular-season weeks only (standings ignore playoff weeks). */
-export function regularSeasonWeeks(): number[] {
-  const league = getLeague();
-  const weeks = getWeeks();
+export function regularSeasonWeeks(leagueId: string, matchups = getMatchups(leagueId)): number[] {
+  const league = getLeagueInfo(leagueId);
+  const weeks = getWeeks(matchups);
   if (!league?.playoffWeekStart) return weeks;
   return weeks.filter((w) => w < league.playoffWeekStart!);
 }
@@ -106,10 +153,10 @@ function opponentOf(row: MatchupRow, weekRows: MatchupRow[]): MatchupRow | null 
   );
 }
 
-export function standingsThroughWeek(week: number): Standing[] {
-  const teams = getTeams();
-  const matchups = getMatchups();
-  const regWeeks = regularSeasonWeeks().filter((w) => w <= week);
+export function standingsThroughWeek(leagueId: string, week: number): Standing[] {
+  const teams = getTeams(leagueId);
+  const matchups = getMatchups(leagueId);
+  const regWeeks = regularSeasonWeeks(leagueId, matchups).filter((w) => w <= week);
 
   const build = (throughWeeks: number[]): Array<Omit<Standing, 'rank' | 'movement'>> =>
     teams.map((team) => {
@@ -165,15 +212,15 @@ export function standingsThroughWeek(week: number): Standing[] {
   }));
 }
 
-export function currentStandings(): Standing[] {
-  const weeks = regularSeasonWeeks();
-  return weeks.length ? standingsThroughWeek(weeks[weeks.length - 1]) : [];
+export function currentStandings(leagueId: string): Standing[] {
+  const weeks = regularSeasonWeeks(leagueId);
+  return weeks.length ? standingsThroughWeek(leagueId, weeks[weeks.length - 1]) : [];
 }
 
 /** One point per team per week: that week's score. For the scores line chart. */
-export function weeklyScoreSeries(): Array<Record<string, number>> {
-  const matchups = getMatchups();
-  const teams = getTeams();
+export function weeklyScoreSeries(leagueId: string): Array<Record<string, number>> {
+  const matchups = getMatchups(leagueId);
+  const teams = getTeams(leagueId);
   return getWeeks(matchups).map((week) => {
     const row: Record<string, number> = { week };
     for (const t of teams) {
@@ -185,10 +232,10 @@ export function weeklyScoreSeries(): Array<Record<string, number>> {
 }
 
 /** One point per team per week: standings rank after that week. For the bump chart. */
-export function weeklyRankSeries(): Array<Record<string, number>> {
-  return regularSeasonWeeks().map((week) => {
+export function weeklyRankSeries(leagueId: string): Array<Record<string, number>> {
+  return regularSeasonWeeks(leagueId).map((week) => {
     const row: Record<string, number> = { week };
-    for (const s of standingsThroughWeek(week)) {
+    for (const s of standingsThroughWeek(leagueId, week)) {
       row[s.team.slug] = s.rank;
     }
     return row;
@@ -206,10 +253,10 @@ export interface PlayerAgg {
 }
 
 /** Season totals for every player any team rostered, grouped by position. */
-export function topSeasonPlayersByPosition(topN = 5): Map<string, PlayerAgg[]> {
-  const matchups = getMatchups();
+export function topSeasonPlayersByPosition(leagueId: string, topN = 5): Map<string, PlayerAgg[]> {
+  const matchups = getMatchups(leagueId);
   const meta = getPlayerMeta();
-  const teams = new Map(getTeams().map((t) => [t.rosterId, t]));
+  const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
 
   const agg = new Map<string, PlayerAgg>();
   for (const m of matchups) {
@@ -261,10 +308,13 @@ export interface WeeklyStar {
 }
 
 /** Best fantasy performance per position in a given week, plus the overall MVP. */
-export function playersOfWeek(week: number): { byPosition: Map<string, WeeklyStar>; mvp: WeeklyStar | null } {
-  const matchups = getMatchups().filter((m) => m.week === week);
+export function playersOfWeek(
+  leagueId: string,
+  week: number
+): { byPosition: Map<string, WeeklyStar>; mvp: WeeklyStar | null } {
+  const matchups = getMatchups(leagueId).filter((m) => m.week === week);
   const meta = getPlayerMeta();
-  const teams = new Map(getTeams().map((t) => [t.rosterId, t]));
+  const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
 
   const byPosition = new Map<string, WeeklyStar>();
   let mvp: WeeklyStar | null = null;
@@ -299,14 +349,14 @@ export interface TeamWeekDetail {
   optimal: OptimalResult;
 }
 
-export function teamWeekDetail(rosterId: number, week: number): TeamWeekDetail | null {
-  const league = getLeague();
+export function teamWeekDetail(leagueId: string, rosterId: number, week: number): TeamWeekDetail | null {
+  const league = getLeagueInfo(leagueId);
   if (!league) return null;
-  const teams = getTeams();
+  const teams = getTeams(leagueId);
   const team = teams.find((t) => t.rosterId === rosterId);
   if (!team) return null;
 
-  const weekRows = getMatchups().filter((m) => m.week === week);
+  const weekRows = getMatchups(leagueId).filter((m) => m.week === week);
   const mine = weekRows.find((m) => m.rosterId === rosterId);
   if (!mine) return null;
   const opp = opponentOf(mine, weekRows);
@@ -357,14 +407,14 @@ export interface TeamSeason {
   efficiency: number;
 }
 
-export function teamSeason(rosterId: number): TeamSeason | null {
-  const league = getLeague();
+export function teamSeason(leagueId: string, rosterId: number): TeamSeason | null {
+  const league = getLeagueInfo(leagueId);
   if (!league) return null;
-  const teams = getTeams();
+  const teams = getTeams(leagueId);
   const team = teams.find((t) => t.rosterId === rosterId);
   if (!team) return null;
 
-  const matchups = getMatchups();
+  const matchups = getMatchups(leagueId);
   const meta = getPlayerMeta();
   const weeks: WeekResult[] = [];
   for (const week of getWeeks(matchups)) {
@@ -385,7 +435,7 @@ export function teamSeason(rosterId: number): TeamSeason | null {
     });
   }
 
-  const standing = currentStandings().find((s) => s.team.rosterId === rosterId) ?? null;
+  const standing = currentStandings(leagueId).find((s) => s.team.rosterId === rosterId) ?? null;
   const played = weeks.filter((w) => w.result !== null);
   const pf = round2(weeks.reduce((s, w) => s + w.points, 0));
   const totalOptimal = round2(weeks.reduce((s, w) => s + w.optimalPoints, 0));
@@ -407,8 +457,8 @@ export function teamSeason(rosterId: number): TeamSeason | null {
 }
 
 /** League median score per week — context line for the team chart. */
-export function weeklyMedians(): Array<{ week: number; median: number }> {
-  const matchups = getMatchups();
+export function weeklyMedians(leagueId: string): Array<{ week: number; median: number }> {
+  const matchups = getMatchups(leagueId);
   return getWeeks(matchups).map((week) => {
     const pts = matchups
       .filter((m) => m.week === week)
