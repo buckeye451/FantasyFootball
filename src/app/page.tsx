@@ -28,7 +28,7 @@ export default function WelcomePage() {
             className="splash-player"
             style={{
               ['--h' as string]: `${p.h}vh`,
-              marginLeft: `-${p.overlap}vw`,
+              ['--overlap' as string]: `${p.overlap}vw`,
               zIndex: p.z,
               animationDelay: `${0.15 + i * 0.15}s`,
             }}

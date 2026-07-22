@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -78,8 +79,12 @@ export function SiteHeader({
             <span />
             <span />
           </button>
-          <Link href={withSeason('/dashboard')} className="brand">
-            {active?.name ?? 'BMCF League'}
+          <Link
+            href={withSeason('/dashboard')}
+            className="brand"
+            aria-label={active?.name ?? 'BMCFF Fantasy Football'}
+          >
+            <img src="/hero/logo.svg" alt={active?.name ?? 'BMCFF'} className="brand-logo" />
           </Link>
           {seasons.length > 0 && (
             <label className="season-picker">
@@ -92,7 +97,6 @@ export function SiteHeader({
                 {seasons.map((s) => (
                   <option key={s.season} value={s.season}>
                     {s.season}
-                    {s.hasGames ? '' : ' (upcoming)'}
                   </option>
                 ))}
               </select>
