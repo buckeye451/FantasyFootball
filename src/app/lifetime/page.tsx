@@ -1,11 +1,13 @@
-import Link from 'next/link';
 import {
   bestSeasonsByPosition,
   CHAMPIONS,
   getSeasons,
+  headToHead,
   lifetimeStandings,
 } from '@/lib/stats';
 import { POSITION_ORDER } from '@/components/PlayerCards';
+import { LifetimeStandingsTable } from '@/components/LifetimeStandingsTable';
+import { HeadToHead } from '@/components/HeadToHead';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +15,7 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
   const rows = lifetimeStandings();
   const playedSeasons = getSeasons().filter((s) => s.hasGames);
   const leaders = bestSeasonsByPosition(5);
-  const sq = searchParams.season ? `?season=${searchParams.season}` : '';
+  const h2h = headToHead();
 
   if (rows.length === 0) {
     return (
@@ -51,48 +53,19 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
 
       <section className="card">
         <h2 className="card-title">All-time standings</h2>
-        <p className="card-note">Combined regular-season records across every season.</p>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Manager</th>
-                <th className="center">🏆</th>
-                <th className="num">Seasons</th>
-                <th>Record</th>
-                <th className="num">Win %</th>
-                <th className="num">PF</th>
-                <th className="num">PA</th>
-                <th className="num">Avg</th>
-                <th className="num">High</th>
-                <th className="num" title="Best regular-season finish">
-                  Best
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.slug + r.displayName}>
-                  <td className="team-cell">
-                    <Link href={`/team/${r.slug}${sq}`}>{r.displayName}</Link>
-                  </td>
-                  <td className="center">{r.trophies > 0 ? '🏆'.repeat(r.trophies) : ''}</td>
-                  <td className="num">{r.seasons}</td>
-                  <td>
-                    {r.wins}-{r.losses}
-                    {r.ties ? `-${r.ties}` : ''}
-                  </td>
-                  <td className="num">{r.winPct.toFixed(1)}%</td>
-                  <td className="num">{r.pointsFor.toFixed(1)}</td>
-                  <td className="num">{r.pointsAgainst.toFixed(1)}</td>
-                  <td className="num">{r.avgPoints.toFixed(1)}</td>
-                  <td className="num">{r.highScore.toFixed(1)}</td>
-                  <td className="num">{r.bestFinish != null ? `#${r.bestFinish}` : '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <p className="card-note">
+          Combined regular-season records across every season. Click a column to sort.
+        </p>
+        <LifetimeStandingsTable rows={rows} />
+      </section>
+
+      <section className="card">
+        <h2 className="card-title">Head to head</h2>
+        <p className="card-note">
+          Pick a manager to see their all-time record against each opponent — expand a row for
+          every meeting in order.
+        </p>
+        <HeadToHead data={h2h} />
       </section>
 
       <section>

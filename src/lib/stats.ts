@@ -857,6 +857,7 @@ export interface LifetimeRow {
   pointsAgainst: number;
   avgPoints: number;
   highScore: number;
+  managerPerformance: number; // career points ÷ best-possible-lineup points, %
   bestFinish: number | null;
   trophies: number;
 }
@@ -868,7 +869,7 @@ export interface LifetimeRow {
  */
 export function lifetimeStandings(): LifetimeRow[] {
   const seasons = getSeasons().filter((s) => s.hasGames);
-  const byOwner = new Map<string, LifetimeRow & { games: number }>();
+  const byOwner = new Map<string, LifetimeRow & { games: number; optimalSum: number }>();
 
   // Oldest season first so the newest display name wins.
   for (const season of [...seasons].sort((a, b) => Number(a.season) - Number(b.season))) {
@@ -888,9 +889,11 @@ export function lifetimeStandings(): LifetimeRow[] {
           pointsAgainst: 0,
           avgPoints: 0,
           highScore: 0,
+          managerPerformance: 0,
           bestFinish: null,
           trophies: 0,
           games: 0,
+          optimalSum: 0,
         };
         byOwner.set(key, row);
       }
@@ -905,6 +908,8 @@ export function lifetimeStandings(): LifetimeRow[] {
       row.highScore = Math.max(row.highScore, s.highScore);
       row.bestFinish = row.bestFinish == null ? s.rank : Math.min(row.bestFinish, s.rank);
       row.games += s.wins + s.losses + s.ties;
+      // Back out this season's best-possible-lineup total from its manager %.
+      row.optimalSum += s.managerPerformance > 0 ? (s.pointsFor * 100) / s.managerPerformance : s.pointsFor;
     }
   }
 
@@ -913,6 +918,8 @@ export function lifetimeStandings(): LifetimeRow[] {
       ...r,
       winPct: r.games ? round2((r.wins / r.games) * 100) : 0,
       avgPoints: r.games ? round2(r.pointsFor / r.games) : 0,
+      managerPerformance:
+        r.optimalSum > 0 ? Math.min(100, round2((r.pointsFor / r.optimalSum) * 100)) : 100,
       trophies: trophiesFor(r.displayName),
     }))
     .sort((a, b) => b.trophies - a.trophies || b.winPct - a.winPct || b.pointsFor - a.pointsFor);
@@ -963,4 +970,176 @@ export function bestSeasonsByPosition(topN = 5): Map<string, SeasonLeader[]> {
     byPosition.set(pos, list.slice(0, topN));
   }
   return byPosition;
+}
+
+// ---------------------------------------------------------------------------
+// Head-to-head (all-time, per manager vs each opponent)
+// ---------------------------------------------------------------------------
+
+export interface H2HMatch {
+  season: string;
+  week: number;
+  myPoints: number;
+  oppPoints: number;
+  result: 'W' | 'L' | 'T';
+}
+
+export interface H2HOpponent {
+  key: string;
+  displayName: string;
+  slug: string;
+  wins: number;
+  losses: number;
+  ties: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  managerPct: number | null;
+  performancePct: number | null;
+  matches: H2HMatch[];
+}
+
+export interface ManagerH2H {
+  key: string;
+  displayName: string;
+  slug: string;
+  opponents: H2HOpponent[];
+}
+
+interface H2HAgg {
+  key: string;
+  displayName: string;
+  slug: string;
+  wins: number;
+  losses: number;
+  ties: number;
+  pf: number;
+  pa: number;
+  optimalSum: number;
+  projPf: number;
+  projSum: number;
+  matches: H2HMatch[];
+}
+
+/**
+ * Every manager's all-time regular-season record against each other manager,
+ * with points for/against, manager %, performance %, and the full list of
+ * their meetings in chronological order. Managers are keyed by Sleeper user
+ * id so renames stay the same person.
+ */
+export function headToHead(): ManagerH2H[] {
+  const seasons = getSeasons()
+    .filter((s) => s.hasGames)
+    .sort((a, b) => Number(a.season) - Number(b.season));
+  const meta = getPlayerMeta();
+  const ownerKeyOf = (t: TeamInfo) => t.ownerId || t.displayName.toLowerCase();
+
+  const managers = new Map<
+    string,
+    { key: string; displayName: string; slug: string; opps: Map<string, H2HAgg> }
+  >();
+
+  for (const season of seasons) {
+    const leagueId = season.leagueId;
+    const league = getLeagueInfo(leagueId);
+    const teamByRoster = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
+    const matchups = getMatchups(leagueId);
+    const fmt = scoringFormat(leagueId);
+
+    for (const week of regularSeasonWeeks(leagueId, matchups)) {
+      const weekRows = matchups.filter((m) => m.week === week);
+      const proj = weekProjections(season.season, week);
+      for (const mine of weekRows) {
+        const opp = opponentOf(mine, weekRows);
+        if (!opp) continue;
+        const myTeam = teamByRoster.get(mine.rosterId);
+        const oppTeam = teamByRoster.get(opp.rosterId);
+        if (!myTeam || !oppTeam) continue;
+        const myKey = ownerKeyOf(myTeam);
+        const oppKey = ownerKeyOf(oppTeam);
+        if (myKey === oppKey) continue;
+
+        let m = managers.get(myKey);
+        if (!m) {
+          m = { key: myKey, displayName: myTeam.displayName, slug: myTeam.slug, opps: new Map() };
+          managers.set(myKey, m);
+        }
+        m.displayName = myTeam.displayName;
+        m.slug = myTeam.slug;
+
+        let agg = m.opps.get(oppKey);
+        if (!agg) {
+          agg = {
+            key: oppKey,
+            displayName: oppTeam.displayName,
+            slug: oppTeam.slug,
+            wins: 0,
+            losses: 0,
+            ties: 0,
+            pf: 0,
+            pa: 0,
+            optimalSum: 0,
+            projPf: 0,
+            projSum: 0,
+            matches: [],
+          };
+          m.opps.set(oppKey, agg);
+        }
+        agg.displayName = oppTeam.displayName;
+        agg.slug = oppTeam.slug;
+
+        const result: 'W' | 'L' | 'T' =
+          mine.points > opp.points ? 'W' : mine.points < opp.points ? 'L' : 'T';
+        if (result === 'W') agg.wins++;
+        else if (result === 'L') agg.losses++;
+        else agg.ties++;
+        agg.pf = round2(agg.pf + mine.points);
+        agg.pa = round2(agg.pa + opp.points);
+        if (league) {
+          agg.optimalSum += optimalLineup(
+            league.rosterPositions,
+            mine.starters,
+            mine.playersPoints,
+            meta
+          ).optimalTotal;
+        }
+        const projected = projectedTotal(mine.starters, proj, fmt);
+        if (projected && projected > 0) {
+          agg.projPf = round2(agg.projPf + mine.points);
+          agg.projSum = round2(agg.projSum + projected);
+        }
+        agg.matches.push({
+          season: season.season,
+          week,
+          myPoints: round2(mine.points),
+          oppPoints: round2(opp.points),
+          result,
+        });
+      }
+    }
+  }
+
+  return [...managers.values()]
+    .map((m) => ({
+      key: m.key,
+      displayName: m.displayName,
+      slug: m.slug,
+      opponents: [...m.opps.values()]
+        .map((a) => ({
+          key: a.key,
+          displayName: a.displayName,
+          slug: a.slug,
+          wins: a.wins,
+          losses: a.losses,
+          ties: a.ties,
+          pointsFor: round2(a.pf),
+          pointsAgainst: round2(a.pa),
+          managerPct: a.optimalSum > 0 ? Math.min(100, round2((a.pf / a.optimalSum) * 100)) : null,
+          performancePct: a.projSum > 0 ? round2((a.projPf / a.projSum) * 100) : null,
+          matches: a.matches.sort(
+            (x, y) => Number(x.season) - Number(y.season) || x.week - y.week
+          ),
+        }))
+        .sort((x, y) => x.displayName.localeCompare(y.displayName)),
+    }))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName));
 }

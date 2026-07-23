@@ -1319,3 +1319,37 @@ th.sortable.sorted {
   font-size: 12px;
   margin-top: 2px;
 }
+
+/* Head-to-head (Lifetime page) */
+.h2h-controls {
+  margin-bottom: 14px;
+}
+
+tr.h2h-row {
+  cursor: pointer;
+}
+
+tr.h2h-row:hover td {
+  background: var(--surface-2);
+}
+
+tr.h2h-row.open td {
+  background: var(--surface-2);
+}
+
+tr.h2h-detail-row td {
+  padding: 0;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.h2h-detail {
+  padding: 4px 10px 12px;
+}
+
+.h2h-detail table {
+  font-size: 12.5px;
+}
+
+.h2h-detail th {
+  font-size: 10px;
+}
