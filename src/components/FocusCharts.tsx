@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CartesianGrid,
   Line,
@@ -27,6 +27,19 @@ const MAX_SELECTED = SLOT_COLORS.length;
 export interface ChartTeam {
   slug: string;
   name: string;
+}
+
+/** Phone-width media query — lets the charts trade margin/ticks for plot area. */
+function useIsMobile(): boolean {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)');
+    const update = () => setMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return mobile;
 }
 
 type Row = Record<string, number>;
@@ -132,28 +145,33 @@ function TeamsLineChart({
     [teams, selection]
   );
   const lastIndex = data.length - 1;
+  const isMobile = useIsMobile();
   return (
     <div className="chart-box">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 12, right: 84, bottom: 4, left: 0 }} accessibilityLayer>
+        <LineChart
+          data={data}
+          margin={{ top: 12, right: isMobile ? 58 : 84, bottom: 4, left: 0 }}
+          accessibilityLayer
+        >
           <CartesianGrid stroke={GRID} vertical={false} />
           <XAxis
             dataKey="week"
             tickFormatter={(w) => `W${w}`}
-            tick={{ fill: MUTED, fontSize: 12 }}
+            tick={{ fill: MUTED, fontSize: isMobile ? 11 : 12 }}
             tickLine={false}
             axisLine={{ stroke: BASELINE }}
-            interval={0}
+            interval={isMobile ? 1 : 0}
           />
           <YAxis
             reversed={reversed}
             domain={reversed ? [1, teams.length] : ['auto', 'auto']}
             ticks={reversed ? teams.map((_, i) => i + 1) : undefined}
             allowDecimals={false}
-            tick={{ fill: MUTED, fontSize: 12 }}
+            tick={{ fill: MUTED, fontSize: isMobile ? 11 : 12 }}
             tickLine={false}
             axisLine={{ stroke: BASELINE }}
-            width={36}
+            width={isMobile ? 30 : 36}
             tickFormatter={reversed ? (v) => `#${v}` : undefined}
           />
           <Tooltip
@@ -301,6 +319,7 @@ export function TeamWeeklyChart({
   data: Array<{ week: number; points: number; median: number }>;
   teamName: string;
 }) {
+  const isMobile = useIsMobile();
   return (
     <>
       <div className="chip-row" aria-hidden>
@@ -320,17 +339,17 @@ export function TeamWeeklyChart({
             <XAxis
               dataKey="week"
               tickFormatter={(w) => `W${w}`}
-              tick={{ fill: MUTED, fontSize: 12 }}
+              tick={{ fill: MUTED, fontSize: isMobile ? 11 : 12 }}
               tickLine={false}
               axisLine={{ stroke: BASELINE }}
-              interval={0}
+              interval={isMobile ? 1 : 0}
             />
             <YAxis
               domain={['auto', 'auto']}
-              tick={{ fill: MUTED, fontSize: 12 }}
+              tick={{ fill: MUTED, fontSize: isMobile ? 11 : 12 }}
               tickLine={false}
               axisLine={{ stroke: BASELINE }}
-              width={40}
+              width={isMobile ? 34 : 40}
             />
             <Tooltip
               cursor={{ stroke: BASELINE }}

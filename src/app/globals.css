@@ -597,6 +597,12 @@ section + section {
   gap: 22px;
 }
 
+/* Grid items default to min-width:auto, which lets a wide table force the
+   page wider than the viewport — wide content must scroll in .table-wrap. */
+.two-col > div {
+  min-width: 0;
+}
+
 @media (max-width: 900px) {
   .two-col {
     grid-template-columns: 1fr;
@@ -1038,4 +1044,199 @@ tr.winner-row .team-cell {
   border-radius: 6px;
   padding: 2px 7px;
   font-size: 13px;
+}
+
+/* ============================================================
+   Mobile pass — compact spacing, 2-up tiles, tighter tables,
+   larger touch targets. Everything scoped to phone widths.
+   ============================================================ */
+@media (max-width: 640px) {
+  .site-header-inner {
+    padding: 0 12px;
+  }
+
+  .brand-row {
+    padding: 10px 0;
+    gap: 10px;
+  }
+
+  main {
+    padding: 18px 12px 48px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .page-subtitle {
+    font-size: 12.5px;
+    margin-bottom: 16px;
+  }
+
+  .dash-controls {
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+
+  /* Stat tiles: two per row instead of a tall single-file stack */
+  .tile-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .tile {
+    padding: 12px 13px;
+  }
+
+  .tile-label {
+    font-size: 10.5px;
+    letter-spacing: 0.4px;
+  }
+
+  .tile-value {
+    font-size: 21px;
+  }
+
+  .tile-sub {
+    font-size: 11.5px;
+  }
+
+  .card {
+    padding: 14px 13px;
+    border-radius: 10px;
+  }
+
+  .card + .card,
+  section + section {
+    margin-top: 16px;
+  }
+
+  .card-note {
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+
+  /* Tables: tighter cells so more columns fit before the sideways scroll */
+  table {
+    font-size: 12.5px;
+  }
+
+  th {
+    padding: 6px 7px;
+    font-size: 10px;
+    letter-spacing: 0.4px;
+  }
+
+  td {
+    padding: 7px 7px;
+  }
+
+  .slot-tag {
+    width: 38px;
+    font-size: 10.5px;
+  }
+
+  .pos-team {
+    font-size: 11px;
+  }
+
+  /* Chart legend chips */
+  .chip {
+    padding: 4px 10px;
+    font-size: 12.5px;
+  }
+
+  .chip-row {
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+
+  .chip-hint {
+    font-size: 11px;
+  }
+
+  .chart-box {
+    height: 300px;
+  }
+
+  /* Week pills: bigger tap targets */
+  .week-pills {
+    gap: 7px;
+  }
+
+  .week-pills a {
+    padding: 8px 13px;
+    font-size: 14px;
+  }
+
+  /* Position cards */
+  .pos-grid {
+    gap: 10px;
+  }
+
+  .pos-card {
+    padding: 12px 13px;
+  }
+
+  /* Drawer: comfier touch targets */
+  .drawer-link {
+    padding: 12px 8px;
+    font-size: 15px;
+  }
+
+  .drawer-section-toggle {
+    padding: 13px 8px;
+    font-size: 15px;
+  }
+
+  .drawer-sublink {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .drawer-sublist {
+    max-height: 320px;
+  }
+
+  /* Matchup breakdown + banner */
+  .matchup-score {
+    font-size: 18px;
+  }
+
+  .breakdown-table .badge {
+    margin-left: 6px;
+  }
+
+  .matchup-list {
+    gap: 10px;
+  }
+
+  /* Playoff bracket: narrower columns, less gap */
+  .bracket {
+    gap: 16px;
+  }
+
+  .bracket-col {
+    min-width: 176px;
+  }
+
+  .bracket-team {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
+
+/* Long/short column headers: full text on desktop, compact on phones */
+.th-short {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .th-full {
+    display: none;
+  }
+  .th-short {
+    display: inline;
+  }
 }

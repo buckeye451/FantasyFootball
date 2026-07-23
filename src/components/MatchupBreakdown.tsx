@@ -56,16 +56,20 @@ export function MatchupBreakdownList({
                     <th>Team</th>
                     <th className="num">Score</th>
                     <th className="num" title="Percent of the other teams this score would beat">
-                      Win % vs League
+                      <span className="th-full">Win % vs League</span>
+                      <span className="th-short">Win %</span>
                     </th>
                     <th className="num" title="Score ÷ projected points">
-                      Performance %
+                      <span className="th-full">Performance %</span>
+                      <span className="th-short">Perf %</span>
                     </th>
                     <th className="num" title="Score ÷ best-possible lineup (max 100%)">
-                      Manager Score
+                      <span className="th-full">Manager Score</span>
+                      <span className="th-short">Mgr %</span>
                     </th>
                     <th className="center" title="Would the optimal lineup have won this matchup?">
-                      Best Lineup Wins?
+                      <span className="th-full">Best Lineup Wins?</span>
+                      <span className="th-short">Best LU?</span>
                     </th>
                   </tr>
                 </thead>
