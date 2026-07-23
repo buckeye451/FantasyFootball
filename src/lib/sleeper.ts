@@ -35,6 +35,12 @@ export const sleeper = {
     get<SleeperBracketMatch[]>(`${BASE}/league/${leagueId}/winners_bracket`),
   losersBracket: (leagueId: string) =>
     get<SleeperBracketMatch[]>(`${BASE}/league/${leagueId}/losers_bracket`),
+  // Season-total actual stats for EVERY NFL player (not just rostered ones),
+  // keyed by player id, with pre-computed pts_std / pts_half_ppr / pts_ppr.
+  seasonStats: (season: string) =>
+    get<Record<string, Record<string, number | undefined>>>(
+      `${BASE}/stats/nfl/regular/${season}`
+    ),
   // Per-player projections for one NFL week. Undocumented endpoint; each item
   // carries pre-computed fantasy points for std / half-ppr / ppr scoring.
   projections: (season: string, week: number) => {

@@ -117,6 +117,10 @@ export function SiteHeader({
           Dashboard
         </Link>
 
+        <Link href={withSeason('/lifetime')} className="drawer-link">
+          Lifetime Stats
+        </Link>
+
         <Section title="Players" defaultOpen>
           {(active?.teams ?? []).map((t) => (
             <Link key={t.slug} href={withSeason(`/team/${t.slug}`)} className="drawer-sublink">

@@ -17,6 +17,7 @@ import {
   upsertPlayers,
   upsertProjections,
   upsertRosters,
+  upsertSeasonStats,
   upsertUsers,
 } from '../src/lib/sync';
 import { getDb } from '../src/lib/db';
@@ -398,6 +399,41 @@ function seedSeason(cfg: SeasonConfig): void {
     { r: 3, m: 6, t1: { l: 3 }, t2: { l: 4 }, w: third, l: fourth, p: 3 },
   ];
   upsertBracket(cfg.leagueId, 'winners', bracket);
+
+  // Season-total stats for the Lifetime page — includes players nobody
+  // rostered (mirrors Sleeper's league-wide season stats endpoint).
+  const statsDump: Record<string, SleeperPlayer> = {};
+  const seasonStats: Record<string, Record<string, number | undefined>> = {};
+  for (const list of rosters.values()) {
+    for (const p of list) {
+      statsDump[p.id] = {
+        player_id: p.id,
+        full_name: p.name,
+        position: p.position,
+        team: p.nfl,
+        fantasy_positions: [p.position],
+      };
+      const [base, drop] = POSITION_CURVE[p.position];
+      const total = Math.max(0, round2((base - p.tier * drop) * WEEKS + gauss() * 22));
+      seasonStats[p.id] = { pts_std: total, pts_half_ppr: total, pts_ppr: total };
+    }
+  }
+  const unrostered: Array<[string, string, string, number]> = [
+    ['Russell Wilson', 'PIT', 'QB', 12],
+    ['Ezekiel Elliott', 'DAL', 'RB', 30],
+    ['Tyler Lockett', 'SEA', 'WR', 36],
+    ['Gerald Everett', 'CHI', 'TE', 14],
+    ['Greg Zuerlein', 'NYJ', 'K', 8],
+    ['Jets D/ST', 'NYJ', 'DEF', 8],
+  ];
+  unrostered.forEach(([name, nfl, pos, tier], i) => {
+    const id = `U${String(i + 1).padStart(3, '0')}`;
+    statsDump[id] = { player_id: id, full_name: name, position: pos, team: nfl, fantasy_positions: [pos] };
+    const [base, drop] = POSITION_CURVE[pos];
+    const total = Math.max(0, round2((base - tier * drop) * WEEKS + gauss() * 22));
+    seasonStats[id] = { pts_std: total, pts_half_ppr: total, pts_ppr: total };
+  });
+  upsertSeasonStats(cfg.season, seasonStats, statsDump);
 
   if (cfg.assert) {
     // The real 2024 schedule + scores must reproduce the sheet's records.

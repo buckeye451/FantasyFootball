@@ -158,6 +158,46 @@ function hasProjections(season: string, week: number): boolean {
   return row.c > 0;
 }
 
+const STAT_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE', 'K', 'DEF']);
+
+/**
+ * Store season-total fantasy points for every NFL player who scored (drives
+ * the Lifetime page's all-time position leaders — includes players no team
+ * ever rostered). Also upserts name/position metadata for those players.
+ */
+export function upsertSeasonStats(
+  season: string,
+  stats: Record<string, Record<string, number | undefined>>,
+  dump: Record<string, SleeperPlayer>
+): void {
+  const db = getDb();
+  const stmt = db.prepare(
+    `INSERT INTO player_season_stats (season, player_id, position, pts_std, pts_half, pts_ppr)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(season, player_id) DO UPDATE SET
+       position = excluded.position, pts_std = excluded.pts_std,
+       pts_half = excluded.pts_half, pts_ppr = excluded.pts_ppr`
+  );
+  const referenced = new Set<string>();
+  for (const [pid, s] of Object.entries(stats)) {
+    const pts = s.pts_ppr ?? s.pts_half_ppr ?? s.pts_std;
+    if (pts == null || pts <= 0) continue;
+    const meta = dump[pid];
+    const pos = meta?.position ?? meta?.fantasy_positions?.[0] ?? null;
+    if (!pos || !STAT_POSITIONS.has(pos)) continue;
+    stmt.run(season, pid, pos, s.pts_std ?? null, s.pts_half_ppr ?? null, s.pts_ppr ?? null);
+    referenced.add(pid);
+  }
+  upsertPlayers(dump, referenced);
+}
+
+export function hasSeasonStats(season: string): boolean {
+  const row = getDb()
+    .prepare('SELECT COUNT(*) AS c FROM player_season_stats WHERE season = ?')
+    .get(season) as { c: number };
+  return row.c > 0;
+}
+
 export function upsertBracket(leagueId: string, type: string, matches: SleeperBracketMatch[]): void {
   getDb()
     .prepare(
@@ -257,6 +297,17 @@ export async function syncLeague(leagueId: string, full = false): Promise<string
   // players table at ~200 rows instead of ~12,000.
   const dump = await fetchPlayersDump();
   upsertPlayers(dump, referenced);
+
+  // Season-total stats for ALL NFL players (Lifetime page leaders). Fetched
+  // once per season and cached; re-fetched on a full sync.
+  if (full || !hasSeasonStats(league.season)) {
+    try {
+      const stats = await sleeper.seasonStats(league.season);
+      upsertSeasonStats(league.season, stats, dump);
+    } catch {
+      // stats endpoint unavailable — lifetime leaders fall back to rostered data
+    }
+  }
 
   const detail = `league=${leagueId} season=${league.season} weeks=${storedWeeks} players=${referenced.size}`;
   logSync('full', detail);

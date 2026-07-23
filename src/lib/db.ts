@@ -7,7 +7,7 @@ export const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', '
 // Bump when the schema changes in a way that needs a rebuild. All data here is
 // re-fetchable from Sleeper, so migrating just drops the re-syncable tables and
 // lets the next sync repopulate them.
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS league (
@@ -76,6 +76,15 @@ CREATE TABLE IF NOT EXISTS brackets (
   data TEXT NOT NULL,
   PRIMARY KEY (league_id, bracket_type)
 );
+CREATE TABLE IF NOT EXISTS player_season_stats (
+  season TEXT NOT NULL,
+  player_id TEXT NOT NULL,
+  position TEXT,
+  pts_std REAL,
+  pts_half REAL,
+  pts_ppr REAL,
+  PRIMARY KEY (season, player_id)
+);
 CREATE INDEX IF NOT EXISTS idx_matchups_week ON matchups (league_id, week);
 CREATE INDEX IF NOT EXISTS idx_projections_week ON projections (season, week);
 `;
@@ -93,6 +102,7 @@ function migrate(db: DatabaseSync): void {
       DROP TABLE IF EXISTS sync_log;
       DROP TABLE IF EXISTS projections;
       DROP TABLE IF EXISTS brackets;
+      DROP TABLE IF EXISTS player_season_stats;
     `);
     db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
   }

@@ -828,3 +828,139 @@ export function weeklyMedians(leagueId: string): Array<{ week: number; median: n
     return { week, median: round2(median) };
   });
 }
+
+// ---------------------------------------------------------------------------
+// Lifetime (all-seasons) stats
+// ---------------------------------------------------------------------------
+
+/** League champions and how many titles each holds (matched by display name). */
+export const CHAMPIONS: Array<{ name: string; trophies: number }> = [
+  { name: 'JMoneyy10', trophies: 1 },
+  { name: 'cjasin', trophies: 1 },
+  { name: 'keithchief', trophies: 1 },
+];
+
+export function trophiesFor(displayName: string): number {
+  const hit = CHAMPIONS.find((c) => c.name.toLowerCase() === displayName.toLowerCase());
+  return hit?.trophies ?? 0;
+}
+
+export interface LifetimeRow {
+  displayName: string;
+  slug: string;
+  seasons: number;
+  wins: number;
+  losses: number;
+  ties: number;
+  winPct: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  avgPoints: number;
+  highScore: number;
+  bestFinish: number | null;
+  trophies: number;
+}
+
+/**
+ * Career regular-season records across every synced season, aggregated per
+ * manager (keyed by Sleeper user id so a renamed team still counts as the
+ * same person; display name comes from their most recent season).
+ */
+export function lifetimeStandings(): LifetimeRow[] {
+  const seasons = getSeasons().filter((s) => s.hasGames);
+  const byOwner = new Map<string, LifetimeRow & { games: number }>();
+
+  // Oldest season first so the newest display name wins.
+  for (const season of [...seasons].sort((a, b) => Number(a.season) - Number(b.season))) {
+    for (const s of currentStandings(season.leagueId)) {
+      const key = s.team.ownerId || s.team.displayName.toLowerCase();
+      let row = byOwner.get(key);
+      if (!row) {
+        row = {
+          displayName: s.team.displayName,
+          slug: s.team.slug,
+          seasons: 0,
+          wins: 0,
+          losses: 0,
+          ties: 0,
+          winPct: 0,
+          pointsFor: 0,
+          pointsAgainst: 0,
+          avgPoints: 0,
+          highScore: 0,
+          bestFinish: null,
+          trophies: 0,
+          games: 0,
+        };
+        byOwner.set(key, row);
+      }
+      row.displayName = s.team.displayName;
+      row.slug = s.team.slug;
+      row.seasons++;
+      row.wins += s.wins;
+      row.losses += s.losses;
+      row.ties += s.ties;
+      row.pointsFor = round2(row.pointsFor + s.pointsFor);
+      row.pointsAgainst = round2(row.pointsAgainst + s.pointsAgainst);
+      row.highScore = Math.max(row.highScore, s.highScore);
+      row.bestFinish = row.bestFinish == null ? s.rank : Math.min(row.bestFinish, s.rank);
+      row.games += s.wins + s.losses + s.ties;
+    }
+  }
+
+  return [...byOwner.values()]
+    .map((r) => ({
+      ...r,
+      winPct: r.games ? round2((r.wins / r.games) * 100) : 0,
+      avgPoints: r.games ? round2(r.pointsFor / r.games) : 0,
+      trophies: trophiesFor(r.displayName),
+    }))
+    .sort((a, b) => b.trophies - a.trophies || b.winPct - a.winPct || b.pointsFor - a.pointsFor);
+}
+
+export interface SeasonLeader {
+  playerId: string;
+  name: string;
+  team: string;
+  season: string;
+  points: number;
+}
+
+/**
+ * Best individual seasons per position across every synced season, from
+ * league-wide NFL season stats (every player who scored — not just the ones
+ * someone rostered). Points use this league's scoring format.
+ */
+export function bestSeasonsByPosition(topN = 5): Map<string, SeasonLeader[]> {
+  const fmtLeague = getSeasons().find((s) => s.hasGames);
+  const fmt = fmtLeague ? scoringFormat(fmtLeague.leagueId) : 'ppr';
+  const col = fmt === 'ppr' ? 'pts_ppr' : fmt === 'half_ppr' ? 'pts_half' : 'pts_std';
+  const seasons = new Set(getSeasons().map((s) => s.season));
+
+  const rows = getDb()
+    .prepare(
+      `SELECT s.season, s.player_id, s.position, s.${col} AS pts, p.full_name, p.team
+       FROM player_season_stats s LEFT JOIN players p ON p.player_id = s.player_id
+       WHERE s.${col} IS NOT NULL`
+    )
+    .all() as Array<Record<string, unknown>>;
+
+  const byPosition = new Map<string, SeasonLeader[]>();
+  for (const r of rows) {
+    if (!seasons.has(r.season as string)) continue; // only seasons this league played
+    const pos = (r.position as string) ?? 'UNKNOWN';
+    if (!byPosition.has(pos)) byPosition.set(pos, []);
+    byPosition.get(pos)!.push({
+      playerId: r.player_id as string,
+      name: (r.full_name as string) ?? (r.player_id as string),
+      team: (r.team as string) ?? '',
+      season: r.season as string,
+      points: round2(r.pts as number),
+    });
+  }
+  for (const [pos, list] of byPosition) {
+    list.sort((a, b) => b.points - a.points);
+    byPosition.set(pos, list.slice(0, topN));
+  }
+  return byPosition;
+}
