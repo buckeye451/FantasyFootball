@@ -38,7 +38,7 @@ export function PlayersOfWeek({
   week: number;
 }) {
   return (
-    <div className="pos-grid">
+    <div className="pos-grid potw">
       {POSITION_ORDER.filter((pos) => byPosition.has(pos)).map((pos) => {
         const star = byPosition.get(pos)!;
         return (

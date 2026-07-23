@@ -874,6 +874,18 @@ details.table-view[open] summary {
   font-weight: 650;
 }
 
+/* Players of the week: one big score per card, filling the box */
+.potw .pos-card li {
+  align-items: center;
+  padding: 6px 0;
+}
+
+.potw .pos-pts {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 /* ---------- week selector pills ---------- */
 .week-pills {
   display: flex;
