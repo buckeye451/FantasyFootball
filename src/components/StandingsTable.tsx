@@ -40,8 +40,17 @@ const DEFAULT_DIR: Record<SortKey, 'asc' | 'desc'> = {
   low: 'desc',
 };
 
-export function StandingsTable({ standings, season }: { standings: Standing[]; season?: string }) {
+export function StandingsTable({
+  standings,
+  season,
+  champion,
+}: {
+  standings: Standing[];
+  season?: string;
+  champion?: string | null;
+}) {
   const q = season ? `?season=${season}` : '';
+  const champKey = champion?.toLowerCase() ?? null;
   const [sortKey, setSortKey] = useState<SortKey>('rank');
   const [dir, setDir] = useState<'asc' | 'desc'>('asc');
 
@@ -77,6 +86,7 @@ export function StandingsTable({ standings, season }: { standings: Standing[]; s
       <table>
         <thead>
           <tr>
+            <th className="champ-col" title="Season champion"></th>
             {th('rank', 'Rank', { num: true })}
             <th></th>
             {th('team', 'Team')}
@@ -96,8 +106,10 @@ export function StandingsTable({ standings, season }: { standings: Standing[]; s
         <tbody>
           {sorted.map((s) => {
             const diff = Math.round((s.pointsFor - s.pointsAgainst) * 100) / 100;
+            const isChamp = champKey != null && s.team.displayName.toLowerCase() === champKey;
             return (
-              <tr key={s.team.rosterId}>
+              <tr key={s.team.rosterId} className={isChamp ? 'champ-row' : undefined}>
+                <td className="champ-col">{isChamp ? '🏆' : ''}</td>
                 <td className="num">{s.rank}</td>
                 <td>
                   <Movement delta={s.movement} />

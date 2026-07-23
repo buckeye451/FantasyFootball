@@ -833,17 +833,28 @@ export function weeklyMedians(leagueId: string): Array<{ week: number; median: n
 // Lifetime (all-seasons) stats
 // ---------------------------------------------------------------------------
 
-/** League champions and how many titles each holds (matched by display name). */
-export const CHAMPIONS: Array<{ name: string; trophies: number }> = [
-  { name: 'JMoneyy10', trophies: 1 },
-  { name: 'cjasin', trophies: 1 },
-  { name: 'keithchief', trophies: 1 },
-];
+/** Season champion by year (Sleeper display name). Single source of truth. */
+export const SEASON_CHAMPIONS: Record<string, string> = {
+  '2025': 'JMoneyy10',
+  '2024': 'keithchief',
+  '2023': 'cjasin',
+};
+
+/** The champion's display name for a season, or null if none recorded. */
+export function championOf(season: string): string | null {
+  return SEASON_CHAMPIONS[season] ?? null;
+}
 
 export function trophiesFor(displayName: string): number {
-  const hit = CHAMPIONS.find((c) => c.name.toLowerCase() === displayName.toLowerCase());
-  return hit?.trophies ?? 0;
+  return Object.values(SEASON_CHAMPIONS).filter(
+    (n) => n.toLowerCase() === displayName.toLowerCase()
+  ).length;
 }
+
+/** Distinct champions with their title counts (for the lifetime trophy case). */
+export const CHAMPIONS: Array<{ name: string; trophies: number }> = Array.from(
+  new Set(Object.values(SEASON_CHAMPIONS))
+).map((name) => ({ name, trophies: trophiesFor(name) }));
 
 export interface LifetimeRow {
   displayName: string;

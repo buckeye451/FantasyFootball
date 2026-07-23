@@ -1,4 +1,5 @@
 import {
+  championOf,
   currentStandings,
   getSeasons,
   getTeams,
@@ -147,7 +148,7 @@ export default function DashboardPage({
         <p className="card-note">
           Regular season through week {selectedWeek}. Arrows show movement since the prior week.
         </p>
-        <StandingsTable standings={standings} season={season} />
+        <StandingsTable standings={standings} season={season} champion={championOf(season)} />
       </section>
 
       <LeagueChartsBoard teams={teams} scoreData={scoreData} rankData={rankData} />

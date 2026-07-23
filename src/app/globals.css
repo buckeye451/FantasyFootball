@@ -1353,3 +1353,15 @@ tr.h2h-detail-row td {
 .h2h-detail th {
   font-size: 10px;
 }
+
+/* Season-champion trophy column in the dashboard standings */
+.champ-col {
+  width: 26px;
+  text-align: center;
+  padding-left: 4px;
+  padding-right: 2px;
+}
+
+tr.champ-row td {
+  background: rgba(246, 201, 69, 0.10);
+}
