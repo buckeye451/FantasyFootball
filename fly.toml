@@ -13,9 +13,9 @@ primary_region = 'ams'
   AUTO_SYNC_MINUTES = '180'
   DB_PATH = '/data/league.db'
   NODE_ENV = 'production'
-  # Comma-separated Sleeper league ids, one per season (2026, 2025, 2024). The
-  # sync also follows each league's previous-season chain automatically.
-  SLEEPER_LEAGUE_ID = '1382410388192120832,1181309188575956992,1124818253726633984'
+  # Comma-separated Sleeper league ids, one per season (2026, 2025, 2024, 2023).
+  # The sync also follows each league's previous-season chain automatically.
+  SLEEPER_LEAGUE_ID = '1382410388192120832,1181309188575956992,1124818253726633984,989593232034095104'
 
 [[mounts]]
   source = 'bmcf_data'
