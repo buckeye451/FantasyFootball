@@ -38,8 +38,7 @@ export function StandingsTable({ standings, season }: { standings: Standing[]; s
                   <Movement delta={s.movement} />
                 </td>
                 <td className="team-cell">
-                  <Link href={`/team/${s.team.slug}${q}`}>{s.team.displayName}</Link>{' '}
-                  <span className="sub">{s.team.teamName !== s.team.displayName ? s.team.teamName : ''}</span>
+                  <Link href={`/team/${s.team.slug}${q}`}>{s.team.displayName}</Link>
                 </td>
                 <td>
                   {s.wins}-{s.losses}
