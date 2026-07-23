@@ -723,9 +723,20 @@ tr.benched-row td {
 
 .benched-tag {
   color: var(--critical);
-  font-size: 11.5px;
-  font-weight: 700;
-  white-space: nowrap;
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* Narrow "left on the bench" flag column in the optimal lineup table */
+.bench-flag {
+  width: 26px;
+  text-align: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.week-picker-row {
+  margin: 4px 0 16px;
 }
 
 .bench-header td {

@@ -10,6 +10,7 @@ import {
 } from '@/lib/stats';
 import { TeamWeeklyChart } from '@/components/FocusCharts';
 import { LineupAsSet, OptimalLineup } from '@/components/RosterTables';
+import { TeamWeekPicker } from '@/components/TeamWeekPicker';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,12 +141,8 @@ export default function TeamPage({
 
       <section className="card" id="week-detail">
         <h2 className="card-title">Week {selectedWeek} lineup</h2>
-        <div className="week-pills">
-          {weeks.map((w) => (
-            <Link key={w} href={weekHref(w)} className={w === selectedWeek ? 'active' : ''}>
-              {w}
-            </Link>
-          ))}
+        <div className="week-picker-row">
+          <TeamWeekPicker slug={team.slug} weeks={weeks} selected={selectedWeek} season={seasonYear} />
         </div>
 
         {detail ? (

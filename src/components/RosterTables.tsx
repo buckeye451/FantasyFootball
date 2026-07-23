@@ -80,7 +80,7 @@ export function OptimalLineup({ detail, meta }: { detail: TeamWeekDetail; meta: 
           <tr>
             <th>Slot</th>
             <th>Player</th>
-            <th></th>
+            <th className="bench-flag"></th>
             <th className="num">Points</th>
           </tr>
         </thead>
@@ -93,7 +93,13 @@ export function OptimalLineup({ detail, meta }: { detail: TeamWeekDetail; meta: 
               <td>
                 <PlayerCell meta={meta} playerId={s.playerId} />
               </td>
-              <td>{s.wasBenched && <span className="benched-tag">⚠ was on bench</span>}</td>
+              <td className="bench-flag">
+                {s.wasBenched && (
+                  <span className="benched-tag" title="Left on the bench" aria-label="Left on the bench">
+                    ⚠
+                  </span>
+                )}
+              </td>
               <td className="num">{s.points.toFixed(2)}</td>
             </tr>
           ))}
