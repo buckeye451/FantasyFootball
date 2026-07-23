@@ -3,14 +3,18 @@
    selection; status good/critical reserved for W/L and bench warnings). */
 :root {
   color-scheme: dark;
-  --page: #0d0d0d;
-  --surface: #1a1a19;
-  --surface-2: #212120;
+  --page: #0c0912;
+  /* Translucent "atomic purple" surfaces for cards / tables / tiles. */
+  --surface: rgba(99, 60, 160, 0.46);
+  --surface-2: rgba(126, 86, 192, 0.46);
+  /* Opaque variant for the sticky header + slide-out drawer (so scrolling
+     content and the page don't bleed through them). */
+  --surface-opaque: #17102a;
   --ink: #ffffff;
   --ink-2: #c3c2b7;
-  --muted: #898781;
-  --grid: #2c2c2a;
-  --baseline: #383835;
+  --muted: #a79bc4;
+  --grid: #40305f;
+  --baseline: #55447e;
   --border: rgba(255, 255, 255, 0.1);
   --series-1: #3987e5;
   --series-2: #008300;
@@ -178,7 +182,7 @@ a {
 /* ---------- shell ---------- */
 .site-header {
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--surface-opaque);
   position: sticky;
   top: 0;
   z-index: 20;
@@ -238,7 +242,7 @@ a {
   bottom: 0;
   width: 290px;
   max-width: 84vw;
-  background: var(--surface);
+  background: var(--surface-opaque);
   border-right: 1px solid var(--border);
   z-index: 50;
   transform: translateX(-100%);

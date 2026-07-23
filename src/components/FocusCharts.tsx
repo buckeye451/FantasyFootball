@@ -11,14 +11,14 @@ import {
   YAxis,
 } from 'recharts';
 
-// Chart chrome (committed dark theme — mirrors globals.css)
+// Chart chrome (purple theme — mirrors globals.css surfaces)
 const INK = '#ffffff';
 const INK2 = '#c3c2b7';
-const MUTED = '#898781';
-const GRID = '#2c2c2a';
-const BASELINE = '#383835';
-const SURFACE_2 = '#212120';
-const CONTEXT = '#4a4a45'; // unselected "context" lines
+const MUTED = '#a79bc4';
+const GRID = '#40305f';
+const BASELINE = '#55447e';
+const SURFACE_2 = '#241a38'; // opaque tooltip background
+const CONTEXT = '#5b4c78'; // unselected "context" lines
 // First four validated dark categorical slots — assigned in selection order,
 // and an entity keeps its slot for as long as it stays selected.
 const SLOT_COLORS = ['#3987e5', '#008300', '#d55181', '#c98500'];
