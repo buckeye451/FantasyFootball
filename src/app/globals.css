@@ -1240,3 +1240,23 @@ tr.winner-row .team-cell {
     display: inline;
   }
 }
+
+/* Sortable table headers (standings) */
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+th.sortable:hover {
+  color: var(--ink-2);
+}
+
+th.sortable.sorted {
+  color: var(--ink);
+}
+
+.sort-caret {
+  font-size: 9px;
+  color: var(--series-1);
+}

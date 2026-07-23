@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import type { Standing } from '@/lib/types';
 
@@ -7,30 +10,91 @@ function Movement({ delta }: { delta: number }) {
   return <span className="flat">–</span>;
 }
 
+type SortKey = 'rank' | 'team' | 'record' | 'mgr' | 'pf' | 'pa' | 'diff' | 'avg' | 'high' | 'low';
+
+const ACCESSORS: Record<SortKey, (s: Standing) => number | string> = {
+  rank: (s) => s.rank,
+  team: (s) => s.team.displayName.toLowerCase(),
+  // sort by wins, breaking ties on points-for
+  record: (s) => s.wins * 1e6 + s.pointsFor,
+  mgr: (s) => s.managerPerformance,
+  pf: (s) => s.pointsFor,
+  pa: (s) => s.pointsAgainst,
+  diff: (s) => s.pointsFor - s.pointsAgainst,
+  avg: (s) => s.avgPoints,
+  high: (s) => s.highScore,
+  low: (s) => s.lowScore,
+};
+
+// Direction a column jumps to the first time it's clicked.
+const DEFAULT_DIR: Record<SortKey, 'asc' | 'desc'> = {
+  rank: 'asc',
+  team: 'asc',
+  record: 'desc',
+  mgr: 'desc',
+  pf: 'desc',
+  pa: 'desc',
+  diff: 'desc',
+  avg: 'desc',
+  high: 'desc',
+  low: 'desc',
+};
+
 export function StandingsTable({ standings, season }: { standings: Standing[]; season?: string }) {
   const q = season ? `?season=${season}` : '';
+  const [sortKey, setSortKey] = useState<SortKey>('rank');
+  const [dir, setDir] = useState<'asc' | 'desc'>('asc');
+
+  const clickSort = (key: SortKey) => {
+    if (key === sortKey) setDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setDir(DEFAULT_DIR[key]);
+    }
+  };
+
+  const sorted = [...standings].sort((a, b) => {
+    const av = ACCESSORS[sortKey](a);
+    const bv = ACCESSORS[sortKey](b);
+    const cmp = typeof av === 'string' ? av.localeCompare(bv as string) : (av as number) - (bv as number);
+    return dir === 'asc' ? cmp : -cmp;
+  });
+
+  const th = (key: SortKey, label: string, opts?: { num?: boolean; title?: string }) => (
+    <th
+      className={`sortable${opts?.num ? ' num' : ''}${sortKey === key ? ' sorted' : ''}`}
+      onClick={() => clickSort(key)}
+      title={opts?.title}
+      aria-sort={sortKey === key ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
+      {label}
+      <span className="sort-caret">{sortKey === key ? (dir === 'asc' ? ' ▲' : ' ▼') : ''}</span>
+    </th>
+  );
+
   return (
     <div className="table-wrap">
       <table>
         <thead>
           <tr>
-            <th className="num">Rank</th>
+            {th('rank', 'Rank', { num: true })}
             <th></th>
-            <th>Team</th>
-            <th>Record</th>
-            <th className="num" title="Manager performance: points scored ÷ best-possible lineup">
-              Mgr %
-            </th>
-            <th className="num">PF</th>
-            <th className="num">PA</th>
-            <th className="num">+/−</th>
-            <th className="num">Avg</th>
-            <th className="num">High</th>
-            <th className="num">Low</th>
+            {th('team', 'Team')}
+            {th('record', 'Record')}
+            {th('mgr', 'Mgr %', {
+              num: true,
+              title: 'Manager performance: points scored ÷ best-possible lineup',
+            })}
+            {th('pf', 'PF', { num: true })}
+            {th('pa', 'PA', { num: true })}
+            {th('diff', '+/−', { num: true })}
+            {th('avg', 'Avg', { num: true })}
+            {th('high', 'High', { num: true })}
+            {th('low', 'Low', { num: true })}
           </tr>
         </thead>
         <tbody>
-          {standings.map((s) => {
+          {sorted.map((s) => {
             const diff = Math.round((s.pointsFor - s.pointsAgainst) * 100) / 100;
             return (
               <tr key={s.team.rosterId}>
