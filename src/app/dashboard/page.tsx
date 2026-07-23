@@ -107,14 +107,14 @@ export default function DashboardPage({
 
       <div className="tile-grid">
         <div className="tile">
-          <div className="tile-label">Highest Scoring Team</div>
+          <div className="tile-label">👑 Highest Scoring Team</div>
           <div className="tile-value">{highestScoring?.team.displayName ?? '—'}</div>
           <div className="tile-sub">
             {highestScoring ? `${highestScoring.score.toFixed(1)} pts · week ${selectedWeek}` : ''}
           </div>
         </div>
         <div className="tile">
-          <div className="tile-label">Highest Performance</div>
+          <div className="tile-label">✅ Highest Performance</div>
           <div className="tile-value">
             {highestPerf?.performancePct != null ? `${highestPerf.performancePct.toFixed(1)}%` : '—'}
           </div>
@@ -123,7 +123,7 @@ export default function DashboardPage({
           </div>
         </div>
         <div className="tile">
-          <div className="tile-label">Best Manager</div>
+          <div className="tile-label">📋 Best Manager</div>
           <div className="tile-value">
             {bestManager ? `${bestManager.managerScorePct.toFixed(1)}%` : '—'}
           </div>
@@ -133,7 +133,7 @@ export default function DashboardPage({
         </div>
         {pow.mvp && (
           <div className="tile">
-            <div className="tile-label">Week {selectedWeek} MVP</div>
+            <div className="tile-label">🏈 Week {selectedWeek} MVP</div>
             <div className="tile-value">{pow.mvp.points.toFixed(1)}</div>
             <div className="tile-sub">
               {pow.mvp.player.name} ({pow.mvp.player.position}) · {pow.mvp.manager}
