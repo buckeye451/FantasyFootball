@@ -18,7 +18,9 @@ export function StandingsTable({ standings, season }: { standings: Standing[]; s
             <th></th>
             <th>Team</th>
             <th>Record</th>
-            <th className="num">Win %</th>
+            <th className="num" title="Manager performance: points scored ÷ best-possible lineup">
+              Mgr %
+            </th>
             <th className="num">PF</th>
             <th className="num">PA</th>
             <th className="num">+/−</th>
@@ -29,7 +31,6 @@ export function StandingsTable({ standings, season }: { standings: Standing[]; s
         </thead>
         <tbody>
           {standings.map((s) => {
-            const games = s.wins + s.losses + s.ties;
             const diff = Math.round((s.pointsFor - s.pointsAgainst) * 100) / 100;
             return (
               <tr key={s.team.rosterId}>
@@ -44,7 +45,7 @@ export function StandingsTable({ standings, season }: { standings: Standing[]; s
                   {s.wins}-{s.losses}
                   {s.ties ? `-${s.ties}` : ''}
                 </td>
-                <td className="num">{games ? ((s.wins / games) * 100).toFixed(1) : '0.0'}%</td>
+                <td className="num">{s.managerPerformance.toFixed(1)}%</td>
                 <td className="num">{s.pointsFor.toFixed(1)}</td>
                 <td className="num">{s.pointsAgainst.toFixed(1)}</td>
                 <td className="num">

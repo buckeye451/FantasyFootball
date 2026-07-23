@@ -121,6 +121,7 @@ export interface Standing {
   avgPoints: number;
   highScore: number;
   lowScore: number;
+  managerPerformance: number; // season points ÷ best-possible lineup points, %
   rank: number;
   movement: number; // vs. previous week's rank; positive = climbed
 }

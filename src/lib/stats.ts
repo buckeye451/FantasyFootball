@@ -164,6 +164,8 @@ function opponentOf(row: MatchupRow, weekRows: MatchupRow[]): MatchupRow | null 
 export function standingsThroughWeek(leagueId: string, week: number): Standing[] {
   const teams = getTeams(leagueId);
   const matchups = getMatchups(leagueId);
+  const league = getLeagueInfo(leagueId);
+  const meta = getPlayerMeta();
   const regWeeks = regularSeasonWeeks(leagueId, matchups).filter((w) => w <= week);
 
   const build = (throughWeeks: number[]): Array<Omit<Standing, 'rank' | 'movement'>> =>
@@ -172,7 +174,8 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
         losses = 0,
         ties = 0,
         pf = 0,
-        pa = 0;
+        pa = 0,
+        optimalSum = 0;
       let high = -Infinity,
         low = Infinity;
       for (const w of throughWeeks) {
@@ -183,6 +186,14 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
         pf += mine.points;
         high = Math.max(high, mine.points);
         low = Math.min(low, mine.points);
+        if (league) {
+          optimalSum += optimalLineup(
+            league.rosterPositions,
+            mine.starters,
+            mine.playersPoints,
+            meta
+          ).optimalTotal;
+        }
         if (opp) {
           pa += opp.points;
           if (mine.points > opp.points) wins++;
@@ -201,6 +212,9 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
         avgPoints: games ? round2(pf / games) : 0,
         highScore: games ? round2(high) : 0,
         lowScore: games ? round2(low) : 0,
+        // Season-cumulative manager performance: points scored ÷ best-possible
+        // lineup points, through these weeks (naturally ≤ 100%).
+        managerPerformance: optimalSum > 0 ? Math.min(100, round2((pf / optimalSum) * 100)) : 100,
       };
     });
 
