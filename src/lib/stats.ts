@@ -1194,3 +1194,123 @@ export function headToHead(): ManagerH2H[] {
     }))
     .sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
+
+// ---------------------------------------------------------------------------
+// Draft board
+// ---------------------------------------------------------------------------
+
+export interface DraftPick {
+  pickNo: number; // overall pick number
+  round: number;
+  manager: string; // manager who made/received the pick
+  ownerId: string;
+  playerId: string;
+  name: string;
+  position: string;
+  seasonPoints: number | null; // season fantasy total (league scoring)
+  posSeasonRank: number | null; // finish among all players at this position that season
+  posDraftRank: number; // Nth at this position taken in the draft
+  highWeek: number | null; // most points in a single week
+  lowWeek: number | null; // fewest points in a single week
+}
+
+export interface DraftBoard {
+  season: string;
+  scoringFormat: ScoringFormat;
+  picks: DraftPick[]; // overall pick order
+  managers: Array<{ ownerId: string; name: string }>; // draft-slot order
+}
+
+/**
+ * The season's draft with, for each pick, the player's season fantasy total,
+ * their positional finish that season, what number they were at their position
+ * in the draft, and their best/worst single week. Weekly high/low come from the
+ * league's own matchup scores (the weeks the player was rostered here). Returns
+ * null if this league has no stored draft.
+ */
+export function draftBoard(leagueId: string): DraftBoard | null {
+  const db = getDb();
+  const pickRows = db
+    .prepare('SELECT * FROM draft_picks WHERE league_id = ? ORDER BY pick_no')
+    .all(leagueId) as Array<Record<string, unknown>>;
+  if (pickRows.length === 0) return null;
+
+  const info = getLeagueInfo(leagueId);
+  const season = info?.season ?? '';
+  const fmt = scoringFormat(leagueId);
+  const col = fmt === 'ppr' ? 'pts_ppr' : fmt === 'half_ppr' ? 'pts_half' : 'pts_std';
+  const meta = getPlayerMeta();
+  const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
+
+  // Season totals + positional finish, from league-wide season stats.
+  const statRows = db
+    .prepare(
+      `SELECT player_id, position, ${col} AS pts FROM player_season_stats
+       WHERE season = ? AND ${col} IS NOT NULL`
+    )
+    .all(season) as Array<{ player_id: string; position: string | null; pts: number }>;
+  const seasonPts = new Map<string, number>();
+  const byPos = new Map<string, Array<{ pid: string; pts: number }>>();
+  for (const r of statRows) {
+    seasonPts.set(r.player_id, round2(r.pts));
+    const pos = r.position ?? 'UNKNOWN';
+    if (!byPos.has(pos)) byPos.set(pos, []);
+    byPos.get(pos)!.push({ pid: r.player_id, pts: r.pts });
+  }
+  const posSeasonRank = new Map<string, number>();
+  for (const list of byPos.values()) {
+    list.sort((a, b) => b.pts - a.pts);
+    list.forEach((e, i) => posSeasonRank.set(e.pid, i + 1));
+  }
+
+  // Best/worst single week from this league's matchup scores.
+  const high = new Map<string, number>();
+  const low = new Map<string, number>();
+  for (const m of getMatchups(leagueId)) {
+    for (const [pid, pts] of Object.entries(m.playersPoints)) {
+      if (pts == null) continue;
+      high.set(pid, Math.max(high.get(pid) ?? -Infinity, pts));
+      low.set(pid, Math.min(low.get(pid) ?? Infinity, pts));
+    }
+  }
+
+  const posDraftCount = new Map<string, number>();
+  const picks: DraftPick[] = pickRows.map((r) => {
+    const playerId = r.player_id as string;
+    const pm = meta.get(playerId);
+    const position = (r.position as string) || pm?.position || 'UNKNOWN';
+    const n = (posDraftCount.get(position) ?? 0) + 1;
+    posDraftCount.set(position, n);
+    const rosterId = r.roster_id as number | null;
+    const team = rosterId != null ? teams.get(rosterId) : undefined;
+    return {
+      pickNo: r.pick_no as number,
+      round: (r.round as number) ?? 0,
+      manager: team?.displayName ?? '—',
+      ownerId: team?.ownerId ?? '',
+      playerId,
+      name: (r.player_name as string) || pm?.name || playerId,
+      position,
+      seasonPoints: seasonPts.get(playerId) ?? null,
+      posSeasonRank: posSeasonRank.get(playerId) ?? null,
+      posDraftRank: n,
+      highWeek: high.has(playerId) ? round2(high.get(playerId)!) : null,
+      lowWeek: low.has(playerId) ? round2(low.get(playerId)!) : null,
+    };
+  });
+
+  // Managers in draft order: earliest overall pick first (i.e. draft slot 1..N).
+  const earliest = new Map<string, { ownerId: string; name: string; pick: number }>();
+  for (const p of picks) {
+    if (!p.ownerId) continue;
+    const cur = earliest.get(p.ownerId);
+    if (!cur || p.pickNo < cur.pick) {
+      earliest.set(p.ownerId, { ownerId: p.ownerId, name: p.manager, pick: p.pickNo });
+    }
+  }
+  const managers = [...earliest.values()]
+    .sort((a, b) => a.pick - b.pick)
+    .map(({ ownerId, name }) => ({ ownerId, name }));
+
+  return { season, scoringFormat: fmt, picks, managers };
+}

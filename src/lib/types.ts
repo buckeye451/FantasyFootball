@@ -84,6 +84,29 @@ export interface SleeperProjection {
   };
 }
 
+export interface SleeperDraft {
+  draft_id: string;
+  season?: string;
+  status?: string;
+  start_time?: number;
+}
+
+export interface SleeperDraftPick {
+  pick_no: number;
+  round: number;
+  draft_slot: number;
+  roster_id: number | string | null;
+  picked_by?: string;
+  player_id: string;
+  metadata?: {
+    first_name?: string;
+    last_name?: string;
+    position?: string;
+    team?: string;
+    [k: string]: string | undefined;
+  };
+}
+
 // App-level read models
 
 export interface TeamInfo {

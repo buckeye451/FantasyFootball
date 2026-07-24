@@ -1365,3 +1365,41 @@ tr.h2h-detail-row td {
 tr.champ-row td {
   background: rgba(246, 201, 69, 0.10);
 }
+
+/* ---- Draft board ---------------------------------------------------------- */
+.draft-table td,
+.draft-table th {
+  white-space: nowrap;
+}
+.draft-pick {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.draft-no {
+  flex: none;
+  min-width: 34px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 12.5px;
+}
+.draft-player {
+  min-width: 0;
+}
+.draft-name {
+  font-weight: 600;
+}
+.draft-pos {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.draft-mgr {
+  display: block;
+  color: var(--muted);
+  font-size: 11.5px;
+  margin-top: 1px;
+}

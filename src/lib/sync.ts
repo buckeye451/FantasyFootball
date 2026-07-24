@@ -4,6 +4,7 @@ import { getDb, DB_PATH } from './db';
 import { sleeper } from './sleeper';
 import type {
   SleeperBracketMatch,
+  SleeperDraftPick,
   SleeperLeague,
   SleeperMatchup,
   SleeperPlayer,
@@ -198,6 +199,40 @@ export function hasSeasonStats(season: string): boolean {
   return row.c > 0;
 }
 
+export function upsertDraftPicks(
+  leagueId: string,
+  draftId: string,
+  picks: SleeperDraftPick[]
+): void {
+  const db = getDb();
+  const stmt = db.prepare(
+    `INSERT INTO draft_picks (league_id, draft_id, pick_no, round, draft_slot, roster_id, picked_by, player_id, player_name, position)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(league_id, pick_no) DO UPDATE SET
+       draft_id = excluded.draft_id, round = excluded.round, draft_slot = excluded.draft_slot,
+       roster_id = excluded.roster_id, picked_by = excluded.picked_by, player_id = excluded.player_id,
+       player_name = excluded.player_name, position = excluded.position`
+  );
+  for (const p of picks) {
+    if (!p.player_id) continue;
+    const name =
+      [p.metadata?.first_name, p.metadata?.last_name].filter(Boolean).join(' ') || null;
+    const rosterId = p.roster_id == null ? null : Number(p.roster_id);
+    stmt.run(
+      leagueId,
+      draftId,
+      p.pick_no,
+      p.round ?? null,
+      p.draft_slot ?? null,
+      Number.isFinite(rosterId as number) ? rosterId : null,
+      p.picked_by ?? null,
+      p.player_id,
+      name,
+      p.metadata?.position ?? null
+    );
+  }
+}
+
 export function upsertBracket(leagueId: string, type: string, matches: SleeperBracketMatch[]): void {
   getDb()
     .prepare(
@@ -291,6 +326,20 @@ export async function syncLeague(leagueId: string, full = false): Promise<string
     } catch {
       // no bracket yet
     }
+  }
+
+  // Draft board — the league's draft and every pick. Add drafted players to the
+  // referenced set so their metadata is stored even if they were never started.
+  try {
+    const drafts = await sleeper.drafts(leagueId);
+    const draft = drafts?.[0]; // a league normally has a single draft
+    if (draft?.draft_id) {
+      const picks = await sleeper.draftPicks(draft.draft_id);
+      upsertDraftPicks(leagueId, draft.draft_id, picks);
+      for (const p of picks) if (p.player_id) referenced.add(p.player_id);
+    }
+  } catch {
+    // no draft yet (or drafts endpoint unavailable)
   }
 
   // Store metadata only for players this league has ever rostered — keeps the

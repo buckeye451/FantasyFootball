@@ -1,5 +1,7 @@
 import type {
   SleeperBracketMatch,
+  SleeperDraft,
+  SleeperDraftPick,
   SleeperLeague,
   SleeperMatchup,
   SleeperPlayer,
@@ -49,6 +51,10 @@ export const sleeper = {
       `${PROJECTIONS_BASE}/projections/nfl/${season}/${week}?season_type=regular&${qs}`
     );
   },
+  // A league's drafts (usually one). Newest first.
+  drafts: (leagueId: string) => get<SleeperDraft[]>(`${BASE}/league/${leagueId}/drafts`),
+  // Every pick in a draft, in overall order.
+  draftPicks: (draftId: string) => get<SleeperDraftPick[]>(`${BASE}/draft/${draftId}/picks`),
   // ~5 MB dump of every NFL player; Sleeper asks that it be fetched at most once per day.
   allPlayers: () => get<Record<string, SleeperPlayer>>(`${BASE}/players/nfl`),
 };

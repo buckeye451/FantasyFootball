@@ -12,6 +12,7 @@
  */
 import {
   upsertBracket,
+  upsertDraftPicks,
   upsertLeague,
   upsertMatchups,
   upsertPlayers,
@@ -435,6 +436,28 @@ function seedSeason(cfg: SeasonConfig): void {
   });
   upsertSeasonStats(cfg.season, seasonStats, statsDump);
 
+  // ---- Draft: order every rostered player by value, snake-ish overall order ----
+  const drafted = MANAGERS.flatMap((mgr) => rosters.get(mgr)!.map((p) => ({ mgr, p })));
+  drafted.sort((a, b) => {
+    const va = POSITION_CURVE[a.p.position][0] - a.p.tier * POSITION_CURVE[a.p.position][1];
+    const vb = POSITION_CURVE[b.p.position][0] - b.p.tier * POSITION_CURVE[b.p.position][1];
+    return vb - va;
+  });
+  const draftPicks = drafted.map(({ mgr, p }, i) => {
+    const rosterId = MANAGERS.indexOf(mgr) + 1;
+    const [first, ...rest] = p.name.split(' ');
+    return {
+      pick_no: i + 1,
+      round: Math.floor(i / MANAGERS.length) + 1,
+      draft_slot: rosterId,
+      roster_id: rosterId,
+      picked_by: `demo-u${rosterId}`,
+      player_id: p.id,
+      metadata: { first_name: first, last_name: rest.join(' '), position: p.position, team: p.nfl },
+    };
+  });
+  upsertDraftPicks(cfg.leagueId, `${cfg.leagueId}-draft`, draftPicks);
+
   if (cfg.assert) {
     // The real 2024 schedule + scores must reproduce the sheet's records.
     const failures: string[] = [];
@@ -460,7 +483,7 @@ function seedSeason(cfg: SeasonConfig): void {
 
 function main() {
   const db = getDb();
-  for (const table of ['matchups', 'players', 'rosters', 'users', 'league']) {
+  for (const table of ['matchups', 'players', 'rosters', 'users', 'league', 'draft_picks']) {
     db.exec(`DELETE FROM ${table}`);
   }
 
