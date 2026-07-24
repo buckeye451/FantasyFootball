@@ -47,26 +47,31 @@ jobs:
       - name: Create the app and volume if they don't exist, then deploy
         run: |
           set -e
-          APP=$(awk -F'"' '/^app *=/{print $2}' fly.toml)
-          REGION=$(awk -F'"' '/^primary_region/{print $2}' fly.toml)
+          # Pull app + region out of fly.toml, tolerating either quote style
+          # (Fly Launch writes single quotes; hand-edits sometimes use double).
+          APP=$(sed -n "s/^app *= *['\"]\\(.*\\)['\"].*/\\1/p" fly.toml)
+          REGION=$(sed -n "s/^primary_region *= *['\"]\\(.*\\)['\"].*/\\1/p" fly.toml)
           echo "App: $APP   Region: $REGION"
 
           # First run creates the app; later runs no-op. --org personal is right
           # for a personal Fly signup; change it if you deploy into a named org.
           flyctl apps create "$APP" --org personal || echo "App already exists (or the name is taken) — continuing."
 
-          # Create the SQLite volume once; skip if it's already there.
-          if ! flyctl volumes list --app "$APP" --json | jq -e '.[] | select(.name=="bmcf_data")' >/dev/null 2>&1; then
+          # Create the SQLite volume once, scoped to the primary region. Fly
+          # volumes are pinned to a region, so a volume that exists only in an
+          # old region must NOT satisfy this check — otherwise a region change
+          # would deploy a machine with no volume in its region to attach to.
+          if ! flyctl volumes list --app "$APP" --json | jq -e --arg r "$REGION" '.[] | select(.name=="bmcf_data" and .region==$r)' >/dev/null 2>&1; then
             echo "Creating volume bmcf_data ($REGION)…"
             flyctl volumes create bmcf_data --size 1 --region "$REGION" --app "$APP" --yes
           else
-            echo "Volume bmcf_data already exists."
+            echo "Volume bmcf_data already exists in $REGION."
           fi
 
           flyctl deploy --remote-only
 
       - name: Show the app URL
         run: |
-          APP=$(awk -F'"' '/^app *=/{print $2}' fly.toml)
+          APP=$(sed -n "s/^app *= *['\"]\\(.*\\)['\"].*/\\1/p" fly.toml)
           echo "Deployed. Your app is at: https://$APP.fly.dev"
           echo "### :rocket: Deployed to https://$APP.fly.dev" >> "$GITHUB_STEP_SUMMARY"

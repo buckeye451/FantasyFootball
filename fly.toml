@@ -4,7 +4,7 @@
 #
 
 app = 'bmcf-league'
-primary_region = 'ams'
+primary_region = 'ord'
 
 [build]
 
