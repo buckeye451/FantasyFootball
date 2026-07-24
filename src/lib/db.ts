@@ -7,7 +7,7 @@ export const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', '
 // Bump when the schema changes in a way that needs a rebuild. All data here is
 // re-fetchable from Sleeper, so migrating just drops the re-syncable tables and
 // lets the next sync repopulate them.
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS league (
@@ -20,7 +20,12 @@ CREATE TABLE IF NOT EXISTS league (
   scoring_settings TEXT,
   settings TEXT,
   previous_league_id TEXT,
-  last_synced_at TEXT
+  last_synced_at TEXT,
+  -- Set only when a sync of this league runs all the way to completion. A
+  -- partial/interrupted sync (e.g. Sleeper rate-limiting mid-backfill) leaves
+  -- this NULL, so the caching logic keeps retrying instead of locking in the
+  -- incomplete data as "done".
+  fully_synced_at TEXT
 );
 CREATE TABLE IF NOT EXISTS users (
   user_id TEXT PRIMARY KEY,

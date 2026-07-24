@@ -309,35 +309,59 @@ export async function syncLeague(leagueId: string, full = false): Promise<string
     }
   }
 
+  // Everything above succeeded — mark the season fully synced so routine syncs
+  // may treat it as cached. If any step above threw, we never reach here and
+  // the season stays eligible for a retry.
+  markFullySynced(leagueId);
+
   const detail = `league=${leagueId} season=${league.season} weeks=${storedWeeks} players=${referenced.size}`;
   logSync('full', detail);
   return detail;
+}
+
+function markFullySynced(leagueId: string): void {
+  getDb()
+    .prepare('UPDATE league SET fully_synced_at = ? WHERE league_id = ?')
+    .run(new Date().toISOString(), leagueId);
 }
 
 interface StoredLeague {
   status: string | null;
   previousLeagueId: string | null;
   games: number;
+  fullySynced: boolean;
 }
 
 function storedLeague(leagueId: string): StoredLeague | null {
   const row = getDb()
     .prepare(
-      `SELECT l.status AS status, l.previous_league_id AS prev,
+      `SELECT l.status AS status, l.previous_league_id AS prev, l.fully_synced_at AS full,
               (SELECT COUNT(*) FROM matchups m WHERE m.league_id = l.league_id) AS games
        FROM league l WHERE l.league_id = ?`
     )
-    .get(leagueId) as { status: string | null; prev: string | null; games: number } | undefined;
-  return row ? { status: row.status, previousLeagueId: row.prev, games: row.games } : null;
+    .get(leagueId) as
+    | { status: string | null; prev: string | null; full: string | null; games: number }
+    | undefined;
+  return row
+    ? {
+        status: row.status,
+        previousLeagueId: row.prev,
+        games: row.games,
+        fullySynced: row.full != null,
+      }
+    : null;
 }
 
 /**
  * A completed season already in the database never changes, so periodic syncs
- * can skip re-fetching it entirely. (A `full` sync ignores this.)
+ * can skip re-fetching it entirely — but only once a sync has run all the way
+ * to completion (fully_synced_at set). A season left partial by an interrupted
+ * sync is NOT cached, so the next routine sync repairs it. (A `full` sync
+ * ignores this and re-imports regardless.)
  */
 function isCached(leagueId: string): boolean {
   const s = storedLeague(leagueId);
-  return !!s && s.status === 'complete' && s.games > 0;
+  return !!s && s.status === 'complete' && s.fullySynced && s.games > 0;
 }
 
 /**
