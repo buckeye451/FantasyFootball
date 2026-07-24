@@ -17,7 +17,7 @@ const FMT_LABEL: Record<string, string> = {
   std: 'Standard',
 };
 
-function HeaderRow({ showManager }: { showManager: boolean }) {
+function HeaderRow({ showLow }: { showLow: boolean }) {
   return (
     <tr>
       <th>Pick</th>
@@ -33,14 +33,24 @@ function HeaderRow({ showManager }: { showManager: boolean }) {
       <th className="num" title="Most fantasy points in a single week (weeks rostered here)">
         High
       </th>
-      <th className="num" title="Fewest fantasy points in a single week (weeks rostered here)">
-        Low
-      </th>
+      {showLow && (
+        <th className="num" title="Fewest fantasy points in a single week (weeks rostered here)">
+          Low
+        </th>
+      )}
     </tr>
   );
 }
 
-function PickRow({ p, showManager }: { p: DraftPick; showManager: boolean }) {
+function PickRow({
+  p,
+  showManager,
+  showLow,
+}: {
+  p: DraftPick;
+  showManager: boolean;
+  showLow: boolean;
+}) {
   return (
     <tr>
       <td>
@@ -57,7 +67,7 @@ function PickRow({ p, showManager }: { p: DraftPick; showManager: boolean }) {
       <td className="num">{rank(p.posSeasonRank)}</td>
       <td className="num">{rank(p.posDraftRank)}</td>
       <td className="num">{num(p.highWeek)}</td>
-      <td className="num">{num(p.lowWeek)}</td>
+      {showLow && <td className="num">{num(p.lowWeek)}</td>}
     </tr>
   );
 }
@@ -76,23 +86,6 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
         {board.season} draft · {board.picks.length} picks ·{' '}
         {FMT_LABEL[board.scoringFormat] ?? board.scoringFormat} scoring
       </p>
-
-      <section className="card">
-        <h2 className="card-title">Full draft</h2>
-        <p className="card-note">Every pick in order. Pts are the player&rsquo;s season total.</p>
-        <div className="table-wrap">
-          <table className="draft-table">
-            <thead>
-              <HeaderRow showManager />
-            </thead>
-            <tbody>
-              {board.picks.map((p) => (
-                <PickRow key={p.pickNo} p={p} showManager />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
 
       <section className="card">
         <h2 className="card-title">By manager</h2>
@@ -116,11 +109,28 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
         <div className="table-wrap">
           <table className="draft-table">
             <thead>
-              <HeaderRow showManager={false} />
+              <HeaderRow showLow={false} />
             </thead>
             <tbody>
               {byManager.map((p) => (
-                <PickRow key={p.pickNo} p={p} showManager={false} />
+                <PickRow key={p.pickNo} p={p} showManager={false} showLow={false} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="card">
+        <h2 className="card-title">Full draft</h2>
+        <p className="card-note">Every pick in order. Pts are the player&rsquo;s season total.</p>
+        <div className="table-wrap">
+          <table className="draft-table">
+            <thead>
+              <HeaderRow showLow />
+            </thead>
+            <tbody>
+              {board.picks.map((p) => (
+                <PickRow key={p.pickNo} p={p} showManager showLow />
               ))}
             </tbody>
           </table>
