@@ -25,10 +25,10 @@ function HeaderRow({ showLow }: { showLow: boolean }) {
         Pts
       </th>
       <th className="num" title="Finish among all players at this position that season">
-        Pos&nbsp;Finish
+        Pos Finish
       </th>
       <th className="num" title="Order this player was taken at their position in the draft">
-        Pos&nbsp;Drafted
+        Pos Drafted
       </th>
       <th className="num" title="Most fantasy points in a single week (weeks rostered here)">
         High
@@ -58,7 +58,7 @@ function PickRow({
           <span className="draft-no">#{p.pickNo}</span>
           <span className="draft-player">
             <span className="draft-name">{p.name}</span>{' '}
-            <span className="draft-pos">{p.position}</span>
+            <span className={`draft-pos draft-pos-${p.position}`}>{p.position}</span>
             {showManager && <span className="draft-mgr">{p.manager}</span>}
           </span>
         </div>
@@ -107,7 +107,7 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
           </label>
         </div>
         <div className="table-wrap">
-          <table className="draft-table">
+          <table className="draft-table draft-compact">
             <thead>
               <HeaderRow showLow={false} />
             </thead>

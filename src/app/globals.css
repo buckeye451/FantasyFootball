@@ -1397,9 +1397,58 @@ tr.champ-row td {
   font-weight: 700;
   letter-spacing: 0.3px;
 }
+/* Position color coding — tags only, everything else keeps its color. */
+.draft-pos-QB {
+  color: #6b8cff;
+} /* royal blue */
+.draft-pos-RB {
+  color: #f5d34e;
+} /* yellow */
+.draft-pos-WR {
+  color: #74e6a8;
+} /* mint green */
+.draft-pos-TE {
+  color: #8fd3ff;
+} /* light blue */
 .draft-mgr {
   display: block;
   color: var(--muted);
   font-size: 11.5px;
   margin-top: 1px;
+}
+
+/* Compact variant (By Manager) — tighter so Pos Finish / Pos Drafted fit on
+   a phone without horizontal scrolling. */
+.draft-compact {
+  font-size: 12.5px;
+}
+.draft-compact th,
+.draft-compact td {
+  padding: 7px 5px;
+}
+.draft-compact th:first-child,
+.draft-compact td:first-child {
+  padding-left: 8px;
+}
+.draft-compact th {
+  white-space: normal; /* let "Pos Finish" / "Pos Drafted" wrap to two lines */
+}
+.draft-compact .draft-no {
+  min-width: 22px;
+  font-size: 11.5px;
+}
+.draft-compact .draft-pick {
+  gap: 6px;
+}
+.draft-compact .draft-name {
+  white-space: normal; /* long names wrap instead of widening the column */
+}
+@media (max-width: 640px) {
+  .draft-compact {
+    font-size: 12px;
+  }
+  .draft-compact th,
+  .draft-compact td {
+    padding: 6px 4px;
+  }
 }
