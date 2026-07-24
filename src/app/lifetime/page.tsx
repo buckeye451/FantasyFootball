@@ -86,7 +86,7 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
                       {l.name}{' '}
                       <span className="pos-team">
                         {l.team ? `${l.team} · ` : ''}
-                        {l.season}
+                        {l.season} · {l.manager ?? 'Free agent'}
                       </span>
                     </span>
                     <span className="pos-pts">{l.points.toFixed(1)}</span>

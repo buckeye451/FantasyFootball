@@ -942,6 +942,43 @@ export interface SeasonLeader {
   team: string;
   season: string;
   points: number;
+  manager: string | null; // manager who rostered them that season (null = free agent)
+}
+
+/**
+ * Map "season::playerId" → the manager who rostered that player the most weeks
+ * that season, so all-time leaders can be attributed to a manager the way the
+ * dashboard's Players of the Week are. Players no team ever rostered are absent.
+ */
+function seasonRosteredManagers(seasons: SeasonOption[]): Map<string, string> {
+  const result = new Map<string, string>();
+  for (const s of seasons) {
+    const teams = new Map(getTeams(s.leagueId).map((t) => [t.rosterId, t.displayName]));
+    const weeksByRoster = new Map<string, Map<number, number>>();
+    for (const m of getMatchups(s.leagueId)) {
+      for (const pid of m.players) {
+        let byRoster = weeksByRoster.get(pid);
+        if (!byRoster) {
+          byRoster = new Map();
+          weeksByRoster.set(pid, byRoster);
+        }
+        byRoster.set(m.rosterId, (byRoster.get(m.rosterId) ?? 0) + 1);
+      }
+    }
+    for (const [pid, byRoster] of weeksByRoster) {
+      let bestRoster = -1;
+      let bestWeeks = -1;
+      for (const [rid, weeks] of byRoster) {
+        if (weeks > bestWeeks) {
+          bestWeeks = weeks;
+          bestRoster = rid;
+        }
+      }
+      const mgr = teams.get(bestRoster);
+      if (mgr) result.set(`${s.season}::${pid}`, mgr);
+    }
+  }
+  return result;
 }
 
 /**
@@ -950,10 +987,12 @@ export interface SeasonLeader {
  * someone rostered). Points use this league's scoring format.
  */
 export function bestSeasonsByPosition(topN = 5): Map<string, SeasonLeader[]> {
-  const fmtLeague = getSeasons().find((s) => s.hasGames);
+  const playedSeasons = getSeasons().filter((s) => s.hasGames);
+  const fmtLeague = playedSeasons[0];
   const fmt = fmtLeague ? scoringFormat(fmtLeague.leagueId) : 'ppr';
   const col = fmt === 'ppr' ? 'pts_ppr' : fmt === 'half_ppr' ? 'pts_half' : 'pts_std';
   const seasons = new Set(getSeasons().map((s) => s.season));
+  const managers = seasonRosteredManagers(playedSeasons);
 
   const rows = getDb()
     .prepare(
@@ -974,6 +1013,7 @@ export function bestSeasonsByPosition(topN = 5): Map<string, SeasonLeader[]> {
       team: (r.team as string) ?? '',
       season: r.season as string,
       points: round2(r.pts as number),
+      manager: managers.get(`${r.season as string}::${r.player_id as string}`) ?? null,
     });
   }
   for (const [pos, list] of byPosition) {
