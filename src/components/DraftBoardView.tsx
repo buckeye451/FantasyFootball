@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { DraftBoard, DraftPick } from '@/lib/stats';
+import { DraftRankingsTable } from '@/components/DraftRankingsTable';
 
 function num(n: number | null): string {
   return n == null ? '—' : n.toFixed(1);
@@ -105,43 +106,6 @@ function PickRow({
   );
 }
 
-function valueSpan(v: number | null): React.ReactNode {
-  if (v == null) return '—';
-  return (
-    <span className={v > 0 ? 'up' : v < 0 ? 'down' : 'flat'}>
-      {v > 0 ? '+' : ''}
-      {v.toFixed(1)}
-    </span>
-  );
-}
-
-/** A pick plus its ordinal within that manager's own draft (their Nth selection). */
-interface RankPick {
-  pick: DraftPick;
-  mgrPickNo: number;
-}
-
-interface DraftRankRow {
-  ownerId: string;
-  manager: string;
-  score: number;
-  worstEarly: RankPick | null; // lowest value among the manager's first 7 picks
-  bestPick: RankPick | null; // highest value across their whole draft
-}
-
-function RankPickCell({ entry }: { entry: RankPick | null }) {
-  if (!entry) return <>—</>;
-  const { pick, mgrPickNo } = entry;
-  return (
-    <span className="draft-rank-pick">
-      <span className="draft-no">#{mgrPickNo}</span>{' '}
-      <span className="draft-name">{pick.name}</span>{' '}
-      <span className={`draft-pos draft-pos-${pick.position}`}>{pick.position}</span>{' '}
-      {valueSpan(pick.vsReplacement)}
-    </span>
-  );
-}
-
 export function DraftBoardView({ board }: { board: DraftBoard }) {
   const [ownerId, setOwnerId] = useState(board.managers[0]?.ownerId ?? '');
 
@@ -150,31 +114,6 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
     [board.picks, ownerId]
   );
 
-  // Every manager's draft ranked by total value vs replacement, with their
-  // worst pick from their first seven selections and their best pick overall.
-  const rankings = useMemo<DraftRankRow[]>(() => {
-    const rows = board.managers.map((m) => {
-      // Number picks by this manager's own draft order, so #2 means their
-      // second selection regardless of where it fell overall.
-      const scored = board.picks
-        .filter((p) => p.ownerId === m.ownerId)
-        .sort((a, b) => a.pickNo - b.pickNo)
-        .map((pick, i) => ({ pick, mgrPickNo: i + 1 }))
-        .filter((e) => e.pick.vsReplacement != null);
-      const score = scored.reduce((s, e) => s + (e.pick.vsReplacement ?? 0), 0);
-      let worstEarly: RankPick | null = null;
-      for (const e of scored) {
-        if (e.mgrPickNo > 7) continue;
-        if (!worstEarly || e.pick.vsReplacement! < worstEarly.pick.vsReplacement!) worstEarly = e;
-      }
-      let bestPick: RankPick | null = null;
-      for (const e of scored) {
-        if (!bestPick || e.pick.vsReplacement! > bestPick.pick.vsReplacement!) bestPick = e;
-      }
-      return { ownerId: m.ownerId, manager: m.name, score: Math.round(score * 10) / 10, worstEarly, bestPick };
-    });
-    return rows.sort((a, b) => b.score - a.score);
-  }, [board.managers, board.picks]);
 
   return (
     <>
@@ -228,38 +167,7 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
           Every draft scored by total points above positional replacement — the same math as the
           Best/Worst Draft tiles.
         </p>
-        <div className="table-wrap">
-          <table className="draft-table draft-compact">
-            <thead>
-              <tr>
-                <th className="num">Rank</th>
-                <th>Manager</th>
-                <th className="num" title="Sum of every pick's points above positional replacement">
-                  Score
-                </th>
-                <th title="Lowest-value pick among their first seven selections">
-                  Worst Early Pick
-                </th>
-                <th title="Highest-value pick of their whole draft">Best Pick</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rankings.map((r, i) => (
-                <tr key={r.ownerId}>
-                  <td className="num">{i + 1}</td>
-                  <td className="team-cell">{r.manager}</td>
-                  <td className="num strong">{valueSpan(r.score)}</td>
-                  <td>
-                    <RankPickCell entry={r.worstEarly} />
-                  </td>
-                  <td>
-                    <RankPickCell entry={r.bestPick} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DraftRankingsTable rows={board.rankings} />
       </section>
 
       <section className="card">

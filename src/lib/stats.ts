@@ -1230,15 +1230,123 @@ export interface DraftGrade {
   score: number; // sum of each pick's points above positional replacement
 }
 
+/** A single pick as shown in the draft-rankings tables. */
+export interface DraftRankPick {
+  name: string;
+  position: string;
+  season: string;
+  managerPickNo: number; // Nth selection of that manager's own draft
+  value: number; // season points above positional replacement
+}
+
+export interface DraftRankRow {
+  ownerId: string;
+  manager: string;
+  score: number; // total points above replacement
+  drafts: number; // how many drafts this covers (1 per season)
+  worstEarly: DraftRankPick | null; // lowest-value pick among their first 7
+  bestPick: DraftRankPick | null; // highest-value pick
+}
+
+/** How many of a manager's own selections count as "early". */
+const EARLY_PICK_COUNT = 7;
+
 export interface DraftBoard {
   season: string;
   scoringFormat: ScoringFormat;
   picks: DraftPick[]; // overall pick order
   managers: Array<{ ownerId: string; name: string }>; // draft-slot order
+  rankings: DraftRankRow[]; // best draft first
   riser: DraftMover | null; // best finish vs draft slot (QB/RB/WR/TE)
   faller: DraftMover | null; // worst finish vs draft slot (QB/RB/WR/TE)
   bestDraft: DraftGrade | null;
   worstDraft: DraftGrade | null;
+}
+
+/**
+ * Score each manager's draft by summing every pick's points above positional
+ * replacement, and pull out their worst early pick and best pick overall.
+ * Picks are numbered within the manager's own draft, so "#2" is their second
+ * selection regardless of where it landed in the overall order.
+ */
+function buildDraftRankings(
+  picks: DraftPick[],
+  managers: Array<{ ownerId: string; name: string }>,
+  season: string
+): DraftRankRow[] {
+  const rows = managers.map((m) => {
+    const own = picks
+      .filter((p) => p.ownerId === m.ownerId)
+      .sort((a, b) => a.pickNo - b.pickNo)
+      .map((pick, i) => ({ pick, managerPickNo: i + 1 }))
+      .filter((e) => e.pick.vsReplacement != null);
+
+    let score = 0;
+    let worstEarly: DraftRankPick | null = null;
+    let bestPick: DraftRankPick | null = null;
+    for (const e of own) {
+      const value = round2(e.pick.vsReplacement!);
+      score += value;
+      const entry: DraftRankPick = {
+        name: e.pick.name,
+        position: e.pick.position,
+        season,
+        managerPickNo: e.managerPickNo,
+        value,
+      };
+      if (e.managerPickNo <= EARLY_PICK_COUNT && (!worstEarly || value < worstEarly.value)) {
+        worstEarly = entry;
+      }
+      if (!bestPick || value > bestPick.value) bestPick = entry;
+    }
+    return {
+      ownerId: m.ownerId,
+      manager: m.name,
+      score: round2(score),
+      drafts: 1,
+      worstEarly,
+      bestPick,
+    };
+  });
+  return rows.sort((a, b) => b.score - a.score);
+}
+
+/**
+ * Career draft rankings: every season's draft score summed per manager (keyed
+ * by Sleeper user id so a rename still counts as the same person), with their
+ * single worst early pick and best pick across all drafts.
+ */
+export function lifetimeDraftRankings(): DraftRankRow[] {
+  const agg = new Map<string, DraftRankRow>();
+  for (const s of getSeasons()) {
+    // getSeasons() is newest-first, so the first name seen is the current one.
+    const board = draftBoard(s.leagueId);
+    if (!board) continue;
+    for (const row of board.rankings) {
+      const key = row.ownerId || row.manager.toLowerCase();
+      let cur = agg.get(key);
+      if (!cur) {
+        cur = {
+          ownerId: row.ownerId,
+          manager: row.manager,
+          score: 0,
+          drafts: 0,
+          worstEarly: null,
+          bestPick: null,
+        };
+        agg.set(key, cur);
+      }
+      cur.score = round2(cur.score + row.score);
+      cur.drafts += 1;
+      if (row.worstEarly && (!cur.worstEarly || row.worstEarly.value < cur.worstEarly.value)) {
+        cur.worstEarly = row.worstEarly;
+      }
+      if (row.bestPick && (!cur.bestPick || row.bestPick.value > cur.bestPick.value)) {
+        cur.bestPick = row.bestPick;
+      }
+    }
+  }
+  return [...agg.values()].sort((a, b) => b.score - a.score);
 }
 
 /**
@@ -1396,5 +1504,15 @@ export function draftBoard(leagueId: string): DraftBoard | null {
     if (!worstDraft || g.score < worstDraft.score) worstDraft = g;
   }
 
-  return { season, scoringFormat: fmt, picks, managers, riser, faller, bestDraft, worstDraft };
+  return {
+    season,
+    scoringFormat: fmt,
+    picks,
+    managers,
+    rankings: buildDraftRankings(picks, managers, season),
+    riser,
+    faller,
+    bestDraft,
+    worstDraft,
+  };
 }

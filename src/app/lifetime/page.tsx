@@ -3,11 +3,13 @@ import {
   CHAMPIONS,
   getSeasons,
   headToHead,
+  lifetimeDraftRankings,
   lifetimeStandings,
 } from '@/lib/stats';
 import { POSITION_ORDER } from '@/components/PlayerCards';
 import { LifetimeStandingsTable } from '@/components/LifetimeStandingsTable';
 import { HeadToHead } from '@/components/HeadToHead';
+import { DraftRankingsTable } from '@/components/DraftRankingsTable';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +18,7 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
   const playedSeasons = getSeasons().filter((s) => s.hasGames);
   const leaders = bestSeasonsByPosition(5);
   const h2h = headToHead();
+  const draftRanks = lifetimeDraftRankings();
 
   if (rows.length === 0) {
     return (
@@ -67,6 +70,18 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
         </p>
         <HeadToHead data={h2h} />
       </section>
+
+      {draftRanks.length > 0 && (
+        <section className="card">
+          <h2 className="card-title">All-time draft rankings</h2>
+          <p className="card-note">
+            Every season&rsquo;s draft score added together — total points above positional
+            replacement. The pick columns show each manager&rsquo;s single worst early pick and
+            best pick across all their drafts.
+          </p>
+          <DraftRankingsTable rows={draftRanks} showSeason showDrafts />
+        </section>
+      )}
 
       <section>
         <h2 className="card-title">Best seasons by position, all-time</h2>

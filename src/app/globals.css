@@ -1421,6 +1421,15 @@ tr.champ-row td {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.draft-rank-pick {
+  white-space: nowrap;
+}
+.draft-rank-season {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Finish-vs-draft arrow next to Pos Finish */
 .draft-arrow {
   margin-left: 4px;
