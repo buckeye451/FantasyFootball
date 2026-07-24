@@ -105,6 +105,24 @@ function PickRow({
   );
 }
 
+function valueSpan(v: number | null): React.ReactNode {
+  if (v == null) return '—';
+  return (
+    <span className={v > 0 ? 'up' : v < 0 ? 'down' : 'flat'}>
+      {v > 0 ? '+' : ''}
+      {v.toFixed(1)}
+    </span>
+  );
+}
+
+interface DraftRankRow {
+  ownerId: string;
+  manager: string;
+  score: number;
+  worstEarly: DraftPick | null; // lowest value among the manager's first 7 picks
+  bestPick: DraftPick | null; // highest value across their whole draft
+}
+
 export function DraftBoardView({ board }: { board: DraftBoard }) {
   const [ownerId, setOwnerId] = useState(board.managers[0]?.ownerId ?? '');
 
@@ -112,6 +130,27 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
     () => board.picks.filter((p) => p.ownerId === ownerId),
     [board.picks, ownerId]
   );
+
+  // Every manager's draft ranked by total value vs replacement, with their
+  // worst pick from their first seven selections and their best pick overall.
+  const rankings = useMemo<DraftRankRow[]>(() => {
+    const rows = board.managers.map((m) => {
+      const picks = board.picks
+        .filter((p) => p.ownerId === m.ownerId && p.vsReplacement != null)
+        .sort((a, b) => a.pickNo - b.pickNo);
+      const score = picks.reduce((s, p) => s + (p.vsReplacement ?? 0), 0);
+      let worstEarly: DraftPick | null = null;
+      for (const p of picks.slice(0, 7)) {
+        if (!worstEarly || p.vsReplacement! < worstEarly.vsReplacement!) worstEarly = p;
+      }
+      let bestPick: DraftPick | null = null;
+      for (const p of picks) {
+        if (!bestPick || p.vsReplacement! > bestPick.vsReplacement!) bestPick = p;
+      }
+      return { ownerId: m.ownerId, manager: m.name, score: Math.round(score * 10) / 10, worstEarly, bestPick };
+    });
+    return rows.sort((a, b) => b.score - a.score);
+  }, [board.managers, board.picks]);
 
   return (
     <>
@@ -158,6 +197,66 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
           </div>
         </div>
       </div>
+
+      <section className="card">
+        <h2 className="card-title">Draft rankings</h2>
+        <p className="card-note">
+          Every draft scored by total points above positional replacement — the same math as the
+          Best/Worst Draft tiles.
+        </p>
+        <div className="table-wrap">
+          <table className="draft-table draft-compact">
+            <thead>
+              <tr>
+                <th className="num">Rank</th>
+                <th>Manager</th>
+                <th className="num" title="Sum of every pick's points above positional replacement">
+                  Score
+                </th>
+                <th title="Lowest-value pick among their first seven selections">
+                  Worst Early Pick
+                </th>
+                <th title="Highest-value pick of their whole draft">Best Pick</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rankings.map((r, i) => (
+                <tr key={r.ownerId}>
+                  <td className="num">{i + 1}</td>
+                  <td className="team-cell">{r.manager}</td>
+                  <td className="num strong">{valueSpan(r.score)}</td>
+                  <td>
+                    {r.worstEarly ? (
+                      <span className="draft-rank-pick">
+                        <span className="draft-name">{r.worstEarly.name}</span>{' '}
+                        <span className={`draft-pos draft-pos-${r.worstEarly.position}`}>
+                          {r.worstEarly.position}
+                        </span>{' '}
+                        {valueSpan(r.worstEarly.vsReplacement)}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td>
+                    {r.bestPick ? (
+                      <span className="draft-rank-pick">
+                        <span className="draft-name">{r.bestPick.name}</span>{' '}
+                        <span className={`draft-pos draft-pos-${r.bestPick.position}`}>
+                          {r.bestPick.position}
+                        </span>{' '}
+                        {valueSpan(r.bestPick.vsReplacement)}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <section className="card">
         <h2 className="card-title">By manager</h2>
