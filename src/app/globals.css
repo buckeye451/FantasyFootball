@@ -1416,6 +1416,11 @@ tr.champ-row td {
   font-size: 11.5px;
   margin-top: 1px;
 }
+/* Draft tiles: always two rows of two, at every width. */
+.draft-tiles {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 /* Finish-vs-draft arrow next to Pos Finish */
 .draft-arrow {
   margin-left: 4px;

@@ -91,6 +91,45 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
         {FMT_LABEL[board.scoringFormat] ?? board.scoringFormat} scoring
       </p>
 
+      <div className="tile-grid draft-tiles">
+        <div className="tile">
+          <div className="tile-label">📈 Biggest Riser</div>
+          <div className="tile-value">{board.riser ? board.riser.name : '—'}</div>
+          <div className="tile-sub">
+            {board.riser
+              ? `+${board.riser.delta} · ${board.riser.position} drafted #${board.riser.drafted}, finished #${board.riser.finished} · ${board.riser.manager}`
+              : 'no season stats yet'}
+          </div>
+        </div>
+        <div className="tile">
+          <div className="tile-label">📉 Biggest Faller</div>
+          <div className="tile-value">{board.faller ? board.faller.name : '—'}</div>
+          <div className="tile-sub">
+            {board.faller
+              ? `${board.faller.delta} · ${board.faller.position} drafted #${board.faller.drafted}, finished #${board.faller.finished} · ${board.faller.manager}`
+              : 'no season stats yet'}
+          </div>
+        </div>
+        <div className="tile">
+          <div className="tile-label">🎯 Best Draft</div>
+          <div className="tile-value">{board.bestDraft ? board.bestDraft.manager : '—'}</div>
+          <div className="tile-sub">
+            {board.bestDraft
+              ? `${board.bestDraft.score >= 0 ? '+' : ''}${board.bestDraft.score.toFixed(1)} pts vs replacement`
+              : 'no season stats yet'}
+          </div>
+        </div>
+        <div className="tile">
+          <div className="tile-label">😬 Worst Draft</div>
+          <div className="tile-value">{board.worstDraft ? board.worstDraft.manager : '—'}</div>
+          <div className="tile-sub">
+            {board.worstDraft
+              ? `${board.worstDraft.score >= 0 ? '+' : ''}${board.worstDraft.score.toFixed(1)} pts vs replacement`
+              : 'no season stats yet'}
+          </div>
+        </div>
+      </div>
+
       <section className="card">
         <h2 className="card-title">By manager</h2>
         <p className="card-note">Pick a manager to see their draft in order.</p>

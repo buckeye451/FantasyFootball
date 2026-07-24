@@ -1214,12 +1214,47 @@ export interface DraftPick {
   lowWeek: number | null; // fewest points in a single week
 }
 
+export interface DraftMover {
+  name: string;
+  position: string;
+  manager: string;
+  drafted: number; // positional draft rank
+  finished: number; // positional season finish
+  delta: number; // drafted − finished; positive = climbed
+}
+
+export interface DraftGrade {
+  manager: string;
+  ownerId: string;
+  score: number; // sum of each pick's points above positional replacement
+}
+
 export interface DraftBoard {
   season: string;
   scoringFormat: ScoringFormat;
   picks: DraftPick[]; // overall pick order
   managers: Array<{ ownerId: string; name: string }>; // draft-slot order
+  riser: DraftMover | null; // best finish vs draft slot (QB/RB/WR/TE)
+  faller: DraftMover | null; // worst finish vs draft slot (QB/RB/WR/TE)
+  bestDraft: DraftGrade | null;
+  worstDraft: DraftGrade | null;
 }
+
+/**
+ * Positional rank whose season total serves as the "replacement level" a
+ * drafted player is measured against (roughly the best widely-available
+ * waiver option at each position in a 10-team league).
+ */
+const REPLACEMENT_RANK: Record<string, number> = {
+  QB: 15,
+  RB: 25,
+  WR: 25,
+  TE: 15,
+  K: 12,
+  DEF: 12,
+};
+
+const MOVER_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE']);
 
 /**
  * The season's draft with, for each pick, the player's season fantasy total,
@@ -1312,5 +1347,51 @@ export function draftBoard(leagueId: string): DraftBoard | null {
     .sort((a, b) => a.pick - b.pick)
     .map(({ ownerId, name }) => ({ ownerId, name }));
 
-  return { season, scoringFormat: fmt, picks, managers };
+  // Biggest riser / faller: finish vs draft slot, skill positions only.
+  let riser: DraftMover | null = null;
+  let faller: DraftMover | null = null;
+  for (const p of picks) {
+    if (!MOVER_POSITIONS.has(p.position) || p.posSeasonRank == null) continue;
+    const mover: DraftMover = {
+      name: p.name,
+      position: p.position,
+      manager: p.manager,
+      drafted: p.posDraftRank,
+      finished: p.posSeasonRank,
+      delta: p.posDraftRank - p.posSeasonRank,
+    };
+    if (!riser || mover.delta > riser.delta) riser = mover;
+    if (!faller || mover.delta < faller.delta) faller = mover;
+  }
+
+  // Draft grades: each pick's season total vs the replacement level at its
+  // position (the Nth-best season league-wide), summed per manager. A drafted
+  // player with no recorded points counts as 0 — a full bust.
+  const replacement = new Map<string, number>();
+  for (const [pos, n] of Object.entries(REPLACEMENT_RANK)) {
+    const list = byPos.get(pos);
+    if (!list || list.length === 0) continue;
+    replacement.set(pos, list[Math.min(n, list.length) - 1].pts);
+  }
+  const grades = new Map<string, DraftGrade>();
+  for (const p of picks) {
+    if (!p.ownerId) continue;
+    const base = replacement.get(p.position);
+    if (base == null) continue; // position outside the scored set
+    let g = grades.get(p.ownerId);
+    if (!g) {
+      g = { manager: p.manager, ownerId: p.ownerId, score: 0 };
+      grades.set(p.ownerId, g);
+    }
+    g.score += (p.seasonPoints ?? 0) - base;
+  }
+  let bestDraft: DraftGrade | null = null;
+  let worstDraft: DraftGrade | null = null;
+  for (const g of grades.values()) {
+    g.score = round2(g.score);
+    if (!bestDraft || g.score > bestDraft.score) bestDraft = g;
+    if (!worstDraft || g.score < worstDraft.score) worstDraft = g;
+  }
+
+  return { season, scoringFormat: fmt, picks, managers, riser, faller, bestDraft, worstDraft };
 }
