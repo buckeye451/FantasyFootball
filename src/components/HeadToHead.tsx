@@ -1,18 +1,74 @@
 'use client';
 
 import { Fragment, useState } from 'react';
-import type { ManagerH2H } from '@/lib/stats';
+import type { H2HOpponent, ManagerH2H } from '@/lib/stats';
 
 function pct(n: number | null): string {
   return n == null ? '—' : `${n.toFixed(1)}%`;
 }
 
+type SortKey = 'opponent' | 'record' | 'pf' | 'pa' | 'mgr' | 'perf' | 'games';
+
+const ACCESSORS: Record<SortKey, (o: H2HOpponent) => number | string> = {
+  opponent: (o) => o.displayName.toLowerCase(),
+  record: (o) => o.wins * 1e6 + o.pointsFor,
+  pf: (o) => o.pointsFor,
+  pa: (o) => o.pointsAgainst,
+  mgr: (o) => o.managerPct ?? -1,
+  perf: (o) => o.performancePct ?? -1,
+  games: (o) => o.matches.length,
+};
+
+const DEFAULT_DIR: Record<SortKey, 'asc' | 'desc'> = {
+  opponent: 'asc',
+  record: 'desc',
+  pf: 'desc',
+  pa: 'desc',
+  mgr: 'desc',
+  perf: 'desc',
+  games: 'desc',
+};
+
 export function HeadToHead({ data }: { data: ManagerH2H[] }) {
   const [managerKey, setManagerKey] = useState(data[0]?.key ?? '');
   const [openOpp, setOpenOpp] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [dir, setDir] = useState<'asc' | 'desc'>('desc');
 
   const active = data.find((m) => m.key === managerKey) ?? data[0];
   if (!active) return <p className="card-note">Not enough matchups yet.</p>;
+
+  const clickSort = (key: SortKey) => {
+    if (key === sortKey) setDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setDir(DEFAULT_DIR[key]);
+    }
+  };
+
+  const opponents = sortKey
+    ? [...active.opponents].sort((a, b) => {
+        const av = ACCESSORS[sortKey](a);
+        const bv = ACCESSORS[sortKey](b);
+        const cmp =
+          typeof av === 'string' ? av.localeCompare(bv as string) : (av as number) - (bv as number);
+        return dir === 'asc' ? cmp : -cmp;
+      })
+    : active.opponents;
+
+  const th = (key: SortKey, label: string, opts?: { num?: boolean; center?: boolean; title?: string }) => (
+    <th
+      className={`sortable${opts?.num ? ' num' : ''}${opts?.center ? ' center' : ''}${
+        sortKey === key ? ' sorted' : ''
+      }`}
+      onClick={() => clickSort(key)}
+      title={opts?.title}
+      aria-sort={sortKey === key ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
+      {label}
+      <span className="sort-caret">{sortKey === key ? (dir === 'asc' ? ' ▲' : ' ▼') : ''}</span>
+    </th>
+  );
 
   return (
     <>
@@ -40,21 +96,17 @@ export function HeadToHead({ data }: { data: ManagerH2H[] }) {
         <table>
           <thead>
             <tr>
-              <th>vs Opponent</th>
-              <th>Record</th>
-              <th className="num">PF</th>
-              <th className="num">PA</th>
-              <th className="num" title="Manager performance: points ÷ best-possible lineup">
-                Mgr %
-              </th>
-              <th className="num" title="Performance: points ÷ projected">
-                Perf %
-              </th>
-              <th className="center"></th>
+              {th('opponent', 'vs Opponent')}
+              {th('record', 'Record')}
+              {th('pf', 'PF', { num: true })}
+              {th('pa', 'PA', { num: true })}
+              {th('mgr', 'Mgr %', { num: true, title: 'Manager performance: points ÷ best-possible lineup' })}
+              {th('perf', 'Perf %', { num: true, title: 'Performance: points ÷ projected' })}
+              {th('games', 'Games', { center: true })}
             </tr>
           </thead>
           <tbody>
-            {active.opponents.map((o) => {
+            {opponents.map((o) => {
               const open = openOpp === o.key;
               return (
                 <Fragment key={o.key}>
@@ -73,7 +125,7 @@ export function HeadToHead({ data }: { data: ManagerH2H[] }) {
                     <td className="num">{o.pointsAgainst.toFixed(1)}</td>
                     <td className="num">{pct(o.managerPct)}</td>
                     <td className="num">{pct(o.performancePct)}</td>
-                    <td className="center sub">{o.matches.length} {o.matches.length === 1 ? 'game' : 'games'}</td>
+                    <td className="center sub">{o.matches.length}</td>
                   </tr>
                   {open && (
                     <tr className="h2h-detail-row">
