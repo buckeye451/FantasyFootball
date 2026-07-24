@@ -1416,6 +1416,21 @@ tr.champ-row td {
   font-size: 11.5px;
   margin-top: 1px;
 }
+/* Finish-vs-draft arrow next to Pos Finish */
+.draft-arrow {
+  margin-left: 4px;
+  font-size: 10px;
+  vertical-align: 1px;
+}
+.draft-arrow.up {
+  color: #48d17a;
+} /* green — outperformed draft slot */
+.draft-arrow.warn {
+  color: #f5a04e;
+} /* orange — 1–10 spots below */
+.draft-arrow.down {
+  color: #ff6b6b;
+} /* red — 10+ spots below */
 
 /* Compact variant (By Manager) — tighter so Pos Finish / Pos Drafted fit on
    a phone without horizontal scrolling. */

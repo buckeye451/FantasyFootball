@@ -11,6 +11,21 @@ function rank(n: number | null): string {
   return n == null ? '—' : `#${n}`;
 }
 
+// Arrow showing how the player's positional finish compares to where they were
+// drafted at their position. Lower rank number = better.
+//   finish better than drafted        → green up arrow
+//   1–10 spots worse than drafted      → orange down arrow
+//   more than 10 spots worse           → red down arrow
+//   same, or no season finish          → nothing
+function FinishArrow({ finish, drafted }: { finish: number | null; drafted: number }) {
+  if (finish == null) return null;
+  const delta = finish - drafted; // positive = finished worse than drafted
+  if (delta < 0) return <span className="draft-arrow up" aria-label="outperformed draft slot">▲</span>;
+  if (delta === 0) return null;
+  if (delta <= 10) return <span className="draft-arrow warn" aria-label="finished below draft slot">▼</span>;
+  return <span className="draft-arrow down" aria-label="finished well below draft slot">▼</span>;
+}
+
 const FMT_LABEL: Record<string, string> = {
   ppr: 'PPR',
   half_ppr: 'Half-PPR',
@@ -21,14 +36,14 @@ function HeaderRow() {
   return (
     <tr>
       <th>Pick</th>
-      <th className="num" title="Season fantasy points in this league's scoring">
-        Pts
+      <th className="num" title="Order this player was taken at their position in the draft">
+        Pos Drafted
       </th>
       <th className="num" title="Finish among all players at this position that season">
         Pos Finish
       </th>
-      <th className="num" title="Order this player was taken at their position in the draft">
-        Pos Drafted
+      <th className="num" title="Season fantasy points in this league's scoring">
+        Pts
       </th>
       <th className="num" title="Most fantasy points in a single week (weeks rostered here)">
         High
@@ -50,9 +65,12 @@ function PickRow({ p, showManager }: { p: DraftPick; showManager: boolean }) {
           </span>
         </div>
       </td>
-      <td className="num strong">{num(p.seasonPoints)}</td>
-      <td className="num">{rank(p.posSeasonRank)}</td>
       <td className="num">{rank(p.posDraftRank)}</td>
+      <td className="num">
+        {rank(p.posSeasonRank)}
+        <FinishArrow finish={p.posSeasonRank} drafted={p.posDraftRank} />
+      </td>
+      <td className="num strong">{num(p.seasonPoints)}</td>
       <td className="num">{num(p.highWeek)}</td>
     </tr>
   );
