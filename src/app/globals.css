@@ -1439,9 +1439,17 @@ tr.champ-row td {
 }
 .draft-compact .draft-pick {
   gap: 6px;
+  flex-wrap: nowrap;
+}
+/* Keep the whole player entry (name + position tag) on one line. The cell
+   sizes to its content, so a very long name widens the column and the table
+   scrolls inside .table-wrap rather than wrapping onto two rows. */
+.draft-compact .draft-player {
+  min-width: auto;
+  white-space: nowrap;
 }
 .draft-compact .draft-name {
-  white-space: normal; /* long names wrap instead of widening the column */
+  white-space: nowrap;
 }
 @media (max-width: 640px) {
   .draft-compact {

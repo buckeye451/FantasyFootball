@@ -17,7 +17,7 @@ const FMT_LABEL: Record<string, string> = {
   std: 'Standard',
 };
 
-function HeaderRow({ showLow }: { showLow: boolean }) {
+function HeaderRow() {
   return (
     <tr>
       <th>Pick</th>
@@ -33,24 +33,11 @@ function HeaderRow({ showLow }: { showLow: boolean }) {
       <th className="num" title="Most fantasy points in a single week (weeks rostered here)">
         High
       </th>
-      {showLow && (
-        <th className="num" title="Fewest fantasy points in a single week (weeks rostered here)">
-          Low
-        </th>
-      )}
     </tr>
   );
 }
 
-function PickRow({
-  p,
-  showManager,
-  showLow,
-}: {
-  p: DraftPick;
-  showManager: boolean;
-  showLow: boolean;
-}) {
+function PickRow({ p, showManager }: { p: DraftPick; showManager: boolean }) {
   return (
     <tr>
       <td>
@@ -67,7 +54,6 @@ function PickRow({
       <td className="num">{rank(p.posSeasonRank)}</td>
       <td className="num">{rank(p.posDraftRank)}</td>
       <td className="num">{num(p.highWeek)}</td>
-      {showLow && <td className="num">{num(p.lowWeek)}</td>}
     </tr>
   );
 }
@@ -109,11 +95,11 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
         <div className="table-wrap">
           <table className="draft-table draft-compact">
             <thead>
-              <HeaderRow showLow={false} />
+              <HeaderRow />
             </thead>
             <tbody>
               {byManager.map((p) => (
-                <PickRow key={p.pickNo} p={p} showManager={false} showLow={false} />
+                <PickRow key={p.pickNo} p={p} showManager={false} />
               ))}
             </tbody>
           </table>
@@ -124,13 +110,13 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
         <h2 className="card-title">Full draft</h2>
         <p className="card-note">Every pick in order. Pts are the player&rsquo;s season total.</p>
         <div className="table-wrap">
-          <table className="draft-table">
+          <table className="draft-table draft-compact">
             <thead>
-              <HeaderRow showLow />
+              <HeaderRow />
             </thead>
             <tbody>
               {board.picks.map((p) => (
-                <PickRow key={p.pickNo} p={p} showManager showLow />
+                <PickRow key={p.pickNo} p={p} showManager />
               ))}
             </tbody>
           </table>
