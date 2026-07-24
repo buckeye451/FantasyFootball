@@ -32,7 +32,7 @@ const FMT_LABEL: Record<string, string> = {
   std: 'Standard',
 };
 
-function HeaderRow() {
+function HeaderRow({ showValue }: { showValue?: boolean }) {
   return (
     <tr>
       <th>Pick</th>
@@ -48,11 +48,28 @@ function HeaderRow() {
       <th className="num" title="Most fantasy points in a single week (weeks rostered here)">
         High
       </th>
+      {showValue && (
+        <th
+          className="num"
+          title="Season points above the positional replacement level (Best Draft score contribution)"
+        >
+          Value
+        </th>
+      )}
     </tr>
   );
 }
 
-function PickRow({ p, showManager }: { p: DraftPick; showManager: boolean }) {
+function PickRow({
+  p,
+  showManager,
+  showValue,
+}: {
+  p: DraftPick;
+  showManager: boolean;
+  showValue?: boolean;
+}) {
+  const v = p.vsReplacement;
   return (
     <tr>
       <td>
@@ -72,6 +89,18 @@ function PickRow({ p, showManager }: { p: DraftPick; showManager: boolean }) {
       </td>
       <td className="num strong">{num(p.seasonPoints)}</td>
       <td className="num">{num(p.highWeek)}</td>
+      {showValue && (
+        <td className="num">
+          {v == null ? (
+            '—'
+          ) : (
+            <span className={v > 0 ? 'up' : v < 0 ? 'down' : 'flat'}>
+              {v > 0 ? '+' : ''}
+              {v.toFixed(1)}
+            </span>
+          )}
+        </td>
+      )}
     </tr>
   );
 }
@@ -152,11 +181,11 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
         <div className="table-wrap">
           <table className="draft-table draft-compact">
             <thead>
-              <HeaderRow />
+              <HeaderRow showValue />
             </thead>
             <tbody>
               {byManager.map((p) => (
-                <PickRow key={p.pickNo} p={p} showManager={false} />
+                <PickRow key={p.pickNo} p={p} showManager={false} showValue />
               ))}
             </tbody>
           </table>

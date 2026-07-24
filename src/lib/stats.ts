@@ -1212,6 +1212,7 @@ export interface DraftPick {
   posDraftRank: number; // Nth at this position taken in the draft
   highWeek: number | null; // most points in a single week
   lowWeek: number | null; // fewest points in a single week
+  vsReplacement: number | null; // season points − positional replacement level
 }
 
 export interface DraftMover {
@@ -1309,6 +1310,14 @@ export function draftBoard(leagueId: string): DraftBoard | null {
     }
   }
 
+  // Replacement level per position: the Nth-best season total league-wide.
+  const replacement = new Map<string, number>();
+  for (const [pos, n] of Object.entries(REPLACEMENT_RANK)) {
+    const list = byPos.get(pos);
+    if (!list || list.length === 0) continue;
+    replacement.set(pos, list[Math.min(n, list.length) - 1].pts);
+  }
+
   const posDraftCount = new Map<string, number>();
   const picks: DraftPick[] = pickRows.map((r) => {
     const playerId = r.player_id as string;
@@ -1318,6 +1327,7 @@ export function draftBoard(leagueId: string): DraftBoard | null {
     posDraftCount.set(position, n);
     const rosterId = r.roster_id as number | null;
     const team = rosterId != null ? teams.get(rosterId) : undefined;
+    const base = replacement.get(position);
     return {
       pickNo: r.pick_no as number,
       round: (r.round as number) ?? 0,
@@ -1331,6 +1341,7 @@ export function draftBoard(leagueId: string): DraftBoard | null {
       posDraftRank: n,
       highWeek: high.has(playerId) ? round2(high.get(playerId)!) : null,
       lowWeek: low.has(playerId) ? round2(low.get(playerId)!) : null,
+      vsReplacement: base == null ? null : round2((seasonPts.get(playerId) ?? 0) - base),
     };
   });
 
@@ -1365,25 +1376,17 @@ export function draftBoard(leagueId: string): DraftBoard | null {
   }
 
   // Draft grades: each pick's season total vs the replacement level at its
-  // position (the Nth-best season league-wide), summed per manager. A drafted
-  // player with no recorded points counts as 0 — a full bust.
-  const replacement = new Map<string, number>();
-  for (const [pos, n] of Object.entries(REPLACEMENT_RANK)) {
-    const list = byPos.get(pos);
-    if (!list || list.length === 0) continue;
-    replacement.set(pos, list[Math.min(n, list.length) - 1].pts);
-  }
+  // position, summed per manager. A drafted player with no recorded points
+  // counts as 0 — a full bust.
   const grades = new Map<string, DraftGrade>();
   for (const p of picks) {
-    if (!p.ownerId) continue;
-    const base = replacement.get(p.position);
-    if (base == null) continue; // position outside the scored set
+    if (!p.ownerId || p.vsReplacement == null) continue;
     let g = grades.get(p.ownerId);
     if (!g) {
       g = { manager: p.manager, ownerId: p.ownerId, score: 0 };
       grades.set(p.ownerId, g);
     }
-    g.score += (p.seasonPoints ?? 0) - base;
+    g.score += p.vsReplacement;
   }
   let bestDraft: DraftGrade | null = null;
   let worstDraft: DraftGrade | null = null;
