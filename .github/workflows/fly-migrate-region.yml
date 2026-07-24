@@ -1,0 +1,86 @@
+name: Migrate Fly.io region (one-time)
+
+# One-time helper for changing primary_region in fly.toml.
+#
+# Fly volumes are pinned to a region and can't be moved, and the Fly web
+# dashboard no longer lets you destroy a volume by hand. This workflow does it
+# for you from the browser: it destroys any machine + bmcf_data volume that is
+# NOT in the current primary_region, then recreates the volume in the new
+# region and deploys. All our data is re-syncable from Sleeper, so dropping the
+# old-region volume loses nothing — the app rebuilds its database on boot.
+#
+# How to run: Actions tab → "Migrate Fly.io region (one-time)" → Run workflow,
+# then type DESTROY in the confirm box. Nothing happens unless you type it.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DESTROY to delete the old-region machine + volume and redeploy'
+        required: true
+        default: ''
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.confirm == 'DESTROY' }}
+    concurrency:
+      group: fly-deploy
+      cancel-in-progress: false
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Destroy old-region machine + volume, then redeploy in the new region
+        run: |
+          set -e
+          if [ -z "$FLY_API_TOKEN" ]; then
+            echo "::error title=Missing token::Add FLY_API_TOKEN as a repository secret first (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+
+          APP=$(sed -n "s/^app *= *['\"]\\(.*\\)['\"].*/\\1/p" fly.toml)
+          REGION=$(sed -n "s/^primary_region *= *['\"]\\(.*\\)['\"].*/\\1/p" fly.toml)
+          echo "App: $APP   Target region: $REGION"
+
+          # Destroy every machine NOT already in the target region. Deploy will
+          # boot a fresh one in $REGION afterward.
+          echo "== Machines =="
+          flyctl machines list --app "$APP" --json \
+            | jq -r --arg r "$REGION" '.[] | select(.region != $r) | .id' \
+            | while read -r id; do
+                [ -n "$id" ] || continue
+                echo "Destroying machine $id (wrong region)…"
+                flyctl machine destroy "$id" --app "$APP" --force
+              done
+
+          # Destroy any bmcf_data volume NOT in the target region. Must come
+          # after the machine is gone, or Fly refuses (volume still attached).
+          echo "== Volumes =="
+          flyctl volumes list --app "$APP" --json \
+            | jq -r --arg r "$REGION" '.[] | select(.name=="bmcf_data" and .region != $r) | .id' \
+            | while read -r id; do
+                [ -n "$id" ] || continue
+                echo "Destroying volume $id (wrong region)…"
+                flyctl volumes destroy "$id" --app "$APP" --yes
+              done
+
+          # Create the volume in the target region if it isn't there yet.
+          if ! flyctl volumes list --app "$APP" --json | jq -e --arg r "$REGION" '.[] | select(.name=="bmcf_data" and .region==$r)' >/dev/null 2>&1; then
+            echo "Creating volume bmcf_data ($REGION)…"
+            flyctl volumes create bmcf_data --size 1 --region "$REGION" --app "$APP" --yes
+          else
+            echo "Volume bmcf_data already exists in $REGION."
+          fi
+
+          echo "== Deploy =="
+          flyctl deploy --remote-only
+
+      - name: Show the app URL
+        run: |
+          APP=$(sed -n "s/^app *= *['\"]\\(.*\\)['\"].*/\\1/p" fly.toml)
+          echo "Migrated. Your app is at: https://$APP.fly.dev"
+          echo "### :rocket: Region migration complete — https://$APP.fly.dev" >> "$GITHUB_STEP_SUMMARY"
