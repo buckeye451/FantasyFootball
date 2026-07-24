@@ -115,12 +115,31 @@ function valueSpan(v: number | null): React.ReactNode {
   );
 }
 
+/** A pick plus its ordinal within that manager's own draft (their Nth selection). */
+interface RankPick {
+  pick: DraftPick;
+  mgrPickNo: number;
+}
+
 interface DraftRankRow {
   ownerId: string;
   manager: string;
   score: number;
-  worstEarly: DraftPick | null; // lowest value among the manager's first 7 picks
-  bestPick: DraftPick | null; // highest value across their whole draft
+  worstEarly: RankPick | null; // lowest value among the manager's first 7 picks
+  bestPick: RankPick | null; // highest value across their whole draft
+}
+
+function RankPickCell({ entry }: { entry: RankPick | null }) {
+  if (!entry) return <>—</>;
+  const { pick, mgrPickNo } = entry;
+  return (
+    <span className="draft-rank-pick">
+      <span className="draft-no">#{mgrPickNo}</span>{' '}
+      <span className="draft-name">{pick.name}</span>{' '}
+      <span className={`draft-pos draft-pos-${pick.position}`}>{pick.position}</span>{' '}
+      {valueSpan(pick.vsReplacement)}
+    </span>
+  );
 }
 
 export function DraftBoardView({ board }: { board: DraftBoard }) {
@@ -135,17 +154,22 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
   // worst pick from their first seven selections and their best pick overall.
   const rankings = useMemo<DraftRankRow[]>(() => {
     const rows = board.managers.map((m) => {
-      const picks = board.picks
-        .filter((p) => p.ownerId === m.ownerId && p.vsReplacement != null)
-        .sort((a, b) => a.pickNo - b.pickNo);
-      const score = picks.reduce((s, p) => s + (p.vsReplacement ?? 0), 0);
-      let worstEarly: DraftPick | null = null;
-      for (const p of picks.slice(0, 7)) {
-        if (!worstEarly || p.vsReplacement! < worstEarly.vsReplacement!) worstEarly = p;
+      // Number picks by this manager's own draft order, so #2 means their
+      // second selection regardless of where it fell overall.
+      const scored = board.picks
+        .filter((p) => p.ownerId === m.ownerId)
+        .sort((a, b) => a.pickNo - b.pickNo)
+        .map((pick, i) => ({ pick, mgrPickNo: i + 1 }))
+        .filter((e) => e.pick.vsReplacement != null);
+      const score = scored.reduce((s, e) => s + (e.pick.vsReplacement ?? 0), 0);
+      let worstEarly: RankPick | null = null;
+      for (const e of scored) {
+        if (e.mgrPickNo > 7) continue;
+        if (!worstEarly || e.pick.vsReplacement! < worstEarly.pick.vsReplacement!) worstEarly = e;
       }
-      let bestPick: DraftPick | null = null;
-      for (const p of picks) {
-        if (!bestPick || p.vsReplacement! > bestPick.vsReplacement!) bestPick = p;
+      let bestPick: RankPick | null = null;
+      for (const e of scored) {
+        if (!bestPick || e.pick.vsReplacement! > bestPick.pick.vsReplacement!) bestPick = e;
       }
       return { ownerId: m.ownerId, manager: m.name, score: Math.round(score * 10) / 10, worstEarly, bestPick };
     });
@@ -226,30 +250,10 @@ export function DraftBoardView({ board }: { board: DraftBoard }) {
                   <td className="team-cell">{r.manager}</td>
                   <td className="num strong">{valueSpan(r.score)}</td>
                   <td>
-                    {r.worstEarly ? (
-                      <span className="draft-rank-pick">
-                        <span className="draft-name">{r.worstEarly.name}</span>{' '}
-                        <span className={`draft-pos draft-pos-${r.worstEarly.position}`}>
-                          {r.worstEarly.position}
-                        </span>{' '}
-                        {valueSpan(r.worstEarly.vsReplacement)}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
+                    <RankPickCell entry={r.worstEarly} />
                   </td>
                   <td>
-                    {r.bestPick ? (
-                      <span className="draft-rank-pick">
-                        <span className="draft-name">{r.bestPick.name}</span>{' '}
-                        <span className={`draft-pos draft-pos-${r.bestPick.position}`}>
-                          {r.bestPick.position}
-                        </span>{' '}
-                        {valueSpan(r.bestPick.vsReplacement)}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
+                    <RankPickCell entry={r.bestPick} />
                   </td>
                 </tr>
               ))}
