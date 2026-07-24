@@ -52,6 +52,14 @@ export function SiteHeader({
   const active = seasons.find((s) => s.season === activeSeason) ?? seasons[0];
   const withSeason = (path: string) => (activeSeason ? `${path}?season=${activeSeason}` : path);
 
+  // Pages that exist for every season, so switching seasons can stay put.
+  // Item-specific routes (/team/[slug], /week/[n], /playoffs/round/[n]) can
+  // 404 in another season — a manager who wasn't in the league, a week that
+  // wasn't played — so those fall back to the dashboard.
+  const SEASON_STABLE = ['/dashboard', '/drafts', '/lifetime', '/playoffs'];
+  const seasonHref = (season: string) =>
+    SEASON_STABLE.includes(pathname) ? `${pathname}?season=${season}` : `/dashboard?season=${season}`;
+
   // Close the drawer whenever the route changes.
   useEffect(() => {
     setOpen(false);
@@ -91,7 +99,7 @@ export function SiteHeader({
               <span className="season-picker-label">Season</span>
               <select
                 value={activeSeason}
-                onChange={(e) => router.push(`/dashboard?season=${e.target.value}`)}
+                onChange={(e) => router.push(seasonHref(e.target.value))}
                 aria-label="Select season"
               >
                 {seasons.map((s) => (
