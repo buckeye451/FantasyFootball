@@ -133,7 +133,7 @@ export function SiteHeader({
           Drafts
         </Link>
 
-        <Section title="Players" defaultOpen>
+        <Section title="Players">
           {(active?.teams ?? []).map((t) => (
             <Link key={t.slug} href={withSeason(`/team/${t.slug}`)} className="drawer-sublink">
               {t.name}
