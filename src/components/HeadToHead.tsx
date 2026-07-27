@@ -2,9 +2,11 @@
 
 import { Fragment, useState } from 'react';
 import type { H2HOpponent, ManagerH2H } from '@/lib/stats';
+import { managerClass, performanceClass } from '@/lib/thresholds';
 
-function pct(n: number | null): string {
-  return n == null ? '—' : `${n.toFixed(1)}%`;
+function Pct({ n, tone }: { n: number | null; tone: (v: number | null) => string | undefined }) {
+  if (n == null) return <>—</>;
+  return <span className={tone(n)}>{n.toFixed(1)}%</span>;
 }
 
 type SortKey = 'opponent' | 'record' | 'pf' | 'pa' | 'mgr' | 'perf' | 'games';
@@ -123,8 +125,12 @@ export function HeadToHead({ data }: { data: ManagerH2H[] }) {
                     </td>
                     <td className="num">{o.pointsFor.toFixed(1)}</td>
                     <td className="num">{o.pointsAgainst.toFixed(1)}</td>
-                    <td className="num">{pct(o.managerPct)}</td>
-                    <td className="num">{pct(o.performancePct)}</td>
+                    <td className="num">
+                      <Pct n={o.managerPct} tone={managerClass} />
+                    </td>
+                    <td className="num">
+                      <Pct n={o.performancePct} tone={performanceClass} />
+                    </td>
                     <td className="center sub">{o.matches.length}</td>
                   </tr>
                   {open && (

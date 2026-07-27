@@ -3,20 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { Standing } from '@/lib/types';
-
-/** Manager %: green above 92, orange 89–92, red below 89. */
-function managerClass(v: number): string {
-  if (v > 92) return 'val-good';
-  if (v >= 89) return 'val-warn';
-  return 'val-bad';
-}
-
-/** Performance %: green above 100, orange 95–100, red below 95. */
-function performanceClass(v: number): string {
-  if (v > 100) return 'val-good';
-  if (v >= 95) return 'val-warn';
-  return 'val-bad';
-}
+import { managerClass, performanceClass } from '@/lib/thresholds';
 
 function Movement({ delta }: { delta: number }) {
   if (delta > 0) return <span className="up">▲ {delta}</span>;
