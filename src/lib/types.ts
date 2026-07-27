@@ -56,6 +56,8 @@ export interface SleeperPlayer {
   position?: string | null;
   team?: string | null;
   fantasy_positions?: string[] | null;
+  /** NFL GSIS id — joins Sleeper players to nflverse historical data. */
+  gsis_id?: string | null;
 }
 
 // A slot in a playoff bracket match: a resolved roster id, or a pointer to the

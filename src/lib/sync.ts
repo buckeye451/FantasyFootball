@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { getDb, DB_PATH } from './db';
 import { sleeper } from './sleeper';
+import { seasonTeams } from './nflverse';
 import type {
   SleeperBracketMatch,
   SleeperDraftPick,
@@ -106,11 +107,12 @@ export function upsertMatchups(leagueId: string, week: number, matchups: Sleeper
 export function upsertPlayers(players: Record<string, SleeperPlayer>, onlyIds?: Set<string>): void {
   const db = getDb();
   const stmt = db.prepare(
-    `INSERT INTO players (player_id, full_name, position, team, fantasy_positions)
-     VALUES (?, ?, ?, ?, ?)
+    `INSERT INTO players (player_id, full_name, position, team, fantasy_positions, gsis_id)
+     VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT(player_id) DO UPDATE SET
        full_name = excluded.full_name, position = excluded.position,
-       team = excluded.team, fantasy_positions = excluded.fantasy_positions`
+       team = excluded.team, fantasy_positions = excluded.fantasy_positions,
+       gsis_id = excluded.gsis_id`
   );
   for (const [id, p] of Object.entries(players)) {
     if (onlyIds && !onlyIds.has(id)) continue;
@@ -121,9 +123,72 @@ export function upsertPlayers(players: Record<string, SleeperPlayer>, onlyIds?: 
       name || id,
       p.position ?? null,
       p.team ?? null,
-      JSON.stringify(p.fantasy_positions ?? (p.position ? [p.position] : []))
+      JSON.stringify(p.fantasy_positions ?? (p.position ? [p.position] : [])),
+      p.gsis_id ?? null
     );
   }
+}
+
+/** Normalized name key for matching players without a GSIS id. */
+function nameKey(name: string, position: string | null): string {
+  const n = name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, '')
+    .replace(/[^a-z]/g, '');
+  return `${n}|${(position ?? '').toUpperCase()}`;
+}
+
+export function hasSeasonTeams(season: string): boolean {
+  const row = getDb()
+    .prepare('SELECT COUNT(*) AS c FROM player_season_teams WHERE season = ?')
+    .get(season) as { c: number };
+  return row.c > 0;
+}
+
+/**
+ * Pin every player we know about to the team they actually played for in a
+ * past season, from nflverse's weekly stats. Sleeper only reports a player's
+ * current team, so without this a 2024 page shows 2026 team codes.
+ *
+ * Joins on GSIS id, falling back to a normalized name+position match for
+ * players whose Sleeper record has no GSIS id. Returns how many were stored.
+ */
+export async function syncSeasonTeams(season: string, full = false): Promise<number> {
+  if (!full && hasSeasonTeams(season)) return 0;
+  const rows = await seasonTeams(season);
+  if (rows.length === 0) return 0;
+
+  const db = getDb();
+  const players = db
+    .prepare('SELECT player_id, full_name, position, gsis_id FROM players')
+    .all() as Array<{
+    player_id: string;
+    full_name: string;
+    position: string | null;
+    gsis_id: string | null;
+  }>;
+  const byGsis = new Map<string, string>();
+  const byName = new Map<string, string>();
+  for (const p of players) {
+    if (p.gsis_id) byGsis.set(p.gsis_id, p.player_id);
+    byName.set(nameKey(p.full_name, p.position), p.player_id);
+  }
+
+  const stmt = db.prepare(
+    `INSERT INTO player_season_teams (season, player_id, team) VALUES (?, ?, ?)
+     ON CONFLICT(season, player_id) DO UPDATE SET team = excluded.team`
+  );
+  let stored = 0;
+  for (const r of rows) {
+    const playerId = byGsis.get(r.gsisId) ?? byName.get(nameKey(r.name, r.position));
+    if (!playerId) continue; // an NFL player this league never touched
+    stmt.run(season, playerId, r.team);
+    stored++;
+  }
+  logSync('season-teams', `season=${season} players=${stored} of ${rows.length}`);
+  return stored;
 }
 
 export function upsertProjections(
@@ -355,6 +420,17 @@ export async function syncLeague(leagueId: string, full = false): Promise<string
       upsertSeasonStats(league.season, stats, dump);
     } catch {
       // stats endpoint unavailable — lifetime leaders fall back to rostered data
+    }
+  }
+
+  // Historical NFL teams for a finished season. Sleeper only reports a
+  // player's *current* team, so past seasons would show today's team codes.
+  // The season in progress keeps Sleeper's live data (nflverse lags).
+  if (league.season !== state.season) {
+    try {
+      await syncSeasonTeams(league.season, full);
+    } catch {
+      // nflverse unavailable — fall back to Sleeper's current teams
     }
   }
 

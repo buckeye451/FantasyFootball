@@ -127,15 +127,29 @@ export function getMatchups(leagueId: string): MatchupRow[] {
   }));
 }
 
-export function getPlayerMeta(): Map<string, PlayerMeta> {
-  const rows = getDb().prepare('SELECT * FROM players').all() as Array<Record<string, unknown>>;
+/**
+ * Player metadata keyed by Sleeper id. Pass a season to show the team each
+ * player actually played for that year (from nflverse) instead of Sleeper's
+ * current-team-only value; players with no historical row keep Sleeper's.
+ */
+export function getPlayerMeta(season?: string): Map<string, PlayerMeta> {
+  const db = getDb();
+  const rows = db.prepare('SELECT * FROM players').all() as Array<Record<string, unknown>>;
+  const historical = new Map<string, string>();
+  if (season) {
+    const teamRows = db
+      .prepare('SELECT player_id, team FROM player_season_teams WHERE season = ?')
+      .all(season) as Array<{ player_id: string; team: string }>;
+    for (const t of teamRows) historical.set(t.player_id, t.team);
+  }
   const map = new Map<string, PlayerMeta>();
   for (const r of rows) {
-    map.set(r.player_id as string, {
-      playerId: r.player_id as string,
+    const id = r.player_id as string;
+    map.set(id, {
+      playerId: id,
       name: r.full_name as string,
       position: (r.position as string) ?? 'UNKNOWN',
-      team: (r.team as string) ?? 'FA',
+      team: historical.get(id) ?? (r.team as string) ?? 'FA',
     });
   }
   return map;
@@ -296,7 +310,7 @@ export interface PlayerAgg {
 /** Season totals for every player any team rostered, grouped by position. */
 export function topSeasonPlayersByPosition(leagueId: string, topN = 5): Map<string, PlayerAgg[]> {
   const matchups = getMatchups(leagueId);
-  const meta = getPlayerMeta();
+  const meta = getPlayerMeta(getLeagueInfo(leagueId)?.season);
   const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
 
   const agg = new Map<string, PlayerAgg>();
@@ -354,7 +368,7 @@ export function playersOfWeek(
   week: number
 ): { byPosition: Map<string, WeeklyStar>; mvp: WeeklyStar | null } {
   const matchups = getMatchups(leagueId).filter((m) => m.week === week);
-  const meta = getPlayerMeta();
+  const meta = getPlayerMeta(getLeagueInfo(leagueId)?.season);
   const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
 
   const byPosition = new Map<string, WeeklyStar>();
@@ -401,7 +415,7 @@ export function teamWeekDetail(leagueId: string, rosterId: number, week: number)
   const mine = weekRows.find((m) => m.rosterId === rosterId);
   if (!mine) return null;
   const opp = opponentOf(mine, weekRows);
-  const meta = getPlayerMeta();
+  const meta = getPlayerMeta(league.season);
 
   const slots = startingSlots(league.rosterPositions);
   const starters = slots.map((slot, i) => {
@@ -456,7 +470,7 @@ export function teamSeason(leagueId: string, rosterId: number): TeamSeason | nul
   if (!team) return null;
 
   const matchups = getMatchups(leagueId);
-  const meta = getPlayerMeta();
+  const meta = getPlayerMeta(league.season);
   const weeks: WeekResult[] = [];
   for (const week of getWeeks(matchups)) {
     const weekRows = matchups.filter((m) => m.week === week);
@@ -1015,8 +1029,14 @@ export function bestSeasonsByPosition(topN = 5): Map<string, SeasonLeader[]> {
 
   const rows = getDb()
     .prepare(
-      `SELECT s.season, s.player_id, s.position, s.${col} AS pts, p.full_name, p.team
-       FROM player_season_stats s LEFT JOIN players p ON p.player_id = s.player_id
+      // Prefer the team the player actually played for that season; fall back
+      // to Sleeper's current team when we have no historical row.
+      `SELECT s.season, s.player_id, s.position, s.${col} AS pts, p.full_name,
+              COALESCE(t.team, p.team) AS team
+       FROM player_season_stats s
+       LEFT JOIN players p ON p.player_id = s.player_id
+       LEFT JOIN player_season_teams t
+              ON t.player_id = s.player_id AND t.season = s.season
        WHERE s.${col} IS NOT NULL`
     )
     .all() as Array<Record<string, unknown>>;
@@ -1402,7 +1422,7 @@ export function draftBoard(leagueId: string): DraftBoard | null {
   const season = info?.season ?? '';
   const fmt = scoringFormat(leagueId);
   const col = fmt === 'ppr' ? 'pts_ppr' : fmt === 'half_ppr' ? 'pts_half' : 'pts_std';
-  const meta = getPlayerMeta();
+  const meta = getPlayerMeta(season);
   const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
 
   // Season totals + positional finish, from league-wide season stats.
