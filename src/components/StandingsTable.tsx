@@ -4,6 +4,20 @@ import { useState } from 'react';
 import Link from 'next/link';
 import type { Standing } from '@/lib/types';
 
+/** Manager %: green above 92, orange 89–92, red below 89. */
+function managerClass(v: number): string {
+  if (v > 92) return 'val-good';
+  if (v >= 89) return 'val-warn';
+  return 'val-bad';
+}
+
+/** Performance %: green above 100, orange 95–100, red below 95. */
+function performanceClass(v: number): string {
+  if (v > 100) return 'val-good';
+  if (v >= 95) return 'val-warn';
+  return 'val-bad';
+}
+
 function Movement({ delta }: { delta: number }) {
   if (delta > 0) return <span className="up">▲ {delta}</span>;
   if (delta < 0) return <span className="down">▼ {Math.abs(delta)}</span>;
@@ -138,7 +152,11 @@ export function StandingsTable({
                   {s.wins}-{s.losses}
                   {s.ties ? `-${s.ties}` : ''}
                 </td>
-                <td className="num">{s.managerPerformance.toFixed(1)}%</td>
+                <td className="num">
+                  <span className={managerClass(s.managerPerformance)}>
+                    {s.managerPerformance.toFixed(1)}%
+                  </span>
+                </td>
                 <td className="num">{s.pointsFor.toFixed(1)}</td>
                 <td className="num">{s.pointsAgainst.toFixed(1)}</td>
                 <td className="num">
@@ -148,7 +166,13 @@ export function StandingsTable({
                   </span>
                 </td>
                 <td className="num">
-                  {s.performance == null ? '—' : `${s.performance.toFixed(1)}%`}
+                  {s.performance == null ? (
+                    '—'
+                  ) : (
+                    <span className={performanceClass(s.performance)}>
+                      {s.performance.toFixed(1)}%
+                    </span>
+                  )}
                 </td>
                 <td className="num">{s.avgPoints.toFixed(1)}</td>
                 <td className="num">{s.highScore.toFixed(1)}</td>

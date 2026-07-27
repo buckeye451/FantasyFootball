@@ -1555,3 +1555,26 @@ tr.champ-row td {
   display: inline;
   margin-top: 0;
 }
+
+/* ---- Threshold highlights (standings Mgr % / Perf %) ---------------------- */
+.val-good,
+.val-warn,
+.val-bad {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.val-good {
+  color: #6ff0a4;
+  background: rgba(72, 209, 122, 0.16);
+}
+.val-warn {
+  color: #ffb877;
+  background: rgba(245, 160, 78, 0.16);
+}
+.val-bad {
+  color: #ff8f8f;
+  background: rgba(255, 107, 107, 0.16);
+}
