@@ -10,6 +10,7 @@ import { POSITION_ORDER } from '@/components/PlayerCards';
 import { LifetimeStandingsTable } from '@/components/LifetimeStandingsTable';
 import { HeadToHead } from '@/components/HeadToHead';
 import { DraftRankingsTable } from '@/components/DraftRankingsTable';
+import { NflTeam } from '@/components/NflTeam';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,8 +101,7 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
                     <span className="pos-name">
                       {l.name}{' '}
                       <span className="pos-team">
-                        {l.team ? `${l.team} · ` : ''}
-                        {l.season} · {l.manager ?? 'Free agent'}
+                        <NflTeam code={l.team} /> {l.season} · {l.manager ?? 'Free agent'}
                       </span>
                     </span>
                     <span className="pos-pts">{l.points.toFixed(1)}</span>

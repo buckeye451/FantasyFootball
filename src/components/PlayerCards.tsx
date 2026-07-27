@@ -1,4 +1,5 @@
 import type { PlayerAgg, WeeklyStar } from '@/lib/stats';
+import { NflTeam } from '@/components/NflTeam';
 
 export const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 
@@ -16,7 +17,7 @@ export function TopSeasonPlayers({ byPosition }: { byPosition: Map<string, Playe
                 <span className="pos-name">
                   {a.player.name}{' '}
                   <span className="pos-team">
-                    {a.player.team} · {a.managers.join(', ')}
+                    <NflTeam code={a.player.team} /> {a.managers.join(', ')}
                   </span>
                 </span>
                 <span className="pos-pts">{a.totalPoints.toFixed(1)}</span>
@@ -51,7 +52,7 @@ export function PlayersOfWeek({
                 <span className="pos-name">
                   {star.player.name}{' '}
                   <span className="pos-team">
-                    {star.player.team} · {star.manager}
+                    <NflTeam code={star.player.team} /> {star.manager}
                     {star.started ? '' : ' (on the bench!)'}
                   </span>
                 </span>

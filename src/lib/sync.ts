@@ -3,6 +3,7 @@ import path from 'node:path';
 import { getDb, DB_PATH } from './db';
 import { sleeper } from './sleeper';
 import { seasonTeams } from './nflverse';
+import { canonicalTeam } from './nflTeams';
 import type {
   SleeperBracketMatch,
   SleeperDraftPick,
@@ -184,7 +185,9 @@ export async function syncSeasonTeams(season: string, full = false): Promise<num
   for (const r of rows) {
     const playerId = byGsis.get(r.gsisId) ?? byName.get(nameKey(r.name, r.position));
     if (!playerId) continue; // an NFL player this league never touched
-    stmt.run(season, playerId, r.team);
+    // nflverse writes LA for the Rams where Sleeper writes LAR — store the
+    // code the rest of the app uses.
+    stmt.run(season, playerId, canonicalTeam(r.team) ?? r.team);
     stored++;
   }
   logSync('season-teams', `season=${season} players=${stored} of ${rows.length}`);

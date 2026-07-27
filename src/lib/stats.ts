@@ -1252,6 +1252,7 @@ export interface DraftPick {
   highWeek: number | null; // most points in a single week
   lowWeek: number | null; // fewest points in a single week
   vsReplacement: number | null; // season points − positional replacement level
+  team: string | null; // NFL team that season
 }
 
 export interface DraftMover {
@@ -1489,6 +1490,7 @@ export function draftBoard(leagueId: string): DraftBoard | null {
       highWeek: high.has(playerId) ? round2(high.get(playerId)!) : null,
       lowWeek: low.has(playerId) ? round2(low.get(playerId)!) : null,
       vsReplacement: base == null ? null : round2((seasonPts.get(playerId) ?? 0) - base),
+      team: pm?.team ?? null,
     };
   });
 

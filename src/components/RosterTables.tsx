@@ -1,5 +1,6 @@
 import type { TeamWeekDetail } from '@/lib/stats';
 import type { PlayerMeta } from '@/lib/types';
+import { NflTeam } from '@/components/NflTeam';
 
 function PlayerCell({ meta, playerId }: { meta: Map<string, PlayerMeta>; playerId: string | null }) {
   if (!playerId) return <span className="sub">— empty —</span>;
@@ -9,7 +10,7 @@ function PlayerCell({ meta, playerId }: { meta: Map<string, PlayerMeta>; playerI
     <>
       {p.name}{' '}
       <span className="pos-team">
-        {p.position} · {p.team}
+        {p.position} <NflTeam code={p.team} />
       </span>
     </>
   );

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { DraftBoard, DraftPick } from '@/lib/stats';
 import { DraftRankingsTable } from '@/components/DraftRankingsTable';
+import { NflTeam } from '@/components/NflTeam';
 
 function num(n: number | null): string {
   return n == null ? '—' : n.toFixed(1);
@@ -79,7 +80,10 @@ function PickRow({
           <span className="draft-player">
             <span className="draft-name">{p.name}</span>{' '}
             <span className={`draft-pos draft-pos-${p.position}`}>{p.position}</span>
-            {showManager && <span className="draft-mgr">{p.manager}</span>}
+            <span className="draft-sub">
+              <NflTeam code={p.team} />
+              {showManager && <span className="draft-mgr">{p.manager}</span>}
+            </span>
           </span>
         </div>
       </td>
