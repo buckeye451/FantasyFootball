@@ -168,6 +168,13 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
   const meta = getPlayerMeta();
   const regWeeks = regularSeasonWeeks(leagueId, matchups).filter((w) => w <= week);
 
+  // Projections per week, loaded once (used for season Performance %).
+  const fmt = scoringFormat(leagueId);
+  const projByWeek = new Map<number, Map<string, Proj>>();
+  if (league) {
+    for (const w of regWeeks) projByWeek.set(w, weekProjections(league.season, w));
+  }
+
   const build = (throughWeeks: number[]): Array<Omit<Standing, 'rank' | 'movement'>> =>
     teams.map((team) => {
       let wins = 0,
@@ -176,6 +183,10 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
         pf = 0,
         pa = 0,
         optimalSum = 0;
+      // Points and projections are accumulated only for weeks that actually
+      // have projection data, so the ratio compares like with like.
+      let projSum = 0,
+        projPf = 0;
       let high = -Infinity,
         low = Infinity;
       for (const w of throughWeeks) {
@@ -186,6 +197,12 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
         pf += mine.points;
         high = Math.max(high, mine.points);
         low = Math.min(low, mine.points);
+        const wp = projByWeek.get(w);
+        const projected = wp ? projectedTotal(mine.starters, wp, fmt) : null;
+        if (projected != null && projected > 0) {
+          projSum += projected;
+          projPf += mine.points;
+        }
         if (league) {
           optimalSum += optimalLineup(
             league.rosterPositions,
@@ -215,6 +232,8 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
         // Season-cumulative manager performance: points scored ÷ best-possible
         // lineup points, through these weeks (naturally ≤ 100%).
         managerPerformance: optimalSum > 0 ? Math.min(100, round2((pf / optimalSum) * 100)) : 100,
+        // Season performance: points scored ÷ points projected.
+        performance: projSum > 0 ? round2((projPf / projSum) * 100) : null,
       };
     });
 

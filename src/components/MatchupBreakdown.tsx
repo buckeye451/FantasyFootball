@@ -35,9 +35,12 @@ function TeamRow({ t, season, winner }: { t: TeamWeekStat; season: string; winne
 export function MatchupBreakdownList({
   breakdowns,
   season,
+  compact,
 }: {
   breakdowns: MatchupBreakdown[];
   season: string;
+  /** Always-short headers and tighter spacing, for the dashboard's week view. */
+  compact?: boolean;
 }) {
   if (breakdowns.length === 0) {
     return <p className="card-note">No matchup data for this week.</p>;
@@ -50,26 +53,50 @@ export function MatchupBreakdownList({
         return (
           <div className="card matchup-card" key={b.matchupId ?? `solo-${i}`}>
             <div className="table-wrap">
-              <table className="breakdown-table">
+              <table className={`breakdown-table${compact ? ' breakdown-compact' : ''}`}>
                 <thead>
                   <tr>
                     <th>Team</th>
                     <th className="num">Score</th>
                     <th className="num" title="Percent of the other teams this score would beat">
-                      <span className="th-full">Win % vs League</span>
-                      <span className="th-short">Win %</span>
+                      {compact ? (
+                        'ROL %'
+                      ) : (
+                        <>
+                          <span className="th-full">Win % vs League</span>
+                          <span className="th-short">Win %</span>
+                        </>
+                      )}
                     </th>
                     <th className="num" title="Score ÷ projected points">
-                      <span className="th-full">Performance %</span>
-                      <span className="th-short">Perf %</span>
+                      {compact ? (
+                        'Perf %'
+                      ) : (
+                        <>
+                          <span className="th-full">Performance %</span>
+                          <span className="th-short">Perf %</span>
+                        </>
+                      )}
                     </th>
                     <th className="num" title="Score ÷ best-possible lineup (max 100%)">
-                      <span className="th-full">Manager Score</span>
-                      <span className="th-short">Mgr %</span>
+                      {compact ? (
+                        'Manager %'
+                      ) : (
+                        <>
+                          <span className="th-full">Manager Score</span>
+                          <span className="th-short">Mgr %</span>
+                        </>
+                      )}
                     </th>
                     <th className="center" title="Would the optimal lineup have won this matchup?">
-                      <span className="th-full">Best Lineup Wins?</span>
-                      <span className="th-short">Best LU?</span>
+                      {compact ? (
+                        'BLW?'
+                      ) : (
+                        <>
+                          <span className="th-full">Best Lineup Wins?</span>
+                          <span className="th-short">Best LU?</span>
+                        </>
+                      )}
                     </th>
                   </tr>
                 </thead>

@@ -10,7 +10,18 @@ function Movement({ delta }: { delta: number }) {
   return <span className="flat">–</span>;
 }
 
-type SortKey = 'rank' | 'team' | 'record' | 'mgr' | 'pf' | 'pa' | 'diff' | 'avg' | 'high' | 'low';
+type SortKey =
+  | 'rank'
+  | 'team'
+  | 'record'
+  | 'mgr'
+  | 'pf'
+  | 'pa'
+  | 'diff'
+  | 'perf'
+  | 'avg'
+  | 'high'
+  | 'low';
 
 const ACCESSORS: Record<SortKey, (s: Standing) => number | string> = {
   rank: (s) => s.rank,
@@ -21,6 +32,7 @@ const ACCESSORS: Record<SortKey, (s: Standing) => number | string> = {
   pf: (s) => s.pointsFor,
   pa: (s) => s.pointsAgainst,
   diff: (s) => s.pointsFor - s.pointsAgainst,
+  perf: (s) => s.performance ?? -1,
   avg: (s) => s.avgPoints,
   high: (s) => s.highScore,
   low: (s) => s.lowScore,
@@ -35,6 +47,7 @@ const DEFAULT_DIR: Record<SortKey, 'asc' | 'desc'> = {
   pf: 'desc',
   pa: 'desc',
   diff: 'desc',
+  perf: 'desc',
   avg: 'desc',
   high: 'desc',
   low: 'desc',
@@ -98,6 +111,10 @@ export function StandingsTable({
             {th('pf', 'PF', { num: true })}
             {th('pa', 'PA', { num: true })}
             {th('diff', '+/−', { num: true })}
+            {th('perf', 'Perf %', {
+              num: true,
+              title: 'Performance: points scored ÷ points projected',
+            })}
             {th('avg', 'Avg', { num: true })}
             {th('high', 'High', { num: true })}
             {th('low', 'Low', { num: true })}
@@ -129,6 +146,9 @@ export function StandingsTable({
                     {diff > 0 ? '+' : ''}
                     {diff.toFixed(1)}
                   </span>
+                </td>
+                <td className="num">
+                  {s.performance == null ? '—' : `${s.performance.toFixed(1)}%`}
                 </td>
                 <td className="num">{s.avgPoints.toFixed(1)}</td>
                 <td className="num">{s.highScore.toFixed(1)}</td>

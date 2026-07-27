@@ -13,6 +13,7 @@ import {
   weeklyScoreSeries,
 } from '@/lib/stats';
 import { LeagueChartsBoard } from '@/components/FocusCharts';
+import { MatchupBreakdownList } from '@/components/MatchupBreakdown';
 import { PlayersOfWeek, TopSeasonPlayers } from '@/components/PlayerCards';
 import { StandingsTable } from '@/components/StandingsTable';
 import { WeekSelect } from '@/components/WeekSelect';
@@ -80,7 +81,8 @@ export default function DashboardPage({
   const pow = playersOfWeek(leagueId, selectedWeek);
 
   // Single-week leaders for the stat tiles.
-  const weekTeams = weekBreakdown(leagueId, selectedWeek).flatMap((m) => m.teams);
+  const weekMatchups = weekBreakdown(leagueId, selectedWeek);
+  const weekTeams = weekMatchups.flatMap((m) => m.teams);
   const highestScoring = weekTeams.reduce<(typeof weekTeams)[number] | null>(
     (best, t) => (best == null || t.score > best.score ? t : best),
     null
@@ -149,6 +151,16 @@ export default function DashboardPage({
           Regular season through week {selectedWeek}. Arrows show movement since the prior week.
         </p>
         <StandingsTable standings={standings} season={season} champion={championOf(season)} />
+      </section>
+
+      <section>
+        <h2 className="card-title">Week {selectedWeek} scores</h2>
+        <p className="card-note">
+          Every matchup that week. ROL % = share of the rest of the league this score beats · Perf %
+          = score ÷ projected · Manager % = score ÷ best-possible lineup · BLW? = would the optimal
+          lineup have won.
+        </p>
+        <MatchupBreakdownList breakdowns={weekMatchups} season={season} compact />
       </section>
 
       <LeagueChartsBoard teams={teams} scoreData={scoreData} rankData={rankData} />

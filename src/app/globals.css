@@ -1489,3 +1489,37 @@ tr.champ-row td {
     padding: 6px 4px;
   }
 }
+
+/* Compact matchup breakdown (dashboard's week view): short fixed headers and
+   tighter cells so all six columns fit a phone without scrolling. */
+.breakdown-compact {
+  font-size: 12.5px;
+}
+.breakdown-compact th,
+.breakdown-compact td {
+  padding: 6px 4px;
+  white-space: nowrap;
+}
+.breakdown-compact th:first-child,
+.breakdown-compact td:first-child {
+  padding-left: 6px;
+}
+.breakdown-compact th {
+  font-size: 10px;
+}
+.breakdown-compact .team-cell {
+  white-space: normal;
+  line-height: 1.25;
+}
+@media (max-width: 640px) {
+  .breakdown-compact {
+    font-size: 12px;
+  }
+  .breakdown-compact th,
+  .breakdown-compact td {
+    padding: 6px 3px;
+  }
+  .breakdown-compact th {
+    font-size: 9.5px;
+  }
+}

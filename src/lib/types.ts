@@ -145,6 +145,7 @@ export interface Standing {
   highScore: number;
   lowScore: number;
   managerPerformance: number; // season points ÷ best-possible lineup points, %
+  performance: number | null; // season points ÷ season projected points, % (null = no projections)
   rank: number;
   movement: number; // vs. previous week's rank; positive = climbed
 }
