@@ -273,25 +273,29 @@ export function LeagueChartsBoard({
 
   return (
     <>
-      <div className="chip-row" role="group" aria-label="Highlight teams">
-        {teams.map((t) => {
-          const slot = selection[t.slug];
-          const selected = slot !== undefined;
-          return (
-            <button
-              key={t.slug}
-              type="button"
-              className={`chip${selected ? ' selected' : ''}`}
-              style={selected ? ({ '--chip-color': SLOT_COLORS[slot] } as React.CSSProperties) : undefined}
-              aria-pressed={selected}
-              onClick={() => toggle(t.slug)}
-            >
-              <span className="chip-dot" />
-              {t.name}
-            </button>
-          );
-        })}
-        <span className="chip-hint">highlight up to {MAX_SELECTED} teams</span>
+      <div className="chip-block">
+        <h2 className="card-title">Highlight up to {MAX_SELECTED} teams</h2>
+        <div className="chip-row" role="group" aria-label="Highlight teams">
+          {teams.map((t) => {
+            const slot = selection[t.slug];
+            const selected = slot !== undefined;
+            return (
+              <button
+                key={t.slug}
+                type="button"
+                className={`chip${selected ? ' selected' : ''}`}
+                style={
+                  selected ? ({ '--chip-color': SLOT_COLORS[slot] } as React.CSSProperties) : undefined
+                }
+                aria-pressed={selected}
+                onClick={() => toggle(t.slug)}
+              >
+                <span className="chip-dot" />
+                {t.name}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <section className="card">

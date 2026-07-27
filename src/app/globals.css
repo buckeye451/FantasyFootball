@@ -791,11 +791,13 @@ tr.benched-row td {
   background: var(--chip-color, var(--baseline));
 }
 
-.chip-hint {
-  color: var(--muted);
-  font-size: 12px;
-  align-self: center;
-  margin-left: 4px;
+/* Team highlight picker: titled block, set apart from the section above it. */
+.chip-block {
+  margin-top: 30px;
+}
+
+.chip-block .card-title {
+  margin-bottom: 10px;
 }
 
 /* ---------- chart card extras ---------- */
@@ -1179,8 +1181,8 @@ tr.winner-row .team-cell {
     margin-bottom: 12px;
   }
 
-  .chip-hint {
-    font-size: 11px;
+  .chip-block {
+    margin-top: 24px;
   }
 
   .chart-box {
