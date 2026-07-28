@@ -1808,3 +1808,8 @@ tr.champ-row td {
     font-size: 14px;
   }
 }
+
+/* Playoff cutoff line in the standings (under 6th place) */
+tr.playoff-cut td {
+  border-bottom: 2px solid var(--critical);
+}

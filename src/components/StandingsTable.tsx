@@ -5,6 +5,9 @@ import Link from 'next/link';
 import type { Standing } from '@/lib/types';
 import { managerClass, performanceClass } from '@/lib/thresholds';
 
+/** Teams that make the playoffs — the red line sits under this place. */
+const PLAYOFF_SPOTS = 6;
+
 function Movement({ delta }: { delta: number }) {
   if (delta > 0) return <span className="up">▲ {delta}</span>;
   if (delta < 0) return <span className="down">▼ {Math.abs(delta)}</span>;
@@ -124,8 +127,14 @@ export function StandingsTable({
           {sorted.map((s) => {
             const diff = Math.round((s.pointsFor - s.pointsAgainst) * 100) / 100;
             const isChamp = champKey != null && s.team.displayName.toLowerCase() === champKey;
+            // Playoff cutoff: red rule under 6th place. Tied to the rank, not
+            // the row position, so it still marks the right team when the
+            // table is sorted by another column.
+            const cls = [isChamp ? 'champ-row' : '', s.rank === PLAYOFF_SPOTS ? 'playoff-cut' : '']
+              .filter(Boolean)
+              .join(' ');
             return (
-              <tr key={s.team.rosterId} className={isChamp ? 'champ-row' : undefined}>
+              <tr key={s.team.rosterId} className={cls || undefined}>
                 <td className="num">{s.rank}</td>
                 <td>
                   <Movement delta={s.movement} />
