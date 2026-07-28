@@ -110,8 +110,8 @@ export default function TeamPage({
                   Manager %
                 </th>
                 <th className="num">Optimal</th>
-                <th className="center" title="Would the best-possible lineup have won this matchup?">
-                  Best lineup wins?
+                <th className="center" title="Best lineup wins? Would the best-possible lineup have won this matchup?">
+                  BLW?
                 </th>
                 <th
                   className="num"
