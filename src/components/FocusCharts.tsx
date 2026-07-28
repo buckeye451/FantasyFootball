@@ -39,14 +39,14 @@ const PALETTES: Record<Theme, Palette> = {
     slots: ['#3987e5', '#008300', '#d55181', '#c98500'],
   },
   light: {
-    ink: '#14121c',
-    ink2: '#3d3950',
-    muted: '#6a6480',
-    grid: '#e4e1ec',
-    baseline: '#cdc8dc',
-    surface2: '#ffffff',
-    context: '#c9c4d6',
-    slots: ['#2f6fd0', '#12803a', '#c2416f', '#a97300'],
+    ink: '#16160f',
+    ink2: '#3b3930',
+    muted: '#6d6756',
+    grid: '#ddd4c0',
+    baseline: '#c8bea7',
+    surface2: '#faf7ef',
+    context: '#cec5b1',
+    slots: ['#1e6b42', '#2f6fd0', '#b23a6b', '#a9700d'],
   },
 };
 
