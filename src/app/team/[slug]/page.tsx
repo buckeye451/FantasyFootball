@@ -110,6 +110,9 @@ export default function TeamPage({
                   Manager %
                 </th>
                 <th className="num">Optimal</th>
+                <th className="center" title="Would the best-possible lineup have won this matchup?">
+                  Best lineup wins?
+                </th>
                 <th
                   className="num"
                   title="Percent of the other teams the best-possible lineup would have beaten"
@@ -143,6 +146,15 @@ export default function TeamPage({
                     <span className={managerClass(w.managerPct)}>{w.managerPct.toFixed(1)}%</span>
                   </td>
                   <td className="num">{w.optimalPoints.toFixed(2)}</td>
+                  <td className="center">
+                    {w.bestLineupWins === null ? (
+                      <span className="flat">–</span>
+                    ) : w.bestLineupWins === 'yes' ? (
+                      <span className="up">Yes</span>
+                    ) : (
+                      <span className="down">No</span>
+                    )}
+                  </td>
                   <td className="num">
                     <span className={winPctClass(w.optimalWinPctVsLeague)}>
                       {w.optimalWinPctVsLeague.toFixed(0)}%

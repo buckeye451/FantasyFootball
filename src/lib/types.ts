@@ -170,6 +170,8 @@ export interface WeekResult {
   managerPct: number;
   /** % of the other teams the best-possible lineup would have beaten */
   optimalWinPctVsLeague: number;
+  /** 'yes' = the optimal lineup would have won; 'no' = still a loss; null = already won or no opponent */
+  bestLineupWins: 'yes' | 'no' | null;
 }
 
 export interface LineupSlot {

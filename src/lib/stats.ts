@@ -503,6 +503,12 @@ export function teamSeason(leagueId: string, rosterId: number): TeamSeason | nul
           ? Math.min(100, round2((mine.points / optimal.optimalTotal) * 100))
           : 100,
       optimalWinPctVsLeague: pctBeating(optimal.optimalTotal),
+      bestLineupWins:
+        opp == null || mine.points > opp.points
+          ? null // no opponent, or the week was already won
+          : optimal.optimalTotal > opp.points
+            ? 'yes'
+            : 'no',
     });
   }
 
