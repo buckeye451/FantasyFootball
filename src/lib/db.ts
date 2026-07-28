@@ -7,7 +7,7 @@ export const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', '
 // Bump when the schema changes in a way that needs a rebuild. All data here is
 // re-fetchable from Sleeper, so migrating just drops the re-syncable tables and
 // lets the next sync repopulate them.
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS league (
@@ -60,7 +60,9 @@ CREATE TABLE IF NOT EXISTS players (
   team TEXT,
   fantasy_positions TEXT,
   -- NFL GSIS id, used to join Sleeper players to nflverse historical data.
-  gsis_id TEXT
+  gsis_id TEXT,
+  -- ESPN athlete id, used to build headshot URLs.
+  espn_id TEXT
 );
 -- The team a player actually played for in a past season (from nflverse).
 -- Sleeper only reports a player's current team, which is wrong for old seasons.

@@ -152,6 +152,7 @@ export function getPlayerMeta(season?: string): Map<string, PlayerMeta> {
       name: r.full_name as string,
       position: (r.position as string) ?? 'UNKNOWN',
       team: historical.get(id) ?? (r.team as string) ?? 'FA',
+      espnId: (r.espn_id as string) ?? null,
     });
   }
   return map;

@@ -1,5 +1,6 @@
 import type { PlayerAgg, WeeklyStar } from '@/lib/stats';
 import { NflTeam } from '@/components/NflTeam';
+import { PlayerHeadshot } from '@/components/PlayerHeadshot';
 
 export const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 
@@ -49,6 +50,7 @@ export function PlayersOfWeek({
             </h3>
             <ol>
               <li>
+                <PlayerHeadshot key={star.player.playerId} player={star.player} size={42} />
                 <span className="pos-name">
                   {star.player.name}{' '}
                   <span className="pos-team">

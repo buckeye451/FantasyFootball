@@ -75,6 +75,18 @@ export function canonicalTeam(code: string | null | undefined): string | null {
   return TEAM_ALIASES[up] ?? up;
 }
 
+/**
+ * ESPN's abbreviation for a Sleeper team code, lowercased for CDN paths.
+ * They agree on 31 of 32 teams; Washington is the exception.
+ */
+const ESPN_TEAM_OVERRIDES: Record<string, string> = { WAS: 'WSH' };
+
+export function espnTeamAbbr(team: string | null | undefined): string | null {
+  const key = canonicalTeam(team);
+  if (!key || key === 'FA' || !NFL_COLORS[key]) return null;
+  return (ESPN_TEAM_OVERRIDES[key] ?? key).toLowerCase();
+}
+
 function srgb(channel: number): number {
   const c = channel / 255;
   return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;

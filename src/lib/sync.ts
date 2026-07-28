@@ -108,12 +108,12 @@ export function upsertMatchups(leagueId: string, week: number, matchups: Sleeper
 export function upsertPlayers(players: Record<string, SleeperPlayer>, onlyIds?: Set<string>): void {
   const db = getDb();
   const stmt = db.prepare(
-    `INSERT INTO players (player_id, full_name, position, team, fantasy_positions, gsis_id)
-     VALUES (?, ?, ?, ?, ?, ?)
+    `INSERT INTO players (player_id, full_name, position, team, fantasy_positions, gsis_id, espn_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(player_id) DO UPDATE SET
        full_name = excluded.full_name, position = excluded.position,
        team = excluded.team, fantasy_positions = excluded.fantasy_positions,
-       gsis_id = excluded.gsis_id`
+       gsis_id = excluded.gsis_id, espn_id = excluded.espn_id`
   );
   for (const [id, p] of Object.entries(players)) {
     if (onlyIds && !onlyIds.has(id)) continue;
@@ -125,7 +125,9 @@ export function upsertPlayers(players: Record<string, SleeperPlayer>, onlyIds?: 
       p.position ?? null,
       p.team ?? null,
       JSON.stringify(p.fantasy_positions ?? (p.position ? [p.position] : [])),
-      p.gsis_id ?? null
+      p.gsis_id ?? null,
+      // Sleeper returns espn_id as a number for most players.
+      p.espn_id == null ? null : String(p.espn_id)
     );
   }
 }

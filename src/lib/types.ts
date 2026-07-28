@@ -58,6 +58,8 @@ export interface SleeperPlayer {
   fantasy_positions?: string[] | null;
   /** NFL GSIS id — joins Sleeper players to nflverse historical data. */
   gsis_id?: string | null;
+  /** ESPN athlete id — keys ESPN headshots. Sometimes a number, often null. */
+  espn_id?: number | string | null;
 }
 
 // A slot in a playoff bracket match: a resolved roster id, or a pointer to the
@@ -134,6 +136,8 @@ export interface PlayerMeta {
   name: string;
   position: string;
   team: string;
+  /** ESPN athlete id, when Sleeper supplies one. */
+  espnId: string | null;
 }
 
 export interface Standing {
