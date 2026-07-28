@@ -48,9 +48,15 @@ export function PlayerHeadshot({ player, size = 44 }: { player: PlayerMeta; size
   const srcs = candidates(player);
   const [idx, setIdx] = useState(0);
   const src = srcs[idx];
+  // Team logos are already tightly cropped, so they don't get the oversizing
+  // the padded player cutouts need.
+  const isLogo = player.position === 'DEF';
 
   return (
-    <span className="headshot" style={{ width: size, height: size }}>
+    <span
+      className={`headshot${isLogo ? ' headshot-logo' : ''}`}
+      style={{ width: size, height: size }}
+    >
       {src ? (
         <img
           src={src}

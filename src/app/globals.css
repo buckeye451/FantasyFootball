@@ -1610,6 +1610,18 @@ tr.champ-row td {
   display: block;
 }
 
+/* Team logos (DEF) are already tightly cropped — show them whole and centred
+   rather than oversized and bottom-anchored like the player cutouts. */
+.headshot-logo img {
+  width: 100%;
+  height: 100%;
+  bottom: auto;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  object-position: center;
+  padding: 4px;
+}
+
 .headshot-initials {
   font-size: 13px;
   font-weight: 800;
