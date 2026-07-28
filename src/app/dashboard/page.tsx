@@ -154,6 +154,12 @@ export default function DashboardPage({
       </section>
 
       <section>
+        <h2 className="card-title">Players of the week</h2>
+        <p className="card-note">Top fantasy performance at each position in week {selectedWeek}, across all rosters.</p>
+        <PlayersOfWeek byPosition={pow.byPosition} week={selectedWeek} />
+      </section>
+
+      <section>
         <h2 className="card-title">Week {selectedWeek} scores</h2>
         <p className="card-note">
           Every matchup that week. ROL % = share of the rest of the league this score beats · Perf %
@@ -164,12 +170,6 @@ export default function DashboardPage({
       </section>
 
       <LeagueChartsBoard teams={teams} scoreData={scoreData} rankData={rankData} />
-
-      <section>
-        <h2 className="card-title">Players of the week</h2>
-        <p className="card-note">Top fantasy performance at each position in week {selectedWeek}, across all rosters.</p>
-        <PlayersOfWeek byPosition={pow.byPosition} week={selectedWeek} />
-      </section>
 
       <section>
         <h2 className="card-title">Best of the season</h2>
