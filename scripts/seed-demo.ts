@@ -401,6 +401,20 @@ function seedSeason(cfg: SeasonConfig): void {
   ];
   upsertBracket(cfg.leagueId, 'winners', bracket);
 
+  // Consolation bracket for seeds 7–10 — its winner is the "ultimate loser".
+  const c1 = winnerOf(15, seed(7), seed(10));
+  const cl1 = loserOf(15, seed(7), seed(10));
+  const c2 = winnerOf(15, seed(8), seed(9));
+  const cl2 = loserOf(15, seed(8), seed(9));
+  const consolationWinner = winnerOf(16, c1, c2);
+  const consolationRunner = loserOf(16, c1, c2);
+  const consolation: SleeperBracketMatch[] = [
+    { r: 1, m: 1, t1: seed(7), t2: seed(10), w: c1, l: cl1 },
+    { r: 1, m: 2, t1: seed(8), t2: seed(9), w: c2, l: cl2 },
+    { r: 2, m: 3, t1: { w: 1 }, t2: { w: 2 }, w: consolationWinner, l: consolationRunner, p: 1 },
+  ];
+  upsertBracket(cfg.leagueId, 'losers', consolation);
+
   // Season-total stats for the Lifetime page — includes players nobody
   // rostered (mirrors Sleeper's league-wide season stats endpoint).
   const statsDump: Record<string, SleeperPlayer> = {};

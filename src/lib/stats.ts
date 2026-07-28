@@ -777,6 +777,45 @@ export function getBracket(leagueId: string, type: 'winners' | 'losers' = 'winne
   });
 }
 
+export interface Podium {
+  champion: TeamInfo | null;
+  runnerUp: TeamInfo | null;
+  third: TeamInfo | null;
+  /** Winner of the consolation bracket. */
+  ultimateLoser: TeamInfo | null;
+}
+
+/**
+ * Final placements from the stored brackets. Sleeper tags the match that
+ * decides a placement with `p` (1 = championship, 3 = third place), so the
+ * champion and runner-up come from the p=1 match's winner and loser. Falls
+ * back to the last round's only match for brackets with no placement tags.
+ */
+export function podium(leagueId: string): Podium {
+  const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
+  const pick = (rosterId: number | null | undefined) =>
+    rosterId != null ? teams.get(rosterId) ?? null : null;
+
+  const winners = rawBracket(leagueId, 'winners');
+  const losers = rawBracket(leagueId, 'losers');
+
+  const lastRound = winners.length ? Math.max(...winners.map((m) => m.r)) : null;
+  const final =
+    winners.find((m) => m.p === 1) ??
+    (lastRound != null ? winners.filter((m) => m.r === lastRound)[0] ?? null : null);
+  const thirdPlace = winners.find((m) => m.p === 3) ?? null;
+  const consolationFinal =
+    losers.find((m) => m.p === 1) ??
+    (losers.length ? losers.filter((m) => m.r === Math.max(...losers.map((x) => x.r)))[0] : null);
+
+  return {
+    champion: pick(final?.w),
+    runnerUp: pick(final?.l),
+    third: pick(thirdPlace?.w),
+    ultimateLoser: pick(consolationFinal?.w),
+  };
+}
+
 export function playoffRounds(leagueId: string): Array<{ round: number; week: number | null; name: string }> {
   // "Round 1", "Round 2", … for the menu and round pages. The bracket view keeps
   // the descriptive names (Quarterfinals/Semifinals/Championship) on its columns.

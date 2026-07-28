@@ -1750,3 +1750,61 @@ tr.champ-row td {
     margin-left: 6px;
   }
 }
+
+/* ---- Playoff final standings --------------------------------------------- */
+.finish-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.finish-tile {
+  background: var(--surface-2);
+  border: 1px solid var(--baseline);
+  border-radius: 10px;
+  padding: 14px 10px;
+  text-align: center;
+}
+
+.finish-tile.loser {
+  border-style: dashed;
+}
+
+.finish-medal {
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.finish-label {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.finish-name {
+  margin-top: 2px;
+  font-weight: 700;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.finish-name a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .finish-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .finish-medal {
+    font-size: 22px;
+  }
+  .finish-name {
+    font-size: 14px;
+  }
+}
