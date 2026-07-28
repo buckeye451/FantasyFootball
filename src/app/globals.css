@@ -1581,6 +1581,7 @@ tr.champ-row td {
 
 /* ---- Player headshots ----------------------------------------------------- */
 .headshot {
+  position: relative;
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -1594,10 +1595,16 @@ tr.champ-row td {
 }
 
 .headshot img {
-  width: 100%;
-  height: 100%;
-  /* contain, not cover — ESPN cutouts carry their own padding and cover
-     crops the top of the head off. */
+  /* ESPN cutouts carry a lot of their own padding, so at 100% the face ends up
+     tiny inside the circle. Draw the image oversized and anchored to the
+     bottom: the head fills the disc and the extra shoulder width crops at the
+     edges. Still `contain`, so nothing is squashed. */
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 140%;
+  height: 140%;
   object-fit: contain;
   object-position: center bottom;
   display: block;
