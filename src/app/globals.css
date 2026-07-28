@@ -25,6 +25,74 @@
   --critical: #d03b3b;
   --critical-wash: rgba(208, 59, 59, 0.14);
   --accent-wash: rgba(57, 135, 229, 0.12);
+  /* Semantic extras, so light mode is a single block of overrides. */
+  --focus-ring: rgba(57, 135, 229, 0.45);
+  --good-wash: rgba(12, 163, 12, 0.14);
+  --good-wash-soft: rgba(12, 163, 12, 0.08);
+  --good-wash-mid: rgba(12, 163, 12, 0.12);
+  --backdrop: rgba(0, 0, 0, 0.55);
+  --sunken: rgba(0, 0, 0, 0.18);
+  --champ-wash: rgba(246, 201, 69, 0.1);
+  --headshot-bg: rgba(23, 16, 42, 0.9);
+  --pos-qb: #6b8cff;
+  --pos-rb: #f5d34e;
+  --pos-wr: #74e6a8;
+  --pos-te: #8fd3ff;
+  --arrow-up: #48d17a;
+  --arrow-warn: #f5a04e;
+  --arrow-down: #ff6b6b;
+  --val-good-fg: #6ff0a4;
+  --val-good-bg: rgba(72, 209, 122, 0.16);
+  --val-warn-fg: #ffb877;
+  --val-warn-bg: rgba(245, 160, 78, 0.16);
+  --val-bad-fg: #ff8f8f;
+  --val-bad-bg: rgba(255, 107, 107, 0.16);
+}
+
+/* Light theme — same layout, lighter surfaces. Every colour the app uses is a
+   token above, so this block is the whole palette swap. */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --page: #f4f5f8;
+  --surface: #ffffff;
+  --surface-2: #f1eff8;
+  --surface-opaque: #ffffff;
+  --ink: #14121c;
+  --ink-2: #3d3950;
+  --muted: #6a6480;
+  --grid: #e4e1ec;
+  --baseline: #cdc8dc;
+  --border: rgba(20, 18, 28, 0.12);
+  --series-1: #2f6fd0;
+  --series-2: #12803a;
+  --series-3: #c2416f;
+  --series-4: #a97300;
+  --context-line: #c9c4d6;
+  --good: #12803a;
+  --critical: #c0342f;
+  --critical-wash: rgba(192, 52, 47, 0.1);
+  --accent-wash: rgba(47, 111, 208, 0.1);
+  --focus-ring: rgba(47, 111, 208, 0.5);
+  --good-wash: rgba(18, 128, 58, 0.12);
+  --good-wash-soft: rgba(18, 128, 58, 0.07);
+  --good-wash-mid: rgba(18, 128, 58, 0.1);
+  --backdrop: rgba(20, 18, 28, 0.4);
+  --sunken: rgba(20, 18, 28, 0.05);
+  --champ-wash: rgba(212, 160, 23, 0.16);
+  --headshot-bg: rgba(226, 222, 238, 0.95);
+  --pos-qb: #2f5bd0;
+  --pos-rb: #9a6b00;
+  --pos-wr: #10794f;
+  --pos-te: #16688f;
+  --arrow-up: #12803a;
+  --arrow-warn: #9a5b00;
+  --arrow-down: #c0342f;
+  --val-good-fg: #0f6b33;
+  --val-good-bg: rgba(18, 128, 58, 0.14);
+  --val-warn-fg: #8a5100;
+  --val-warn-bg: rgba(212, 145, 40, 0.18);
+  --val-bad-fg: #ab2b25;
+  --val-bad-bg: rgba(192, 52, 47, 0.13);
 }
 
 * {
@@ -231,7 +299,7 @@ a {
 .drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--backdrop);
   z-index: 40;
 }
 
@@ -460,7 +528,7 @@ a {
 
 .team-nav a.active {
   background: var(--accent-wash);
-  border-color: rgba(57, 135, 229, 0.45);
+  border-color: var(--focus-ring);
   color: var(--ink);
 }
 
@@ -692,7 +760,7 @@ th.num {
 
 .badge.w {
   color: var(--good);
-  background: rgba(12, 163, 12, 0.14);
+  background: var(--good-wash);
 }
 
 .badge.l {
@@ -915,7 +983,7 @@ details.table-view[open] summary {
 
 .week-pills a.active {
   background: var(--accent-wash);
-  border-color: rgba(57, 135, 229, 0.45);
+  border-color: var(--focus-ring);
   color: var(--ink);
   font-weight: 650;
 }
@@ -968,7 +1036,7 @@ th.center {
 }
 
 tr.winner-row td {
-  background: rgba(12, 163, 12, 0.08);
+  background: var(--good-wash-soft);
 }
 
 tr.winner-row .team-cell {
@@ -1039,7 +1107,7 @@ tr.winner-row .team-cell {
 }
 
 .bracket-team.winner {
-  background: rgba(12, 163, 12, 0.12);
+  background: var(--good-wash-mid);
   font-weight: 700;
 }
 
@@ -1341,7 +1409,7 @@ tr.h2h-row.open td {
 
 tr.h2h-detail-row td {
   padding: 0;
-  background: rgba(0, 0, 0, 0.18);
+  background: var(--sunken);
 }
 
 .h2h-detail {
@@ -1364,7 +1432,7 @@ tr.h2h-detail-row td {
 }
 
 tr.champ-row td {
-  background: rgba(246, 201, 69, 0.10);
+  background: var(--champ-wash);
 }
 
 /* ---- Draft board ---------------------------------------------------------- */
@@ -1400,16 +1468,16 @@ tr.champ-row td {
 }
 /* Position color coding — tags only, everything else keeps its color. */
 .draft-pos-QB {
-  color: #6b8cff;
+  color: var(--pos-qb);
 } /* royal blue */
 .draft-pos-RB {
-  color: #f5d34e;
+  color: var(--pos-rb);
 } /* yellow */
 .draft-pos-WR {
-  color: #74e6a8;
+  color: var(--pos-wr);
 } /* mint green */
 .draft-pos-TE {
-  color: #8fd3ff;
+  color: var(--pos-te);
 } /* light blue */
 .draft-mgr {
   display: block;
@@ -1438,13 +1506,13 @@ tr.champ-row td {
   vertical-align: 1px;
 }
 .draft-arrow.up {
-  color: #48d17a;
+  color: var(--arrow-up);
 } /* green — outperformed draft slot */
 .draft-arrow.warn {
-  color: #f5a04e;
+  color: var(--arrow-warn);
 } /* orange — 1–10 spots below */
 .draft-arrow.down {
-  color: #ff6b6b;
+  color: var(--arrow-down);
 } /* red — 10+ spots below */
 
 /* Compact variant (By Manager) — tighter so Pos Finish / Pos Drafted fit on
@@ -1566,16 +1634,16 @@ tr.champ-row td {
   font-variant-numeric: tabular-nums;
 }
 .val-good {
-  color: #6ff0a4;
-  background: rgba(72, 209, 122, 0.16);
+  color: var(--val-good-fg);
+  background: var(--val-good-bg);
 }
 .val-warn {
-  color: #ffb877;
-  background: rgba(245, 160, 78, 0.16);
+  color: var(--val-warn-fg);
+  background: var(--val-warn-bg);
 }
 .val-bad {
-  color: #ff8f8f;
-  background: rgba(255, 107, 107, 0.16);
+  color: var(--val-bad-fg);
+  background: var(--val-bad-bg);
 }
 
 /* ---- Player headshots ----------------------------------------------------- */
@@ -1589,7 +1657,7 @@ tr.champ-row td {
   overflow: hidden;
   /* Sit the transparent ESPN cutout on a solid disc so the opaque Sleeper
      fallback doesn't look boxed-in when it kicks in. */
-  background: linear-gradient(160deg, var(--surface-2), rgba(23, 16, 42, 0.9));
+  background: linear-gradient(160deg, var(--surface-2), var(--headshot-bg));
   border: 1px solid var(--baseline);
 }
 
@@ -1641,5 +1709,43 @@ tr.champ-row td {
 @media (max-width: 640px) {
   .potw .pos-card li {
     gap: 8px;
+  }
+}
+
+/* ---- Light/dark toggle ---------------------------------------------------- */
+.theme-toggle {
+  margin-left: auto;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: var(--muted);
+}
+
+/* The season picker used to claim the free space; the toggle does now. */
+.season-picker {
+  margin-left: 8px;
+}
+
+@media (max-width: 640px) {
+  .theme-toggle {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .season-picker {
+    margin-left: 6px;
   }
 }

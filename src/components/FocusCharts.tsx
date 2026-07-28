@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTheme, type Theme } from '@/components/ThemeToggle';
 import {
   CartesianGrid,
   Line,
@@ -11,18 +12,45 @@ import {
   YAxis,
 } from 'recharts';
 
-// Chart chrome (purple theme — mirrors globals.css surfaces)
-const INK = '#ffffff';
-const INK2 = '#c3c2b7';
-const MUTED = '#a79bc4';
-const GRID = '#40305f';
-const BASELINE = '#55447e';
-const SURFACE_2 = '#241a38'; // opaque tooltip background
-const CONTEXT = '#5b4c78'; // unselected "context" lines
-// First four validated dark categorical slots — assigned in selection order,
-// and an entity keeps its slot for as long as it stays selected.
-const SLOT_COLORS = ['#3987e5', '#008300', '#d55181', '#c98500'];
-const MAX_SELECTED = SLOT_COLORS.length;
+// Chart chrome. Recharts writes these as SVG attributes, which don't resolve
+// CSS variables, so the palette is mirrored here and picked by theme.
+interface Palette {
+  ink: string;
+  ink2: string;
+  muted: string;
+  grid: string;
+  baseline: string;
+  surface2: string; // opaque tooltip background
+  context: string; // unselected "context" lines
+  // First four categorical slots — assigned in selection order, and an entity
+  // keeps its slot for as long as it stays selected.
+  slots: string[];
+}
+
+const PALETTES: Record<Theme, Palette> = {
+  dark: {
+    ink: '#ffffff',
+    ink2: '#c3c2b7',
+    muted: '#a79bc4',
+    grid: '#40305f',
+    baseline: '#55447e',
+    surface2: '#241a38',
+    context: '#5b4c78',
+    slots: ['#3987e5', '#008300', '#d55181', '#c98500'],
+  },
+  light: {
+    ink: '#14121c',
+    ink2: '#3d3950',
+    muted: '#6a6480',
+    grid: '#e4e1ec',
+    baseline: '#cdc8dc',
+    surface2: '#ffffff',
+    context: '#c9c4d6',
+    slots: ['#2f6fd0', '#12803a', '#c2416f', '#a97300'],
+  },
+};
+
+const MAX_SELECTED = 4;
 
 export interface ChartTeam {
   slug: string;
@@ -57,6 +85,7 @@ function ChartTooltip({
   selection,
   sortAsc,
   suffix,
+  pal,
 }: {
   active?: boolean;
   label?: number;
@@ -65,6 +94,7 @@ function ChartTooltip({
   selection: Record<string, number>;
   sortAsc: boolean;
   suffix?: string;
+  pal: Palette;
 }) {
   if (!active || !payload?.length) return null;
   const names = new Map(teams.map((t) => [t.slug, t.name]));
@@ -75,15 +105,15 @@ function ChartTooltip({
   return (
     <div
       style={{
-        background: SURFACE_2,
-        border: `1px solid ${BASELINE}`,
+        background: pal.surface2,
+        border: `1px solid ${pal.baseline}`,
         borderRadius: 8,
         padding: '8px 12px',
         fontSize: 12.5,
         lineHeight: 1.55,
       }}
     >
-      <div style={{ color: MUTED, marginBottom: 4 }}>Week {label}</div>
+      <div style={{ color: pal.muted, marginBottom: 4 }}>Week {label}</div>
       {rows.map((r) => {
         const slot = selection[r.slug];
         const selected = slot !== undefined;
@@ -95,15 +125,15 @@ function ChartTooltip({
                   width: 8,
                   height: 8,
                   borderRadius: '50%',
-                  background: selected ? SLOT_COLORS[slot] : CONTEXT,
+                  background: selected ? pal.slots[slot] : pal.context,
                   display: 'inline-block',
                 }}
               />
-              <span style={{ color: selected ? INK : INK2, fontWeight: selected ? 650 : 400 }}>
+              <span style={{ color: selected ? pal.ink : pal.ink2, fontWeight: selected ? 650 : 400 }}>
                 {names.get(r.slug) ?? r.slug}
               </span>
             </span>
-            <span style={{ fontVariantNumeric: 'tabular-nums', color: selected ? INK : INK2 }}>
+            <span style={{ fontVariantNumeric: 'tabular-nums', color: selected ? pal.ink : pal.ink2 }}>
               {sortAsc ? `#${r.value}` : r.value.toFixed(2)}
               {suffix}
             </span>
@@ -114,11 +144,11 @@ function ChartTooltip({
   );
 }
 
-function endLabel(name: string, lastIndex: number) {
+function endLabel(name: string, lastIndex: number, pal: Palette) {
   return function EndLabel(props: { x?: number; y?: number; index?: number }) {
     if (props.index !== lastIndex || props.x == null || props.y == null) return <g />;
     return (
-      <text x={props.x + 8} y={props.y + 4} fontSize={12} fontWeight={650} fill={INK}>
+      <text x={props.x + 8} y={props.y + 4} fontSize={12} fontWeight={650} fill={pal.ink}>
         {name}
       </text>
     );
@@ -146,6 +176,7 @@ function TeamsLineChart({
   );
   const lastIndex = data.length - 1;
   const isMobile = useIsMobile();
+  const p = PALETTES[useTheme()];
   return (
     <div className="chart-box">
       <ResponsiveContainer width="100%" height="100%">
@@ -154,13 +185,13 @@ function TeamsLineChart({
           margin={{ top: 12, right: isMobile ? 58 : 84, bottom: 4, left: 0 }}
           accessibilityLayer
         >
-          <CartesianGrid stroke={GRID} vertical={false} />
+          <CartesianGrid stroke={p.grid} vertical={false} />
           <XAxis
             dataKey="week"
             tickFormatter={(w) => `W${w}`}
-            tick={{ fill: MUTED, fontSize: isMobile ? 11 : 12 }}
+            tick={{ fill: p.muted, fontSize: isMobile ? 11 : 12 }}
             tickLine={false}
-            axisLine={{ stroke: BASELINE }}
+            axisLine={{ stroke: p.baseline }}
             interval={isMobile ? 1 : 0}
           />
           <YAxis
@@ -168,15 +199,15 @@ function TeamsLineChart({
             domain={reversed ? [1, teams.length] : ['auto', 'auto']}
             ticks={reversed ? teams.map((_, i) => i + 1) : undefined}
             allowDecimals={false}
-            tick={{ fill: MUTED, fontSize: isMobile ? 11 : 12 }}
+            tick={{ fill: p.muted, fontSize: isMobile ? 11 : 12 }}
             tickLine={false}
-            axisLine={{ stroke: BASELINE }}
+            axisLine={{ stroke: p.baseline }}
             width={isMobile ? 30 : 36}
             tickFormatter={reversed ? (v) => `#${v}` : undefined}
           />
           <Tooltip
-            cursor={{ stroke: BASELINE }}
-            content={<ChartTooltip teams={teams} selection={selection} sortAsc={!!reversed} />}
+            cursor={{ stroke: p.baseline }}
+            content={<ChartTooltip teams={teams} selection={selection} sortAsc={!!reversed} pal={p} />}
           />
           {ordered.map((t) => {
             const slot = selection[t.slug];
@@ -186,12 +217,12 @@ function TeamsLineChart({
                 key={t.slug}
                 type="monotone"
                 dataKey={t.slug}
-                stroke={selected ? SLOT_COLORS[slot] : CONTEXT}
+                stroke={selected ? p.slots[slot] : p.context}
                 strokeWidth={selected ? 2.5 : 1.5}
                 dot={false}
-                activeDot={{ r: 4, strokeWidth: 2, stroke: SURFACE_2 }}
+                activeDot={{ r: 4, strokeWidth: 2, stroke: p.surface2 }}
                 isAnimationActive={false}
-                label={selected ? endLabel(t.name, lastIndex) : undefined}
+                label={selected ? endLabel(t.name, lastIndex, p) : undefined}
               />
             );
           })}
@@ -271,6 +302,7 @@ export function LeagueChartsBoard({
     });
   }
 
+  const p = PALETTES[useTheme()];
   return (
     <>
       <div className="chip-block">
@@ -285,7 +317,7 @@ export function LeagueChartsBoard({
                 type="button"
                 className={`chip${selected ? ' selected' : ''}`}
                 style={
-                  selected ? ({ '--chip-color': SLOT_COLORS[slot] } as React.CSSProperties) : undefined
+                  selected ? ({ '--chip-color': p.slots[slot] } as React.CSSProperties) : undefined
                 }
                 aria-pressed={selected}
                 onClick={() => toggle(t.slug)}
@@ -324,42 +356,43 @@ export function TeamWeeklyChart({
   teamName: string;
 }) {
   const isMobile = useIsMobile();
+  const p = PALETTES[useTheme()];
   return (
     <>
       <div className="chip-row" aria-hidden>
-        <span className="chip selected" style={{ '--chip-color': SLOT_COLORS[0] } as React.CSSProperties}>
+        <span className="chip selected" style={{ '--chip-color': p.slots[0] } as React.CSSProperties}>
           <span className="chip-dot" />
           {teamName}
         </span>
         <span className="chip">
-          <span className="chip-dot" style={{ background: MUTED }} />
+          <span className="chip-dot" style={{ background: p.muted }} />
           League median
         </span>
       </div>
       <div className="chart-box" style={{ height: 300 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 12, right: 16, bottom: 4, left: 0 }} accessibilityLayer>
-            <CartesianGrid stroke={GRID} vertical={false} />
+            <CartesianGrid stroke={p.grid} vertical={false} />
             <XAxis
               dataKey="week"
               tickFormatter={(w) => `W${w}`}
-              tick={{ fill: MUTED, fontSize: isMobile ? 11 : 12 }}
+              tick={{ fill: p.muted, fontSize: isMobile ? 11 : 12 }}
               tickLine={false}
-              axisLine={{ stroke: BASELINE }}
+              axisLine={{ stroke: p.baseline }}
               interval={isMobile ? 1 : 0}
             />
             <YAxis
               domain={['auto', 'auto']}
-              tick={{ fill: MUTED, fontSize: isMobile ? 11 : 12 }}
+              tick={{ fill: p.muted, fontSize: isMobile ? 11 : 12 }}
               tickLine={false}
-              axisLine={{ stroke: BASELINE }}
+              axisLine={{ stroke: p.baseline }}
               width={isMobile ? 34 : 40}
             />
             <Tooltip
-              cursor={{ stroke: BASELINE }}
+              cursor={{ stroke: p.baseline }}
               contentStyle={{
-                background: SURFACE_2,
-                border: `1px solid ${BASELINE}`,
+                background: p.surface2,
+                border: `1px solid ${p.baseline}`,
                 borderRadius: 8,
                 fontSize: 12.5,
               }}
@@ -372,7 +405,7 @@ export function TeamWeeklyChart({
             <Line
               type="monotone"
               dataKey="median"
-              stroke={MUTED}
+              stroke={p.muted}
               strokeWidth={1.5}
               dot={false}
               isAnimationActive={false}
@@ -380,10 +413,10 @@ export function TeamWeeklyChart({
             <Line
               type="monotone"
               dataKey="points"
-              stroke={SLOT_COLORS[0]}
+              stroke={p.slots[0]}
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 4, strokeWidth: 2, stroke: SURFACE_2 }}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: p.surface2 }}
               isAnimationActive={false}
             />
           </LineChart>

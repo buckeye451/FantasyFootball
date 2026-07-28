@@ -27,7 +27,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // fresh checkout with no database yet — render the shell anyway
   }
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark">
+      <head>
+        {/* Apply the saved theme before first paint, so a light-mode user
+            doesn't get a flash of the dark palette on every navigation. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('bmcf-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body>
         <SiteHeader seasons={seasons} defaultSeason={fallbackSeason} />
         <main>{children}</main>

@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export interface HeaderSeason {
   season: string;
@@ -94,6 +95,7 @@ export function SiteHeader({
           >
             <img src="/hero/logo.svg" alt={active?.name ?? 'BMCFF'} className="brand-logo" />
           </Link>
+          <ThemeToggle />
           {seasons.length > 0 && (
             <label className="season-picker">
               <span className="season-picker-label">Season</span>
