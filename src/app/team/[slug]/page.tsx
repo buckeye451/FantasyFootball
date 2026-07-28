@@ -11,6 +11,7 @@ import {
 import { TeamWeeklyChart } from '@/components/FocusCharts';
 import { LineupAsSet, OptimalLineup } from '@/components/RosterTables';
 import { TeamWeekPicker } from '@/components/TeamWeekPicker';
+import { managerClass, winPctClass } from '@/lib/thresholds';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,7 +103,19 @@ export default function TeamPage({
                 <th></th>
                 <th className="num">Score</th>
                 <th className="num">Opp</th>
+                <th className="num" title="Percent of the other teams this score would have beaten">
+                  % vs ROL
+                </th>
+                <th className="num" title="Score ÷ best-possible lineup (max 100%)">
+                  Manager %
+                </th>
                 <th className="num">Optimal</th>
+                <th
+                  className="num"
+                  title="Percent of the other teams the best-possible lineup would have beaten"
+                >
+                  Optimal ROL %
+                </th>
                 <th className="num">Benched pts</th>
                 <th></th>
               </tr>
@@ -121,7 +134,20 @@ export default function TeamPage({
                   <td>{w.result && <span className={`badge ${w.result.toLowerCase()}`}>{w.result}</span>}</td>
                   <td className="num">{w.points.toFixed(2)}</td>
                   <td className="num">{w.opponentPoints != null ? w.opponentPoints.toFixed(2) : '—'}</td>
+                  <td className="num">
+                    <span className={winPctClass(w.winPctVsLeague)}>
+                      {w.winPctVsLeague.toFixed(0)}%
+                    </span>
+                  </td>
+                  <td className="num">
+                    <span className={managerClass(w.managerPct)}>{w.managerPct.toFixed(1)}%</span>
+                  </td>
                   <td className="num">{w.optimalPoints.toFixed(2)}</td>
+                  <td className="num">
+                    <span className={winPctClass(w.optimalWinPctVsLeague)}>
+                      {w.optimalWinPctVsLeague.toFixed(0)}%
+                    </span>
+                  </td>
                   <td className="num">
                     {w.benchPointsLost > 0 ? (
                       <span className="down">{w.benchPointsLost.toFixed(2)}</span>

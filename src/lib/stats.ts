@@ -482,6 +482,13 @@ export function teamSeason(leagueId: string, rosterId: number): TeamSeason | nul
     const opp = opponentOf(mine, weekRows);
     const oppTeam = opp ? teams.find((t) => t.rosterId === opp.rosterId) ?? null : null;
     const optimal = optimalLineup(league.rosterPositions, mine.starters, mine.playersPoints, meta);
+    // Beat-the-league percentages measure this team against every other team's
+    // actual score that week — the same basis as the week pages' ROL %.
+    const otherScores = weekRows.filter((r) => r.rosterId !== rosterId).map((r) => r.points);
+    const pctBeating = (value: number) =>
+      otherScores.length
+        ? round2((otherScores.filter((s) => value > s).length / otherScores.length) * 100)
+        : 0;
     weeks.push({
       week,
       points: mine.points,
@@ -490,6 +497,12 @@ export function teamSeason(leagueId: string, rosterId: number): TeamSeason | nul
       result: opp ? (mine.points > opp.points ? 'W' : mine.points < opp.points ? 'L' : 'T') : null,
       optimalPoints: optimal.optimalTotal,
       benchPointsLost: optimal.pointsLost,
+      winPctVsLeague: pctBeating(mine.points),
+      managerPct:
+        optimal.optimalTotal > 0
+          ? Math.min(100, round2((mine.points / optimal.optimalTotal) * 100))
+          : 100,
+      optimalWinPctVsLeague: pctBeating(optimal.optimalTotal),
     });
   }
 

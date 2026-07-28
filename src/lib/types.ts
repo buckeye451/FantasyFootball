@@ -164,6 +164,12 @@ export interface WeekResult {
   result: 'W' | 'L' | 'T' | null;
   optimalPoints: number;
   benchPointsLost: number;
+  /** % of the other teams this score would have beaten that week */
+  winPctVsLeague: number;
+  /** points ÷ best-possible lineup × 100, capped at 100 */
+  managerPct: number;
+  /** % of the other teams the best-possible lineup would have beaten */
+  optimalWinPctVsLeague: number;
 }
 
 export interface LineupSlot {
