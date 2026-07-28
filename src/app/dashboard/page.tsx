@@ -111,9 +111,13 @@ export default function DashboardPage({
       <div className="tile-grid">
         <div className="tile">
           <div className="tile-label">👑 Highest Scoring Team</div>
-          <div className="tile-value">{highestScoring?.team.displayName ?? '—'}</div>
+          <div className="tile-value">
+            {highestScoring ? highestScoring.score.toFixed(1) : '—'}
+          </div>
           <div className="tile-sub">
-            {highestScoring ? `${highestScoring.score.toFixed(1)} pts · week ${selectedWeek}` : ''}
+            {highestScoring
+              ? `${highestScoring.team.displayName} · week ${selectedWeek}`
+              : ''}
           </div>
         </div>
         <div className="tile">

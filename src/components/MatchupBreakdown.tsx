@@ -1,9 +1,6 @@
 import Link from 'next/link';
 import type { MatchupBreakdown, TeamWeekStat } from '@/lib/stats';
-
-function pct(n: number | null): string {
-  return n == null ? '—' : `${n.toFixed(1)}%`;
-}
+import { managerClass, performanceClass, winPctClass } from '@/lib/thresholds';
 
 function BestLineup({ v }: { v: 'yes' | 'no' | null }) {
   if (v === null) return <span className="flat">–</span>;
@@ -18,9 +15,21 @@ function TeamRow({ t, season, winner }: { t: TeamWeekStat; season: string; winne
         {t.result && <span className={`badge ${t.result.toLowerCase()}`}>{t.result}</span>}
       </td>
       <td className="num strong">{t.score.toFixed(2)}</td>
-      <td className="num">{t.winPctVsLeague.toFixed(0)}%</td>
-      <td className="num">{pct(t.performancePct)}</td>
-      <td className="num">{t.managerScorePct.toFixed(1)}%</td>
+      <td className="num">
+        <span className={winPctClass(t.winPctVsLeague)}>{t.winPctVsLeague.toFixed(0)}%</span>
+      </td>
+      <td className="num">
+        {t.performancePct == null ? (
+          '—'
+        ) : (
+          <span className={performanceClass(t.performancePct)}>
+            {t.performancePct.toFixed(1)}%
+          </span>
+        )}
+      </td>
+      <td className="num">
+        <span className={managerClass(t.managerScorePct)}>{t.managerScorePct.toFixed(1)}%</span>
+      </td>
       <td className="center">
         <BestLineup v={t.bestLineupWins} />
       </td>

@@ -1356,12 +1356,11 @@ tr.h2h-detail-row td {
   font-size: 10px;
 }
 
-/* Season-champion trophy column in the dashboard standings */
-.champ-col {
-  width: 26px;
-  text-align: center;
-  padding-left: 4px;
-  padding-right: 2px;
+/* Season champion: trophy sits beside the name in the Team column */
+.champ-trophy {
+  margin-left: 6px;
+  font-size: 12px;
+  vertical-align: 1px;
 }
 
 tr.champ-row td {

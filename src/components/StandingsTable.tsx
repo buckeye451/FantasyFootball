@@ -100,7 +100,6 @@ export function StandingsTable({
       <table>
         <thead>
           <tr>
-            <th className="champ-col" title="Season champion"></th>
             {th('rank', 'Rank', { num: true })}
             <th></th>
             {th('team', 'Team')}
@@ -127,13 +126,17 @@ export function StandingsTable({
             const isChamp = champKey != null && s.team.displayName.toLowerCase() === champKey;
             return (
               <tr key={s.team.rosterId} className={isChamp ? 'champ-row' : undefined}>
-                <td className="champ-col">{isChamp ? '🏆' : ''}</td>
                 <td className="num">{s.rank}</td>
                 <td>
                   <Movement delta={s.movement} />
                 </td>
                 <td className="team-cell">
                   <Link href={`/team/${s.team.slug}${q}`}>{s.team.displayName}</Link>
+                  {isChamp && (
+                    <span className="champ-trophy" title={`${season ?? ''} champion`.trim()}>
+                      🏆
+                    </span>
+                  )}
                 </td>
                 <td>
                   {s.wins}-{s.losses}
