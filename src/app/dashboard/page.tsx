@@ -110,7 +110,7 @@ export default function DashboardPage({
 
       <div className="tile-grid">
         <div className="tile">
-          <div className="tile-label">👑 Highest Scoring Team</div>
+          <div className="tile-label">👑 Highest Score</div>
           <div className="tile-value">
             {highestScoring ? highestScoring.score.toFixed(1) : '—'}
           </div>
