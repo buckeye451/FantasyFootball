@@ -1,4 +1,5 @@
 import { getDb } from './db';
+import { managerName } from './managers';
 import { optimalLineup, round2, startingSlots, type OptimalResult } from './optimal';
 import type {
   MatchupRow,
@@ -97,7 +98,8 @@ export function getTeams(leagueId: string): TeamInfo[] {
     )
     .all(leagueId) as Array<Record<string, unknown>>;
   return rows.map((r) => {
-    const display = (r.display_name as string) ?? `Team ${r.roster_id}`;
+    // Real name where we know the handle; slug follows from it.
+    const display = managerName(r.display_name as string) || `Team ${r.roster_id}`;
     return {
       rosterId: r.roster_id as number,
       ownerId: (r.owner_id as string) ?? '',
@@ -875,18 +877,19 @@ export const SEASON_CHAMPIONS: Record<string, string> = {
 
 /** The champion's display name for a season, or null if none recorded. */
 export function championOf(season: string): string | null {
-  return SEASON_CHAMPIONS[season] ?? null;
+  const handle = SEASON_CHAMPIONS[season];
+  return handle ? managerName(handle) : null;
 }
 
 export function trophiesFor(displayName: string): number {
   return Object.values(SEASON_CHAMPIONS).filter(
-    (n) => n.toLowerCase() === displayName.toLowerCase()
+    (n) => managerName(n).toLowerCase() === displayName.toLowerCase()
   ).length;
 }
 
 /** Distinct champions with their title counts (for the lifetime trophy case). */
 export const CHAMPIONS: Array<{ name: string; trophies: number }> = Array.from(
-  new Set(Object.values(SEASON_CHAMPIONS))
+  new Set(Object.values(SEASON_CHAMPIONS).map(managerName))
 ).map((name) => ({ name, trophies: trophiesFor(name) }));
 
 export interface LifetimeRow {
