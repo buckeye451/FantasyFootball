@@ -34,7 +34,9 @@ export default function TeamPage({
   const requested = Number(searchParams.week);
   const selectedWeek = weeks.includes(requested) ? requested : weeks[weeks.length - 1];
   const detail = teamWeekDetail(leagueId, team.rosterId, selectedWeek);
-  const meta = getPlayerMeta();
+  // Season-scoped so the lineups show the NFL team each player actually
+  // played for that year, not their current one.
+  const meta = getPlayerMeta(seasonYear);
 
   const medians = new Map(weeklyMedians(leagueId).map((m) => [m.week, m.median]));
   const chartData = season.weeks.map((w) => ({
