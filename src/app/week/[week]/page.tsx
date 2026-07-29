@@ -7,6 +7,7 @@ import {
 } from '@/lib/stats';
 import { MatchupBreakdownList } from '@/components/MatchupBreakdown';
 import { PageNav } from '@/components/PageNav';
+import { ScrollToHash } from '@/components/ScrollToHash';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +16,7 @@ export default function WeekPage({
   searchParams,
 }: {
   params: { week: string };
-  searchParams: { season?: string };
+  searchParams: { season?: string; box?: string };
 }) {
   const league = resolveActiveLeague(searchParams.season);
   if (!league) notFound();
@@ -31,6 +32,7 @@ export default function WeekPage({
 
   return (
     <>
+      <ScrollToHash />
       <h1 className="page-title">Week {week} scores</h1>
       <p className="page-subtitle">
         {league.name} · {league.season} · every matchup with each team&apos;s advanced stats.
@@ -49,6 +51,7 @@ export default function WeekPage({
         breakdowns={breakdowns}
         season={league.season}
         boxScores={boxScores}
+        openBox={searchParams.box}
       />
     </>
   );

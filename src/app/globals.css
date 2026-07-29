@@ -58,6 +58,8 @@
   --progress-empty: rgba(255, 255, 255, 0.13);
   --progress-fill: #3987e5;
   --progress-post: #f6c945;
+  /* Recessed shade behind the bench rows of a box score. */
+  --box-bench-bg: rgba(0, 0, 0, 0.2);
 }
 
 /* Light theme — same layout, lighter surfaces. Every colour the app uses is a
@@ -114,6 +116,7 @@
   --progress-empty: #ddd4c0;
   --progress-fill: #1e6b42;
   --progress-post: #b8860b;
+  --box-bench-bg: rgba(30, 28, 20, 0.08);
 }
 
 * {
@@ -2604,6 +2607,12 @@ tr.playoff-cut td {
   padding-right: 8px !important;
 }
 
+/* Bench sits on a recessed shade, so the starting lineup reads as the part
+   that actually counted. */
+.box-bench-row td {
+  background: var(--box-bench-bg);
+}
+
 .box-bench-row .box-name,
 .box-bench-row .box-pts {
   color: var(--muted);
@@ -2653,4 +2662,35 @@ tr.playoff-cut td {
   .box-head-score {
     font-size: 18px;
   }
+}
+
+/* Dashboard week tiles: link through to the expanded box score */
+.box-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 8px 2px 2px;
+  border-top: 1px solid var(--grid);
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.box-link:hover {
+  color: var(--ink);
+}
+
+.box-link-arrow {
+  transition: transform 0.15s ease;
+}
+
+.box-link:hover .box-link-arrow {
+  transform: translateX(2px);
+}
+
+/* Keep an anchored matchup clear of the sticky header. */
+.matchup-card {
+  scroll-margin-top: 84px;
 }

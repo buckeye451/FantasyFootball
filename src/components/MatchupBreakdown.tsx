@@ -42,11 +42,18 @@ function TeamRow({ t, season, winner }: { t: TeamWeekStat; season: string; winne
  * Renders a week's (or playoff round's) matchups, each as a two-row card with
  * per-team advanced metrics. Winner of each matchup is highlighted.
  */
+/** Stable per-matchup id, used for both the anchor and the ?box= parameter. */
+export function matchupKey(b: MatchupBreakdown, index: number): string {
+  return b.matchupId != null ? String(b.matchupId) : `solo-${index}`;
+}
+
 export function MatchupBreakdownList({
   breakdowns,
   season,
   compact,
   boxScores,
+  openBox,
+  boxLinkWeek,
 }: {
   breakdowns: MatchupBreakdown[];
   season: string;
@@ -54,6 +61,10 @@ export function MatchupBreakdownList({
   compact?: boolean;
   /** Parallel to `breakdowns`. Supplied only where the full lineups are wanted. */
   boxScores?: Array<BoxScore | null>;
+  /** Matchup key to render already expanded, from `?box=` on the week page. */
+  openBox?: string;
+  /** When set, each matchup links through to its box score on that week's page. */
+  boxLinkWeek?: number;
 }) {
   if (breakdowns.length === 0) {
     return <p className="card-note">No matchup data for this week.</p>;
@@ -64,8 +75,9 @@ export function MatchupBreakdownList({
         const topScore = Math.max(...b.teams.map((t) => t.score));
         const tied = b.teams.length === 2 && b.teams[0].score === b.teams[1].score;
         const box = boxScores?.[i] ?? null;
+        const key = matchupKey(b, i);
         return (
-          <div className="card matchup-card" key={b.matchupId ?? `solo-${i}`}>
+          <div className="card matchup-card" id={`matchup-${key}`} key={key}>
             <div className="table-wrap">
               <table className={`breakdown-table${compact ? ' breakdown-compact' : ''}`}>
                 <thead>
@@ -129,7 +141,7 @@ export function MatchupBreakdownList({
             {box && (
               // <details> so the box score expands without any JavaScript, and
               // stays open across a re-render.
-              <details className="box-toggle">
+              <details className="box-toggle" open={openBox === key}>
                 <summary>
                   <span className="box-caret" aria-hidden="true">
                     ▸
@@ -138,6 +150,19 @@ export function MatchupBreakdownList({
                 </summary>
                 <BoxScoreTable box={box} />
               </details>
+            )}
+            {boxLinkWeek != null && (
+              // Straight through to this matchup on the week page, already
+              // expanded — ?box= opens it, the anchor scrolls to it.
+              <Link
+                className="box-link"
+                href={`/week/${boxLinkWeek}?season=${season}&box=${key}#matchup-${key}`}
+              >
+                Full box score
+                <span className="box-link-arrow" aria-hidden="true">
+                  →
+                </span>
+              </Link>
             )}
           </div>
         );

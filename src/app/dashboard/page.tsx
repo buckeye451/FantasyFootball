@@ -192,7 +192,12 @@ export default function DashboardPage({
           = score ÷ projected · Manager % = score ÷ best-possible lineup · BLW? = would the optimal
           lineup have won.
         </p>
-        <MatchupBreakdownList breakdowns={weekMatchups} season={season} compact />
+        <MatchupBreakdownList
+          breakdowns={weekMatchups}
+          season={season}
+          compact
+          boxLinkWeek={selectedWeek}
+        />
       </section>
 
       <LeagueChartsBoard teams={teams} scoreData={scoreData} rankData={rankData} />
