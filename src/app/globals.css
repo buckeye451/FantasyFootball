@@ -1813,3 +1813,16 @@ tr.champ-row td {
 tr.playoff-cut td {
   border-bottom: 2px solid var(--critical);
 }
+
+/* Most-started cards carry more detail than Players of the Week, so the stats
+   line wraps under the name instead of being clipped. */
+.usage .pos-name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.usage .pos-team {
+  display: block;
+  margin-top: 1px;
+}

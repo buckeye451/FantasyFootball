@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import {
   getPlayerMeta,
   getTeamBySlug,
+  mostStartedByPosition,
   resolveActiveLeague,
   teamSeason,
   teamWeekDetail,
@@ -10,6 +11,7 @@ import {
 } from '@/lib/stats';
 import { TeamWeeklyChart } from '@/components/FocusCharts';
 import { LineupAsSet, OptimalLineup } from '@/components/RosterTables';
+import { MostStartedPlayers } from '@/components/PlayerCards';
 import { TeamWeekPicker } from '@/components/TeamWeekPicker';
 import { managerClass, winPctClass } from '@/lib/thresholds';
 
@@ -38,6 +40,8 @@ export default function TeamPage({
   // Season-scoped so the lineups show the NFL team each player actually
   // played for that year, not their current one.
   const meta = getPlayerMeta(seasonYear);
+
+  const mostStarted = mostStartedByPosition(leagueId, team.rosterId);
 
   const medians = new Map(weeklyMedians(leagueId).map((m) => [m.week, m.median]));
   const chartData = season.weeks.map((w) => ({
@@ -91,6 +95,17 @@ export default function TeamPage({
         <p className="card-note">Weekly score against the league median.</p>
         <TeamWeeklyChart data={chartData} teamName={team.displayName} />
       </section>
+
+      {mostStarted.size > 0 && (
+        <section>
+          <h2 className="card-title">Most-started players</h2>
+          <p className="card-note">
+            Who {team.displayName} leaned on at each position — points scored in the weeks they
+            were started.
+          </p>
+          <MostStartedPlayers byPosition={mostStarted} />
+        </section>
+      )}
 
       <section className="card">
         <h2 className="card-title">Weekly results</h2>

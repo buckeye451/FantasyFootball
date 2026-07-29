@@ -1,4 +1,4 @@
-import type { PlayerAgg, WeeklyStar } from '@/lib/stats';
+import type { PlayerAgg, StarterUsage, WeeklyStar } from '@/lib/stats';
 import { NflTeam } from '@/components/NflTeam';
 import { PlayerHeadshot } from '@/components/PlayerHeadshot';
 
@@ -59,6 +59,35 @@ export function PlayersOfWeek({
                   </span>
                 </span>
                 <span className="pos-pts">{star.points.toFixed(1)}</span>
+              </li>
+            </ol>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** A team's most-started player at each position, with what they produced. */
+export function MostStartedPlayers({ byPosition }: { byPosition: Map<string, StarterUsage> }) {
+  return (
+    <div className="pos-grid potw usage">
+      {POSITION_ORDER.filter((pos) => byPosition.has(pos)).map((pos) => {
+        const u = byPosition.get(pos)!;
+        return (
+          <div className="pos-card" key={pos}>
+            <h3>{pos}</h3>
+            <ol>
+              <li>
+                <PlayerHeadshot key={u.player.playerId} player={u.player} size={42} />
+                <span className="pos-name">
+                  {u.player.name}{' '}
+                  <span className="pos-team">
+                    <NflTeam code={u.player.team} /> {u.weeksStarted} week
+                    {u.weeksStarted === 1 ? '' : 's'} started · high {u.bestWeek.toFixed(1)}
+                  </span>
+                </span>
+                <span className="pos-pts">{u.pointsWhileStarting.toFixed(1)}</span>
               </li>
             </ol>
           </div>

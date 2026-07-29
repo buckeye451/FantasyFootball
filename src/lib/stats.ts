@@ -395,6 +395,60 @@ export function playersOfWeek(
   return { byPosition, mvp };
 }
 
+export interface StarterUsage {
+  player: PlayerMeta;
+  weeksStarted: number;
+  /** Points this player scored in the weeks they were started. */
+  pointsWhileStarting: number;
+  /** Best single week among the weeks they were started. */
+  bestWeek: number;
+}
+
+/**
+ * The player this roster started most often at each position, with what they
+ * scored in those weeks. Ties on weeks started break toward the higher total.
+ */
+export function mostStartedByPosition(
+  leagueId: string,
+  rosterId: number
+): Map<string, StarterUsage> {
+  const league = getLeagueInfo(leagueId);
+  const meta = getPlayerMeta(league?.season);
+  const usage = new Map<string, StarterUsage>();
+
+  for (const m of getMatchups(leagueId)) {
+    if (m.rosterId !== rosterId) continue;
+    for (const pid of m.starters) {
+      if (!pid || pid === '0') continue;
+      const player = meta.get(pid);
+      if (!player) continue;
+      const points = m.playersPoints[pid] ?? 0;
+      let u = usage.get(pid);
+      if (!u) {
+        u = { player, weeksStarted: 0, pointsWhileStarting: 0, bestWeek: 0 };
+        usage.set(pid, u);
+      }
+      u.weeksStarted++;
+      u.pointsWhileStarting = round2(u.pointsWhileStarting + points);
+      u.bestWeek = Math.max(u.bestWeek, round2(points));
+    }
+  }
+
+  const byPosition = new Map<string, StarterUsage>();
+  for (const u of usage.values()) {
+    const pos = u.player.position;
+    const cur = byPosition.get(pos);
+    if (
+      !cur ||
+      u.weeksStarted > cur.weeksStarted ||
+      (u.weeksStarted === cur.weeksStarted && u.pointsWhileStarting > cur.pointsWhileStarting)
+    ) {
+      byPosition.set(pos, u);
+    }
+  }
+  return byPosition;
+}
+
 export interface TeamWeekDetail {
   week: number;
   team: TeamInfo;
