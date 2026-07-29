@@ -1398,12 +1398,6 @@ th.sortable.sorted {
   font-weight: 700;
 }
 
-.trophy-sub {
-  color: var(--muted);
-  font-size: 12px;
-  margin-top: 2px;
-}
-
 /* Head-to-head (Lifetime page) */
 .h2h-controls {
   margin-bottom: 14px;
@@ -2130,6 +2124,152 @@ tr.playoff-cut td {
   font-variant-numeric: tabular-nums;
   color: var(--trophy-tile-ink);
 }
-.trophy-case .trophy-sub {
-  color: var(--trophy-tile-muted);
+
+/* Drawer entries that are both a destination and a section (Lifetime Stats) */
+.drawer-link-row {
+  display: flex;
+  align-items: center;
+}
+
+.drawer-link-row .drawer-link {
+  flex: 1;
+  min-width: 0;
+}
+
+.drawer-caret-button {
+  flex: none;
+  padding: 10px 8px;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.drawer-caret-button:hover {
+  background: var(--surface-2);
+}
+
+/* "View top 50" link under each all-time position tile */
+.pos-more {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--series-1);
+}
+
+.pos-more:hover {
+  text-decoration: underline;
+}
+
+/* Best player rankings */
+.rank-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.rank-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.rank-filter select {
+  min-width: 132px;
+  padding: 7px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.rank-table td {
+  vertical-align: middle;
+}
+
+.rank-player {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.rank-ident {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rank-name {
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rank-ident .nfl-team {
+  align-self: flex-start;
+}
+
+.rank-manager {
+  white-space: nowrap;
+}
+
+/* Phones: squeeze the five columns onto one screen. Points is the whole point
+   of the list, so it must not be the thing that scrolls off the right edge. */
+@media (max-width: 640px) {
+  .rank-filter select {
+    min-width: 118px;
+  }
+
+  .rank-table th,
+  .rank-table td {
+    padding: 6px 3px;
+    font-size: 12.5px;
+  }
+
+  .rank-table th:first-child,
+  .rank-table td:first-child {
+    padding-left: 5px;
+  }
+
+  .rank-table th:last-child,
+  .rank-table td:last-child {
+    padding-right: 5px;
+  }
+
+  .rank-player {
+    gap: 6px;
+  }
+
+  .rank-player .headshot {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .rank-name {
+    font-size: 13px;
+    max-width: 108px;
+  }
+
+  .rank-manager {
+    max-width: 62px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }

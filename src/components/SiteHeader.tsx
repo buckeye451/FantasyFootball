@@ -37,6 +37,41 @@ function Section({
   );
 }
 
+/**
+ * A top-level destination that also has sub-pages: the label navigates and the
+ * caret beside it expands the list, so reaching the parent page never costs an
+ * extra tap the way a plain Section would.
+ */
+function LinkSection({
+  title,
+  href,
+  children,
+}: {
+  title: string;
+  href: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="drawer-section">
+      <div className="drawer-link-row">
+        <Link href={href} className="drawer-link">
+          {title}
+        </Link>
+        <button
+          className="drawer-caret-button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={`${open ? 'Hide' : 'Show'} ${title} pages`}
+        >
+          <span className={`caret${open ? ' open' : ''}`}>▸</span>
+        </button>
+      </div>
+      {open && <div className="drawer-sublist">{children}</div>}
+    </div>
+  );
+}
+
 export function SiteHeader({
   seasons,
   defaultSeason,
@@ -57,7 +92,7 @@ export function SiteHeader({
   // Item-specific routes (/team/[slug], /week/[n], /playoffs/round/[n]) can
   // 404 in another season — a manager who wasn't in the league, a week that
   // wasn't played — so those fall back to the dashboard.
-  const SEASON_STABLE = ['/dashboard', '/drafts', '/lifetime', '/playoffs', '/recaps'];
+  const SEASON_STABLE = ['/dashboard', '/drafts', '/lifetime', '/playoffs', '/rankings', '/recaps'];
   const seasonHref = (season: string) =>
     SEASON_STABLE.includes(pathname) ? `${pathname}?season=${season}` : `/dashboard?season=${season}`;
 
@@ -127,9 +162,11 @@ export function SiteHeader({
           Dashboard
         </Link>
 
-        <Link href={withSeason('/lifetime')} className="drawer-link">
-          Lifetime Stats
-        </Link>
+        <LinkSection title="Lifetime Stats" href={withSeason('/lifetime')}>
+          <Link href={withSeason('/rankings')} className="drawer-sublink">
+            Best Player Rankings
+          </Link>
+        </LinkSection>
 
         <Link href={withSeason('/drafts')} className="drawer-link">
           Drafts

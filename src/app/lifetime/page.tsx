@@ -13,10 +13,12 @@ import { HeadToHead } from '@/components/HeadToHead';
 import { SeasonPointsChart } from '@/components/FocusCharts';
 import { DraftRankingsTable } from '@/components/DraftRankingsTable';
 import { NflTeam } from '@/components/NflTeam';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
 export default function LifetimePage({ searchParams }: { searchParams: { season?: string } }) {
+  const season = searchParams.season;
   const rows = lifetimeStandings();
   const playedSeasons = getSeasons().filter((s) => s.hasGames);
   const leaders = bestSeasonsByPosition(5);
@@ -51,9 +53,6 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
               <div className="trophy-emojis">{'🏆'.repeat(c.trophies)}</div>
               <div className="trophy-name">{c.name}</div>
               <div className="trophy-years">{c.seasons.join(' · ')}</div>
-              <div className="trophy-sub">
-                {c.trophies} championship{c.trophies === 1 ? '' : 's'}
-              </div>
             </div>
           ))}
         </div>
@@ -123,6 +122,12 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
                   </li>
                 ))}
               </ol>
+              <Link
+                className="pos-more"
+                href={`/rankings?pos=${pos}&year=all${season ? `&season=${season}` : ''}`}
+              >
+                View top 50 →
+              </Link>
             </div>
           ))}
         </div>

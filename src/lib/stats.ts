@@ -1138,12 +1138,20 @@ function seasonRosteredManagers(seasons: SeasonOption[]): Map<string, string> {
   return result;
 }
 
+/** A leader row carrying what the rankings page needs on top of the tiles. */
+export interface PlayerRanking extends SeasonLeader {
+  position: string;
+  /** ESPN athlete id, for the headshot. */
+  espnId: string | null;
+}
+
 /**
- * Best individual seasons per position across every synced season, from
- * league-wide NFL season stats (every player who scored — not just the ones
- * someone rostered). Points use this league's scoring format.
+ * Every player-season the league has data for, from league-wide NFL season
+ * stats — every player who scored, not just the ones someone rostered. Points
+ * use this league's scoring format. Shared by the position tiles and the
+ * rankings page so both rank off exactly the same numbers.
  */
-export function bestSeasonsByPosition(topN = 5): Map<string, SeasonLeader[]> {
+function allPlayerSeasons(): PlayerRanking[] {
   const playedSeasons = getSeasons().filter((s) => s.hasGames);
   const fmtLeague = playedSeasons[0];
   const fmt = fmtLeague ? scoringFormat(fmtLeague.leagueId) : 'ppr';
@@ -1155,7 +1163,7 @@ export function bestSeasonsByPosition(topN = 5): Map<string, SeasonLeader[]> {
     .prepare(
       // Prefer the team the player actually played for that season; fall back
       // to Sleeper's current team when we have no historical row.
-      `SELECT s.season, s.player_id, s.position, s.${col} AS pts, p.full_name,
+      `SELECT s.season, s.player_id, s.position, s.${col} AS pts, p.full_name, p.espn_id,
               COALESCE(t.team, p.team) AS team
        FROM player_season_stats s
        LEFT JOIN players p ON p.player_id = s.player_id
@@ -1165,25 +1173,61 @@ export function bestSeasonsByPosition(topN = 5): Map<string, SeasonLeader[]> {
     )
     .all() as Array<Record<string, unknown>>;
 
-  const byPosition = new Map<string, SeasonLeader[]>();
+  const out: PlayerRanking[] = [];
   for (const r of rows) {
     if (!seasons.has(r.season as string)) continue; // only seasons this league played
-    const pos = (r.position as string) ?? 'UNKNOWN';
-    if (!byPosition.has(pos)) byPosition.set(pos, []);
-    byPosition.get(pos)!.push({
+    out.push({
       playerId: r.player_id as string,
       name: (r.full_name as string) ?? (r.player_id as string),
+      position: (r.position as string) ?? 'UNKNOWN',
       team: (r.team as string) ?? '',
+      espnId: (r.espn_id as string) ?? null,
       season: r.season as string,
       points: round2(r.pts as number),
       manager: managers.get(`${r.season as string}::${r.player_id as string}`) ?? null,
     });
   }
+  return out;
+}
+
+/**
+ * Best individual seasons per position across every synced season.
+ */
+export function bestSeasonsByPosition(topN = 5): Map<string, SeasonLeader[]> {
+  const byPosition = new Map<string, PlayerRanking[]>();
+  for (const r of allPlayerSeasons()) {
+    if (!byPosition.has(r.position)) byPosition.set(r.position, []);
+    byPosition.get(r.position)!.push(r);
+  }
+  const out = new Map<string, SeasonLeader[]>();
   for (const [pos, list] of byPosition) {
     list.sort((a, b) => b.points - a.points);
-    byPosition.set(pos, list.slice(0, topN));
+    out.set(pos, list.slice(0, topN));
   }
-  return byPosition;
+  return out;
+}
+
+/**
+ * Top scoring seasons at one position, for a single season or — with `season`
+ * null — every season the league has played, in which case one player can
+ * appear more than once, on a separate row per year.
+ */
+export function positionRankings(
+  position: string,
+  season: string | null,
+  limit = 50
+): PlayerRanking[] {
+  return allPlayerSeasons()
+    .filter((r) => r.position === position && (season === null || r.season === season))
+    .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
+    .slice(0, limit);
+}
+
+/** Positions that have any scoring data behind them, for the rankings filter. */
+export function rankablePositions(): string[] {
+  const seen = new Set<string>();
+  for (const r of allPlayerSeasons()) seen.add(r.position);
+  return [...seen];
 }
 
 export interface SeasonPoints {
