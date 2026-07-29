@@ -60,6 +60,8 @@
   --progress-post: #f6c945;
   /* Recessed shade behind the bench rows of a box score. */
   --box-bench-bg: rgba(0, 0, 0, 0.2);
+  /* Zebra striping on the long tables. */
+  --row-stripe: rgba(255, 255, 255, 0.045);
 }
 
 /* Light theme — same layout, lighter surfaces. Every colour the app uses is a
@@ -117,6 +119,7 @@
   --progress-fill: #1e6b42;
   --progress-post: #b8860b;
   --box-bench-bg: rgba(30, 28, 20, 0.08);
+  --row-stripe: rgba(30, 28, 20, 0.035);
 }
 
 * {
@@ -1425,7 +1428,9 @@ tr.h2h-row.open td {
   background: var(--surface-2);
 }
 
-tr.h2h-detail-row td {
+/* Direct child only — this is the wrapper cell holding the per-meeting table,
+   and a descendant selector would flatten that table's own cells too. */
+tr.h2h-detail-row > td {
   padding: 0;
   background: var(--sunken);
 }
@@ -2693,4 +2698,36 @@ tr.playoff-cut td {
 /* Keep an anchored matchup clear of the sticky header. */
 .matchup-card {
   scroll-margin-top: 84px;
+}
+
+/* ---------- zebra striping on the long tables ---------- */
+/*
+ * Every selector here is wrapped in :where(), which contributes no
+ * specificity. That's deliberate: the stripe is the floor, and every existing
+ * row highlight — the champion row, a matchup winner, a benched player, an
+ * open head-to-head row — outranks it without needing !important or being
+ * reordered.
+ *
+ * The child chain (`>`) keeps this off tables nested inside another table's
+ * cell, which get their own rule below. The two-row matchup breakdown opts out
+ * entirely: at that length a stripe reads as a highlight rather than a guide.
+ */
+:where(
+    .table-wrap
+      > table:not(.breakdown-table):not(.h2h-table)
+      > tbody
+      > tr:nth-child(even)
+      > td
+  ) {
+  background: var(--row-stripe);
+}
+
+/* Head-to-head stripes itself by row index — see the component for why. */
+:where(.h2h-row.alt > td) {
+  background: var(--row-stripe);
+}
+
+/* The per-meeting table inside an expanded head-to-head row. */
+:where(.h2h-detail > table > tbody > tr:nth-child(even) > td) {
+  background: var(--row-stripe);
 }

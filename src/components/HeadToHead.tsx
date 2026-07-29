@@ -95,7 +95,7 @@ export function HeadToHead({ data }: { data: ManagerH2H[] }) {
       </div>
 
       <div className="table-wrap">
-        <table>
+        <table className="h2h-table">
           <thead>
             <tr>
               {th('opponent', 'vs Opponent')}
@@ -108,12 +108,15 @@ export function HeadToHead({ data }: { data: ManagerH2H[] }) {
             </tr>
           </thead>
           <tbody>
-            {opponents.map((o) => {
+            {opponents.map((o, i) => {
               const open = openOpp === o.key;
               return (
                 <Fragment key={o.key}>
                   <tr
-                    className={`h2h-row${open ? ' open' : ''}`}
+                    // Striping is driven off the row index rather than
+                    // :nth-child, because the detail row below only exists
+                    // while a row is open and would shift every parity under it.
+                    className={`h2h-row${open ? ' open' : ''}${i % 2 === 1 ? ' alt' : ''}`}
                     onClick={() => setOpenOpp(open ? null : o.key)}
                   >
                     <td className="team-cell">
