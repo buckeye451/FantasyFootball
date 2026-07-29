@@ -1186,6 +1186,39 @@ export function bestSeasonsByPosition(topN = 5): Map<string, SeasonLeader[]> {
   return byPosition;
 }
 
+export interface SeasonPoints {
+  season: string;
+  /** League-wide points actually scored that regular season. */
+  actual: number;
+  /** League-wide points the best-possible lineups would have scored. */
+  optimal: number;
+}
+
+/**
+ * Actual vs best-possible points per season, summed across every team. Uses
+ * regular-season weeks only, matching the all-time standings above it.
+ */
+export function seasonPointsSeries(): SeasonPoints[] {
+  const out: SeasonPoints[] = [];
+  for (const s of getSeasons()) {
+    if (!s.hasGames) continue;
+    const league = getLeagueInfo(s.leagueId);
+    if (!league) continue;
+    const meta = getPlayerMeta(s.season);
+    const matchups = getMatchups(s.leagueId);
+    const weeks = new Set(regularSeasonWeeks(s.leagueId, matchups));
+    let actual = 0;
+    let optimal = 0;
+    for (const m of matchups) {
+      if (!weeks.has(m.week)) continue;
+      actual += m.points;
+      optimal += optimalLineup(league.rosterPositions, m.starters, m.playersPoints, meta).optimalTotal;
+    }
+    out.push({ season: s.season, actual: round2(actual), optimal: round2(optimal) });
+  }
+  return out.sort((a, b) => Number(a.season) - Number(b.season));
+}
+
 // ---------------------------------------------------------------------------
 // Head-to-head (all-time, per manager vs each opponent)
 // ---------------------------------------------------------------------------

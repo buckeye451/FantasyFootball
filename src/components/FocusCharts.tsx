@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTheme, type Theme } from '@/components/ThemeToggle';
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -446,5 +449,61 @@ export function TeamWeeklyChart({
         </div>
       </details>
     </>
+  );
+}
+
+/** Lifetime page: league-wide actual vs best-possible points, season by season. */
+export function SeasonPointsChart({
+  data,
+}: {
+  data: Array<{ season: string; actual: number; optimal: number }>;
+}) {
+  const isMobile = useIsMobile();
+  const p = PALETTES[useTheme()];
+  return (
+    <div className="chart-box">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: 0 }} accessibilityLayer>
+          <CartesianGrid stroke={p.grid} vertical={false} />
+          <XAxis
+            dataKey="season"
+            tick={{ fill: p.muted, fontSize: isMobile ? 11 : 12 }}
+            tickLine={false}
+            axisLine={{ stroke: p.baseline }}
+          />
+          <YAxis
+            tick={{ fill: p.muted, fontSize: isMobile ? 11 : 12 }}
+            tickLine={false}
+            axisLine={{ stroke: p.baseline }}
+            width={isMobile ? 44 : 56}
+            tickFormatter={(v: number) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v))}
+          />
+          <Tooltip
+            cursor={{ fill: p.grid, opacity: 0.35 }}
+            contentStyle={{
+              background: p.surface2,
+              border: `1px solid ${p.baseline}`,
+              borderRadius: 8,
+              fontSize: 12.5,
+            }}
+            labelStyle={{ color: p.muted }}
+            labelFormatter={(season) => `${season} season`}
+            formatter={(value: number, name: string) => [
+              value.toLocaleString(undefined, { maximumFractionDigits: 1 }),
+              name === 'optimal' ? 'Best possible' : 'Actual',
+            ]}
+          />
+          <Legend
+            formatter={(name) => (
+              <span style={{ color: p.ink2, fontSize: 12.5 }}>
+                {name === 'optimal' ? 'Best possible' : 'Actual'}
+              </span>
+            )}
+          />
+          <Bar dataKey="actual" fill={p.slots[0]} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+          <Bar dataKey="optimal" fill={p.slots[1]} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

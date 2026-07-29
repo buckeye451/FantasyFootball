@@ -5,10 +5,12 @@ import {
   headToHead,
   lifetimeDraftRankings,
   lifetimeStandings,
+  seasonPointsSeries,
 } from '@/lib/stats';
 import { POSITION_ORDER } from '@/components/PlayerCards';
 import { LifetimeStandingsTable } from '@/components/LifetimeStandingsTable';
 import { HeadToHead } from '@/components/HeadToHead';
+import { SeasonPointsChart } from '@/components/FocusCharts';
 import { DraftRankingsTable } from '@/components/DraftRankingsTable';
 import { NflTeam } from '@/components/NflTeam';
 
@@ -20,6 +22,7 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
   const leaders = bestSeasonsByPosition(5);
   const h2h = headToHead();
   const draftRanks = lifetimeDraftRankings();
+  const seasonPoints = seasonPointsSeries();
 
   if (rows.length === 0) {
     return (
@@ -63,6 +66,17 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
         </p>
         <LifetimeStandingsTable rows={rows} />
       </section>
+
+      {seasonPoints.length > 0 && (
+        <section className="card">
+          <h2 className="card-title">Actual vs best-possible points by season</h2>
+          <p className="card-note">
+            League-wide regular-season totals — what everyone scored against what the best-possible
+            lineups would have scored.
+          </p>
+          <SeasonPointsChart data={seasonPoints} />
+        </section>
+      )}
 
       <section className="card">
         <h2 className="card-title">Head to head</h2>
