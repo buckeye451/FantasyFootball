@@ -2273,3 +2273,8 @@ tr.playoff-cut td {
     text-overflow: ellipsis;
   }
 }
+
+/* On-page sibling navigation (week → week, manager → manager) */
+.page-nav {
+  margin: -8px 0 20px;
+}

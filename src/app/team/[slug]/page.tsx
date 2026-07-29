@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import {
   getPlayerMeta,
   getTeamBySlug,
+  getTeams,
   mostStartedByPosition,
   resolveActiveLeague,
   teamSeason,
@@ -13,6 +14,7 @@ import { TeamWeeklyChart } from '@/components/FocusCharts';
 import { LineupAsSet, OptimalLineup } from '@/components/RosterTables';
 import { MostStartedPlayers } from '@/components/PlayerCards';
 import { TeamWeekPicker } from '@/components/TeamWeekPicker';
+import { PageNav } from '@/components/PageNav';
 import { managerClass, winPctClass } from '@/lib/thresholds';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +63,19 @@ export default function TeamPage({
         {seasonYear} · managed by {team.displayName}
         {season.rank ? ` · #${season.rank} in the league` : ''}
       </p>
+
+      {/* Carries the selected week across, so you can hold a week steady and
+          step through managers to compare them. */}
+      <PageNav
+        label="Manager"
+        value={team.slug}
+        ariaLabel="Jump to another manager"
+        options={getTeams(leagueId).map((t) => ({
+          value: t.slug,
+          label: t.displayName,
+          href: `/team/${t.slug}?week=${selectedWeek}&season=${seasonYear}`,
+        }))}
+      />
 
       <div className="tile-grid">
         <div className="tile">
