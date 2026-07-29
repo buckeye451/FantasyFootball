@@ -47,6 +47,11 @@
   --val-warn-bg: rgba(245, 160, 78, 0.16);
   --val-bad-fg: #ff8f8f;
   --val-bad-bg: rgba(255, 107, 107, 0.16);
+  /* Latest-recap tile: inverted against the page so it stands out. */
+  --recap-tile-bg: #ffffff;
+  --recap-tile-ink: #4a2a86;
+  --recap-tile-muted: #6f52ad;
+  --recap-tile-border: rgba(74, 42, 134, 0.25);
 }
 
 /* Light theme — same layout, lighter surfaces. Every colour the app uses is a
@@ -94,6 +99,10 @@
   --val-warn-bg: rgba(196, 150, 40, 0.2);
   --val-bad-fg: #a33526;
   --val-bad-bg: rgba(179, 64, 47, 0.14);
+  --recap-tile-bg: #1e6b42;
+  --recap-tile-ink: #ffffff;
+  --recap-tile-muted: rgba(255, 255, 255, 0.82);
+  --recap-tile-border: rgba(255, 255, 255, 0.24);
 }
 
 * {
@@ -1886,21 +1895,22 @@ tr.playoff-cut td {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--recap-tile-bg);
+  color: var(--recap-tile-ink);
+  border: 1px solid var(--recap-tile-border);
   border-radius: 12px;
   padding: 14px 16px;
   margin-bottom: 18px;
 }
 .recap-preview:hover {
-  border-color: var(--muted);
+  border-color: var(--recap-tile-ink);
 }
 .recap-preview-body {
   min-width: 0;
   flex: 1;
 }
 .recap-preview-label {
-  color: var(--muted);
+  color: var(--recap-tile-muted);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -1912,14 +1922,14 @@ tr.playoff-cut td {
   margin-top: 2px;
 }
 .recap-preview-sub {
-  color: var(--ink-2);
+  color: var(--recap-tile-muted);
   font-size: 13.5px;
   margin-top: 1px;
 }
 .recap-preview-arrow {
   flex: none;
   font-size: 20px;
-  color: var(--muted);
+  color: var(--recap-tile-ink);
 }
 
 /* ---- Modal ---------------------------------------------------------------- */
