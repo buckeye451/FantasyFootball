@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { PlayerAgg, StarterUsage, WeeklyStar } from '@/lib/stats';
 import { NflTeam } from '@/components/NflTeam';
 import { PlayerHeadshot } from '@/components/PlayerHeadshot';
@@ -5,7 +6,14 @@ import { PlayerHeadshot } from '@/components/PlayerHeadshot';
 export const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 
 /** Season-long leaders at each position across every rostered player. */
-export function TopSeasonPlayers({ byPosition }: { byPosition: Map<string, PlayerAgg[]> }) {
+export function TopSeasonPlayers({
+  byPosition,
+  season,
+}: {
+  byPosition: Map<string, PlayerAgg[]>;
+  /** When set, each card links through to that season's rankings page. */
+  season?: string;
+}) {
   return (
     <div className="pos-grid">
       {POSITION_ORDER.filter((pos) => byPosition.has(pos)).map((pos) => (
@@ -25,6 +33,14 @@ export function TopSeasonPlayers({ byPosition }: { byPosition: Map<string, Playe
               </li>
             ))}
           </ol>
+          {season && (
+            <Link
+              className="pos-more"
+              href={`/rankings?pos=${pos}&year=${season}&season=${season}`}
+            >
+              See more →
+            </Link>
+          )}
         </div>
       ))}
     </div>

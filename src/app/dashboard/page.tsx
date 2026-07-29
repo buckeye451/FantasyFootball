@@ -205,7 +205,7 @@ export default function DashboardPage({
       <section>
         <h2 className="card-title">Best of the season</h2>
         <p className="card-note">Total fantasy points this season by position, across every rostered player.</p>
-        <TopSeasonPlayers byPosition={topPlayers} />
+        <TopSeasonPlayers byPosition={topPlayers} season={season} />
       </section>
     </>
   );
