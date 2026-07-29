@@ -6,9 +6,12 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Customized,
+  LabelList,
   Legend,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -453,6 +456,70 @@ export function TeamWeeklyChart({
 }
 
 /** Lifetime page: league-wide actual vs best-possible points, season by season. */
+// Bar colours for the season-points chart. These two are fixed rather than
+// pulled from the palette: the pairing (actual vs best-possible) reads the same
+// way in either theme, so it shouldn't shift with it.
+const POINTS_BARS = { actual: '#f08080', optimal: '#228b22' };
+
+interface PointsAxis {
+  floor: number;
+  ceil: number;
+  major: number[];
+  minor: number[];
+}
+
+/**
+ * Truncated y-axis for the season-points chart.
+ *
+ * Starting at zero squashes every season into the same band near the top, so
+ * the axis starts just below the smallest bar instead and the chart draws a
+ * break mark at the origin to say so. Majors land on a 500-point grid (1000 if
+ * that would crowd the axis), with a minor line halfway between each pair.
+ */
+function pointsAxis(data: Array<{ actual: number; optimal: number }>): PointsAxis {
+  const values = data.flatMap((d) => [d.actual, d.optimal]);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = Math.max(max - min, 1);
+
+  let step = 500;
+  let floor = 0;
+  let ceil = 0;
+  for (;;) {
+    // Leave a third of the spread below the shortest bar so it still reads as
+    // a bar rather than a sliver sitting on the axis.
+    floor = Math.max(0, Math.floor((min - span * 0.35) / step) * step);
+    ceil = Math.ceil((max + span * 0.12) / step) * step;
+    if ((ceil - floor) / step <= 9) break;
+    step += 500;
+  }
+
+  const major: number[] = [];
+  for (let v = floor; v <= ceil + 1e-6; v += step) major.push(v);
+  const minor = major.slice(0, -1).map((v) => v + step / 2);
+  return { floor, ceil, major, minor };
+}
+
+/**
+ * The "//" break drawn where the y-axis meets the x-axis, marking that the
+ * scale starts above zero. Recharts hands `Customized` the plot offset, which
+ * is the only reliable way to find that corner.
+ */
+function AxisBreak({ stroke, muted, offset }: { stroke: string; muted: string; offset?: { left: number; top: number; height: number } }) {
+  if (!offset) return null;
+  const x = offset.left;
+  const y = offset.top + offset.height;
+  return (
+    <g pointerEvents="none">
+      <line x1={x - 5} y1={y - 1} x2={x + 5} y2={y - 9} stroke={stroke} strokeWidth={1.5} />
+      <line x1={x - 5} y1={y + 4} x2={x + 5} y2={y - 4} stroke={stroke} strokeWidth={1.5} />
+      <text x={x - 9} y={y + 11} textAnchor="end" fill={muted} fontSize={10}>
+        0
+      </text>
+    </g>
+  );
+}
+
 export function SeasonPointsChart({
   data,
 }: {
@@ -460,11 +527,17 @@ export function SeasonPointsChart({
 }) {
   const isMobile = useIsMobile();
   const p = PALETTES[useTheme()];
+  const axis = pointsAxis(data);
+  const barLabel = (v: number) =>
+    isMobile ? `${(v / 1000).toFixed(1)}k` : Math.round(v).toLocaleString();
   return (
     <div className="chart-box">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: 0 }} accessibilityLayer>
+        <BarChart data={data} margin={{ top: 16, right: 8, bottom: 4, left: 0 }} accessibilityLayer>
           <CartesianGrid stroke={p.grid} vertical={false} />
+          {axis.minor.map((v) => (
+            <ReferenceLine key={v} y={v} stroke={p.grid} strokeOpacity={0.45} strokeWidth={1} />
+          ))}
           <XAxis
             dataKey="season"
             tick={{ fill: p.muted, fontSize: isMobile ? 11 : 12 }}
@@ -476,8 +549,14 @@ export function SeasonPointsChart({
             tickLine={false}
             axisLine={{ stroke: p.baseline }}
             width={isMobile ? 44 : 56}
-            tickFormatter={(v: number) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v))}
+            domain={[axis.floor, axis.ceil]}
+            ticks={axis.major}
+            allowDataOverflow
+            tickFormatter={(v: number) =>
+              v % 1000 === 0 ? `${v / 1000}k` : `${(v / 1000).toFixed(1)}k`
+            }
           />
+          <Customized component={<AxisBreak stroke={p.baseline} muted={p.muted} />} />
           <Tooltip
             cursor={{ fill: p.grid, opacity: 0.35 }}
             contentStyle={{
@@ -500,8 +579,36 @@ export function SeasonPointsChart({
               </span>
             )}
           />
-          <Bar dataKey="actual" fill={p.slots[0]} radius={[3, 3, 0, 0]} isAnimationActive={false} />
-          <Bar dataKey="optimal" fill={p.slots[1]} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+          <Bar
+            dataKey="actual"
+            fill={POINTS_BARS.actual}
+            fillOpacity={0.9}
+            radius={[3, 3, 0, 0]}
+            isAnimationActive={false}
+          >
+            <LabelList
+              dataKey="actual"
+              position="top"
+              fill={p.ink2}
+              fontSize={isMobile ? 9 : 11}
+              formatter={barLabel}
+            />
+          </Bar>
+          <Bar
+            dataKey="optimal"
+            fill={POINTS_BARS.optimal}
+            fillOpacity={0.9}
+            radius={[3, 3, 0, 0]}
+            isAnimationActive={false}
+          >
+            <LabelList
+              dataKey="optimal"
+              position="top"
+              fill={p.ink2}
+              fontSize={isMobile ? 9 : 11}
+              formatter={barLabel}
+            />
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
