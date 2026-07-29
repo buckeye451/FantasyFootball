@@ -39,7 +39,7 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
         {[...playedSeasons].map((s) => s.season).sort().join(', ')}).
       </p>
 
-      <section className="card">
+      <section className="card trophy-case">
         <h2 className="card-title">🏆 Trophy case</h2>
         <p className="card-note">League champions, one trophy per title.</p>
         <div className="trophy-grid">
@@ -47,6 +47,7 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
             <div className="trophy-tile" key={c.name}>
               <div className="trophy-emojis">{'🏆'.repeat(c.trophies)}</div>
               <div className="trophy-name">{c.name}</div>
+              <div className="trophy-years">{c.seasons.join(' · ')}</div>
               <div className="trophy-sub">
                 {c.trophies} championship{c.trophies === 1 ? '' : 's'}
               </div>

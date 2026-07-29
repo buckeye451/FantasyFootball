@@ -52,6 +52,8 @@
   --recap-tile-ink: #4a2a86;
   --recap-tile-muted: #6f52ad;
   --recap-tile-border: rgba(74, 42, 134, 0.25);
+  --trophy-tile-ink: #4a2a86;
+  --trophy-tile-muted: #6f52ad;
 }
 
 /* Light theme — same layout, lighter surfaces. Every colour the app uses is a
@@ -103,6 +105,8 @@
   --recap-tile-ink: #ffffff;
   --recap-tile-muted: rgba(255, 255, 255, 0.82);
   --recap-tile-border: rgba(255, 255, 255, 0.24);
+  --trophy-tile-ink: #16160f;
+  --trophy-tile-muted: #6d6756;
 }
 
 * {
@@ -2100,4 +2104,32 @@ tr.playoff-cut td {
   font-size: 11px;
   line-height: 1;
   cursor: pointer;
+}
+
+/* Trophy case: same inverted treatment as the latest-recap tile. The tiles
+   inside keep their own surface; only their text is re-pinned so it stays
+   readable once the container flips. */
+.trophy-case {
+  background: var(--recap-tile-bg);
+  color: var(--recap-tile-ink);
+  border-color: var(--recap-tile-border);
+}
+.trophy-case .card-title {
+  color: var(--recap-tile-ink);
+}
+.trophy-case .card-note {
+  color: var(--recap-tile-muted);
+}
+.trophy-tile {
+  color: var(--trophy-tile-ink);
+}
+.trophy-years {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--trophy-tile-ink);
+}
+.trophy-case .trophy-sub {
+  color: var(--trophy-tile-muted);
 }

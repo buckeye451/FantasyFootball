@@ -1000,10 +1000,18 @@ export function trophiesFor(displayName: string): number {
   ).length;
 }
 
+/** The seasons a manager won, oldest first. */
+export function championSeasons(displayName: string): string[] {
+  return Object.entries(SEASON_CHAMPIONS)
+    .filter(([, handle]) => managerName(handle).toLowerCase() === displayName.toLowerCase())
+    .map(([season]) => season)
+    .sort();
+}
+
 /** Distinct champions with their title counts (for the lifetime trophy case). */
-export const CHAMPIONS: Array<{ name: string; trophies: number }> = Array.from(
+export const CHAMPIONS: Array<{ name: string; trophies: number; seasons: string[] }> = Array.from(
   new Set(Object.values(SEASON_CHAMPIONS).map(managerName))
-).map((name) => ({ name, trophies: trophiesFor(name) }));
+).map((name) => ({ name, trophies: trophiesFor(name), seasons: championSeasons(name) }));
 
 export interface LifetimeRow {
   displayName: string;
