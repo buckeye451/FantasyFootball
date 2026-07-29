@@ -84,6 +84,46 @@ export function createRecap(input: {
   return Number(result.lastInsertRowid);
 }
 
+export function getRecap(id: number): Recap | null {
+  const row = getDb().prepare('SELECT * FROM recaps WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  return row ? toRecap(row) : null;
+}
+
+/** Edit a post in place. `images` replaces the stored list wholesale. */
+export function updateRecap(
+  id: number,
+  input: { title: string; preheader?: string | null; body: string; images: string[] }
+): boolean {
+  const res = getDb()
+    .prepare(
+      `UPDATE recaps SET title = ?, preheader = ?, body = ?, images = ? WHERE id = ?`
+    )
+    .run(input.title, input.preheader?.trim() || null, input.body, JSON.stringify(input.images), id);
+  return res.changes > 0;
+}
+
+export function deleteRecap(id: number): boolean {
+  const existing = getRecap(id);
+  if (!existing) return false;
+  getDb().prepare('DELETE FROM recaps WHERE id = ?').run(id);
+  deleteImages(existing.images);
+  return true;
+}
+
+/** Remove stored uploads that no post references any more. */
+export function deleteImages(names: string[]): void {
+  for (const name of names) {
+    if (!/^[A-Za-z0-9-]+\.(jpg|png|gif|webp|avif)$/.test(name)) continue;
+    try {
+      fs.unlinkSync(path.join(UPLOAD_DIR, name));
+    } catch {
+      // already gone — nothing to clean up
+    }
+  }
+}
+
 const EXT_BY_TYPE: Record<string, string> = {
   'image/jpeg': '.jpg',
   'image/png': '.png',

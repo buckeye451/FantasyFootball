@@ -40,7 +40,10 @@ export default function RecapsPage({ searchParams }: { searchParams: { season?: 
       ) : (
         posts.map((p) => (
           <article className="card recap" id={`recap-${p.id}`} key={p.id}>
-            <h2 className="recap-title">{p.title}</h2>
+            <div className="recap-head">
+              <h2 className="recap-title">{p.title}</h2>
+              <RecapEditor season={season} recap={p} />
+            </div>
             {p.preheader && <p className="recap-preheader">{p.preheader}</p>}
             <p className="recap-date">{formatDate(p.createdAt)}</p>
             <div className="recap-body">
