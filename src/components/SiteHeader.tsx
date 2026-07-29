@@ -57,7 +57,7 @@ export function SiteHeader({
   // Item-specific routes (/team/[slug], /week/[n], /playoffs/round/[n]) can
   // 404 in another season — a manager who wasn't in the league, a week that
   // wasn't played — so those fall back to the dashboard.
-  const SEASON_STABLE = ['/dashboard', '/drafts', '/lifetime', '/playoffs'];
+  const SEASON_STABLE = ['/dashboard', '/drafts', '/lifetime', '/playoffs', '/recaps'];
   const seasonHref = (season: string) =>
     SEASON_STABLE.includes(pathname) ? `${pathname}?season=${season}` : `/dashboard?season=${season}`;
 
@@ -133,6 +133,10 @@ export function SiteHeader({
 
         <Link href={withSeason('/drafts')} className="drawer-link">
           Drafts
+        </Link>
+
+        <Link href={withSeason('/recaps')} className="drawer-link">
+          Recaps
         </Link>
 
         <Section title="Players">

@@ -12,8 +12,10 @@ import {
   weeklyRankSeries,
   weeklyScoreSeries,
 } from '@/lib/stats';
+import Link from 'next/link';
 import { LeagueChartsBoard } from '@/components/FocusCharts';
 import { MatchupBreakdownList } from '@/components/MatchupBreakdown';
+import { latestRecap } from '@/lib/recaps';
 import { PlayersOfWeek, TopSeasonPlayers } from '@/components/PlayerCards';
 import { StandingsTable } from '@/components/StandingsTable';
 import { WeekSelect } from '@/components/WeekSelect';
@@ -81,6 +83,7 @@ export default function DashboardPage({
   const pow = playersOfWeek(leagueId, selectedWeek);
 
   // Single-week leaders for the stat tiles.
+  const recap = latestRecap(season);
   const weekMatchups = weekBreakdown(leagueId, selectedWeek);
   const weekTeams = weekMatchups.flatMap((m) => m.teams);
   const highestScoring = weekTeams.reduce<(typeof weekTeams)[number] | null>(
@@ -148,6 +151,19 @@ export default function DashboardPage({
           </div>
         )}
       </div>
+
+      {recap && (
+        <Link className="recap-preview" href={`/recaps?season=${season}#recap-${recap.id}`}>
+          <div className="recap-preview-body">
+            <div className="recap-preview-label">Latest recap</div>
+            <div className="recap-preview-title">{recap.title}</div>
+            {recap.preheader && <div className="recap-preview-sub">{recap.preheader}</div>}
+          </div>
+          <span className="recap-preview-arrow" aria-hidden="true">
+            →
+          </span>
+        </Link>
+      )}
 
       <section className="card">
         <h2 className="card-title">Standings</h2>

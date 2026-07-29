@@ -115,6 +115,18 @@ CREATE TABLE IF NOT EXISTS draft_picks (
   position TEXT,
   PRIMARY KEY (league_id, pick_no)
 );
+-- Weekly recap posts. UNLIKE every other table here this is user-authored and
+-- cannot be re-fetched from anywhere, so it must never be dropped by migrate().
+CREATE TABLE IF NOT EXISTS recaps (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  season TEXT NOT NULL,
+  title TEXT NOT NULL,
+  preheader TEXT,
+  body TEXT NOT NULL,
+  images TEXT,          -- JSON array of stored file names
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_recaps_season ON recaps (season, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_matchups_week ON matchups (league_id, week);
 CREATE INDEX IF NOT EXISTS idx_projections_week ON projections (season, week);
 `;
@@ -124,6 +136,8 @@ function migrate(db: DatabaseSync): void {
   if (row.user_version < SCHEMA_VERSION) {
     // Safe: everything below is re-synced from Sleeper. Dropping lets the new
     // schema (e.g. per-season roster names) take effect on existing databases.
+    // NEVER add `recaps` here — those posts are written by hand and cannot be
+    // recovered from any API.
     db.exec(`
       DROP TABLE IF EXISTS matchups;
       DROP TABLE IF EXISTS rosters;

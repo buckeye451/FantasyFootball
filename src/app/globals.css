@@ -1826,3 +1826,193 @@ tr.playoff-cut td {
   display: block;
   margin-top: 1px;
 }
+
+/* ---- Recaps --------------------------------------------------------------- */
+.post-button {
+  flex: none;
+  padding: 9px 16px;
+  border-radius: 9px;
+  border: 1px solid var(--baseline);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.post-button:hover {
+  border-color: var(--muted);
+}
+
+.recap {
+  scroll-margin-top: 90px; /* clear the sticky header when deep-linked */
+}
+.recap-title {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 750;
+}
+.recap-preheader {
+  margin: 4px 0 0;
+  color: var(--ink-2);
+  font-size: 15px;
+}
+.recap-date {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.recap-body p {
+  margin: 12px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.recap-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.recap-images img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid var(--grid);
+  display: block;
+}
+
+/* Dashboard preview of the newest post */
+.recap-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+.recap-preview:hover {
+  border-color: var(--muted);
+}
+.recap-preview-body {
+  min-width: 0;
+  flex: 1;
+}
+.recap-preview-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.recap-preview-title {
+  font-size: 16.5px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.recap-preview-sub {
+  color: var(--ink-2);
+  font-size: 13.5px;
+  margin-top: 1px;
+}
+.recap-preview-arrow {
+  flex: none;
+  font-size: 20px;
+  color: var(--muted);
+}
+
+/* ---- Modal ---------------------------------------------------------------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--backdrop);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal {
+  background: var(--surface-opaque);
+  border: 1px solid var(--baseline);
+  border-radius: 14px;
+  padding: 18px;
+  width: 100%;
+  max-width: 380px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal.wide {
+  max-width: 620px;
+}
+.modal-title {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.field {
+  display: block;
+  margin-top: 12px;
+}
+.field > span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.modal-input {
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid var(--baseline);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+}
+.modal-input:focus-visible {
+  outline: none;
+  border-color: var(--focus-ring);
+}
+.modal-textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+.modal-error {
+  margin: 10px 0 0;
+  color: var(--val-bad-fg);
+  font-size: 13px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.btn-primary,
+.btn-ghost {
+  padding: 8px 16px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  border: 1px solid var(--baseline);
+}
+.btn-primary {
+  background: var(--good);
+  border-color: var(--good);
+  color: #fff;
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+}
