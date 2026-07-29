@@ -850,6 +850,83 @@ export function getBracket(leagueId: string, type: 'winners' | 'losers' = 'winne
   });
 }
 
+/** Postseason length to assume before a bracket exists to count. */
+const POSTSEASON_ROUNDS = 3;
+
+export interface ProgressSegment {
+  /** "Week 4", "Semifinals" — shown on hover. */
+  label: string;
+  done: boolean;
+  postseason: boolean;
+}
+
+export interface SeasonProgress {
+  segments: ProgressSegment[];
+  completed: number;
+  total: number;
+  /** 0–100. */
+  pct: number;
+}
+
+/**
+ * How far through the season we are, one segment per week: the regular season
+ * followed by the postseason rounds.
+ *
+ * The length comes from the league settings rather than from how many weeks
+ * have rows, so the bar shows the whole season from day one instead of growing
+ * a slot at a time.
+ */
+export function seasonProgress(leagueId: string): SeasonProgress | null {
+  const league = getLeagueInfo(leagueId);
+  if (!league) return null;
+  const matchups = getMatchups(leagueId);
+
+  const regularWeeks =
+    league.playoffWeekStart != null
+      ? league.playoffWeekStart - 1
+      : regularSeasonWeeks(leagueId, matchups).length;
+  if (regularWeeks <= 0) return null;
+
+  const byWeek = new Map<number, MatchupRow[]>();
+  for (const m of matchups) {
+    if (!byWeek.has(m.week)) byWeek.set(m.week, []);
+    byWeek.get(m.week)!.push(m);
+  }
+
+  // A week counts as played once every roster in it has scored. Mid-week the
+  // teams whose players haven't kicked off yet are still on zero, so a week in
+  // progress doesn't light up early.
+  const weekDone = (w: number): boolean => {
+    const rows = byWeek.get(w);
+    return !!rows && rows.length > 0 && rows.every((r) => r.points > 0);
+  };
+
+  const segments: ProgressSegment[] = [];
+  for (let w = 1; w <= regularWeeks; w++) {
+    segments.push({ label: `Week ${w}`, done: weekDone(w), postseason: false });
+  }
+
+  // Before the bracket is published there's nothing to count, so the
+  // postseason still shows its usual three slots, just empty.
+  const rounds = getBracket(leagueId, 'winners');
+  const postseason = rounds.length || POSTSEASON_ROUNDS;
+  for (let i = 0; i < postseason; i++) {
+    const round = rounds[i];
+    segments.push({
+      label: round ? round.name : `Postseason round ${i + 1}`,
+      done:
+        !!round &&
+        round.matches.length > 0 &&
+        round.matches.every((m) => m.winnerRosterId != null),
+      postseason: true,
+    });
+  }
+
+  const completed = segments.filter((s) => s.done).length;
+  const total = segments.length;
+  return { segments, completed, total, pct: (completed / total) * 100 };
+}
+
 export interface Podium {
   champion: TeamInfo | null;
   runnerUp: TeamInfo | null;

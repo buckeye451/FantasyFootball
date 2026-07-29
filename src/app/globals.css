@@ -54,6 +54,10 @@
   --recap-tile-border: rgba(74, 42, 134, 0.25);
   --trophy-tile-ink: #4a2a86;
   --trophy-tile-muted: #6f52ad;
+  /* Season progress bar: empty dash, regular-season fill, postseason fill. */
+  --progress-empty: rgba(255, 255, 255, 0.13);
+  --progress-fill: #3987e5;
+  --progress-post: #f6c945;
 }
 
 /* Light theme — same layout, lighter surfaces. Every colour the app uses is a
@@ -107,6 +111,9 @@
   --recap-tile-border: rgba(255, 255, 255, 0.24);
   --trophy-tile-ink: #16160f;
   --trophy-tile-muted: #6d6756;
+  --progress-empty: #ddd4c0;
+  --progress-fill: #1e6b42;
+  --progress-post: #b8860b;
 }
 
 * {
@@ -2341,5 +2348,106 @@ tr.playoff-cut td {
   .loading-logo {
     animation: none;
     opacity: 0.85;
+  }
+}
+
+/* ---------- season progress bar (dashboard) ---------- */
+.progress-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 18px 16px;
+  margin-bottom: 18px;
+}
+
+.progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.progress-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.progress-count {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* The dashes share the row equally, so the bar fits any season length. */
+.progress-bar {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+
+.progress-dash {
+  flex: 1;
+  min-width: 0;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--progress-empty);
+}
+
+.progress-dash.done {
+  background: var(--progress-fill);
+}
+
+.progress-dash.post.done {
+  background: var(--progress-post);
+}
+
+/* Empty postseason slots stay outlined, so the playoff weeks read as part of
+   the season rather than as trailing blanks. */
+.progress-dash.post {
+  box-shadow: inset 0 0 0 1.5px var(--progress-post);
+}
+
+.progress-pct {
+  flex: none;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .progress-tile {
+    padding: 12px 14px 14px;
+  }
+
+  .progress-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+  }
+
+  .progress-bar {
+    gap: 3px;
+  }
+
+  .progress-dash {
+    height: 12px;
+  }
+
+  .progress-pct {
+    text-align: right;
   }
 }

@@ -6,6 +6,7 @@ import {
   playersOfWeek,
   regularSeasonWeeks,
   resolveActiveLeague,
+  seasonProgress,
   standingsThroughWeek,
   topSeasonPlayersByPosition,
   weekBreakdown,
@@ -19,6 +20,7 @@ import { latestRecap } from '@/lib/recaps';
 import { PlayersOfWeek, TopSeasonPlayers } from '@/components/PlayerCards';
 import { StandingsTable } from '@/components/StandingsTable';
 import { WeekSelect } from '@/components/WeekSelect';
+import { SeasonProgressTile } from '@/components/SeasonProgress';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,6 +86,8 @@ export default function DashboardPage({
 
   // Single-week leaders for the stat tiles.
   const recap = latestRecap(season);
+  // Real calendar progress, so it doesn't rewind with the week selector above.
+  const progress = seasonProgress(leagueId);
   const weekMatchups = weekBreakdown(leagueId, selectedWeek);
   const weekTeams = weekMatchups.flatMap((m) => m.teams);
   const highestScoring = weekTeams.reduce<(typeof weekTeams)[number] | null>(
@@ -164,6 +168,8 @@ export default function DashboardPage({
           </span>
         </Link>
       )}
+
+      {progress && <SeasonProgressTile progress={progress} season={season} />}
 
       <section className="card">
         <h2 className="card-title">Standings</h2>
