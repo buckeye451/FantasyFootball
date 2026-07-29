@@ -671,6 +671,113 @@ export interface MatchupBreakdown {
   teams: TeamWeekStat[];
 }
 
+export interface BoxScorePlayer {
+  playerId: string;
+  name: string;
+  position: string;
+  /** NFL team that season, not the player's current one. */
+  nflTeam: string;
+  points: number;
+}
+
+export interface BoxScoreRow {
+  /** Lineup slot — 'QB', 'FLEX', … or 'BE' on the bench rows. */
+  slot: string;
+  bench: boolean;
+  home: BoxScorePlayer | null;
+  away: BoxScorePlayer | null;
+}
+
+export interface BoxScoreSide {
+  team: TeamInfo;
+  score: number;
+  benchPoints: number;
+}
+
+export interface BoxScore {
+  home: BoxScoreSide;
+  /** Null on a bye, where one team has no opponent that week. */
+  away: BoxScoreSide | null;
+  rows: BoxScoreRow[];
+}
+
+/**
+ * Both lineups of one matchup, zipped into rows for a side-by-side box score.
+ *
+ * Starters line up by slot — the slot list comes from the league's roster
+ * positions, so it's identical for both teams — and the benches, which can be
+ * different lengths, are padded so each side keeps its own ordering.
+ */
+export function matchupBoxScore(
+  leagueId: string,
+  week: number,
+  rosterIds: number[]
+): BoxScore | null {
+  const league = getLeagueInfo(leagueId);
+  if (!league || rosterIds.length === 0) return null;
+  const meta = getPlayerMeta(league.season);
+
+  const detail = (rosterId: number) => teamWeekDetail(leagueId, rosterId, week);
+  const homeDetail = detail(rosterIds[0]);
+  if (!homeDetail) return null;
+  const awayDetail = rosterIds.length > 1 ? detail(rosterIds[1]) : null;
+
+  const toPlayer = (playerId: string | null, points: number): BoxScorePlayer | null => {
+    if (!playerId || playerId === '0') return null;
+    const m = meta.get(playerId);
+    return {
+      playerId,
+      name: m?.name ?? playerId,
+      position: m?.position ?? '',
+      nflTeam: m?.team ?? '',
+      points: round2(points),
+    };
+  };
+
+  const rows: BoxScoreRow[] = [];
+  const starterCount = Math.max(
+    homeDetail.starters.length,
+    awayDetail?.starters.length ?? 0
+  );
+  for (let i = 0; i < starterCount; i++) {
+    const h = homeDetail.starters[i];
+    const a = awayDetail?.starters[i];
+    rows.push({
+      slot: h?.slot ?? a?.slot ?? '',
+      bench: false,
+      home: h ? toPlayer(h.playerId, h.points) : null,
+      away: a ? toPlayer(a.playerId, a.points) : null,
+    });
+  }
+
+  const benchCount = Math.max(homeDetail.bench.length, awayDetail?.bench.length ?? 0);
+  for (let i = 0; i < benchCount; i++) {
+    const h = homeDetail.bench[i];
+    const a = awayDetail?.bench[i];
+    rows.push({
+      slot: 'BE',
+      bench: true,
+      home: h ? toPlayer(h.playerId, h.points) : null,
+      away: a ? toPlayer(a.playerId, a.points) : null,
+    });
+  }
+
+  const benchTotal = (d: TeamWeekDetail) =>
+    round2(d.bench.reduce((sum, b) => sum + b.points, 0));
+
+  return {
+    home: { team: homeDetail.team, score: round2(homeDetail.points), benchPoints: benchTotal(homeDetail) },
+    away: awayDetail
+      ? {
+          team: awayDetail.team,
+          score: round2(awayDetail.points),
+          benchPoints: benchTotal(awayDetail),
+        }
+      : null,
+    rows,
+  };
+}
+
 function computeTeamWeekStat(
   m: MatchupRow,
   opponentScore: number | null,

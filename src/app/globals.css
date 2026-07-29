@@ -2451,3 +2451,206 @@ tr.playoff-cut td {
     text-align: right;
   }
 }
+
+/* ---------- full box score (weekly scores page) ---------- */
+.box-toggle {
+  border-top: 1px solid var(--grid);
+  margin-top: 4px;
+}
+
+.box-toggle > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 2px 8px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 650;
+  list-style: none;
+}
+
+.box-toggle > summary::-webkit-details-marker {
+  display: none;
+}
+
+.box-toggle > summary:hover {
+  color: var(--ink);
+}
+
+.box-caret {
+  display: inline-block;
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+
+.box-toggle[open] .box-caret {
+  transform: rotate(90deg);
+}
+
+.box-score {
+  padding-bottom: 4px;
+}
+
+.box-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 12px;
+}
+
+.box-head-side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.box-head-side.away {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.box-head-name {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.box-head-score {
+  font-size: 21px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.box-head-side.won .box-head-name,
+.box-head-side.won .box-head-score {
+  color: var(--good);
+}
+
+.box-head-vs {
+  flex: none;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.box-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.box-table td {
+  padding: 5px 4px;
+  border-top: 1px solid var(--grid);
+  vertical-align: middle;
+}
+
+.box-player {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.box-right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.box-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.box-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.box-empty {
+  color: var(--muted);
+}
+
+.box-pts {
+  width: 1%;
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The slot column is the spine of the layout — fixed width so both sides stay
+   symmetrical however long the names are. */
+.box-slot {
+  width: 1%;
+  text-align: center;
+  white-space: nowrap;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+.box-bench-row .box-name,
+.box-bench-row .box-pts {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.box-bench-first td {
+  border-top: 2px solid var(--baseline);
+}
+
+.box-table tfoot td {
+  border-top: 1px solid var(--baseline);
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.box-foot-label {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 10.5px;
+}
+
+.box-cell-right .box-foot-label {
+  display: block;
+  text-align: right;
+}
+
+@media (max-width: 560px) {
+  .box-table td {
+    padding: 5px 2px;
+  }
+
+  .box-name {
+    font-size: 12px;
+    max-width: 96px;
+  }
+
+  .box-pts {
+    font-size: 12px;
+  }
+
+  .box-slot {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+
+  .box-head-score {
+    font-size: 18px;
+  }
+}

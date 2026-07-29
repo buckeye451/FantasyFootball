@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import type { MatchupBreakdown, TeamWeekStat } from '@/lib/stats';
+import type { BoxScore, MatchupBreakdown, TeamWeekStat } from '@/lib/stats';
 import { managerClass, performanceClass, winPctClass } from '@/lib/thresholds';
+import { BoxScoreTable } from '@/components/BoxScore';
 
 function BestLineup({ v }: { v: 'yes' | 'no' | null }) {
   if (v === null) return <span className="flat">–</span>;
@@ -45,11 +46,14 @@ export function MatchupBreakdownList({
   breakdowns,
   season,
   compact,
+  boxScores,
 }: {
   breakdowns: MatchupBreakdown[];
   season: string;
   /** Always-short headers and tighter spacing, for the dashboard's week view. */
   compact?: boolean;
+  /** Parallel to `breakdowns`. Supplied only where the full lineups are wanted. */
+  boxScores?: Array<BoxScore | null>;
 }) {
   if (breakdowns.length === 0) {
     return <p className="card-note">No matchup data for this week.</p>;
@@ -59,6 +63,7 @@ export function MatchupBreakdownList({
       {breakdowns.map((b, i) => {
         const topScore = Math.max(...b.teams.map((t) => t.score));
         const tied = b.teams.length === 2 && b.teams[0].score === b.teams[1].score;
+        const box = boxScores?.[i] ?? null;
         return (
           <div className="card matchup-card" key={b.matchupId ?? `solo-${i}`}>
             <div className="table-wrap">
@@ -121,6 +126,19 @@ export function MatchupBreakdownList({
                 </tbody>
               </table>
             </div>
+            {box && (
+              // <details> so the box score expands without any JavaScript, and
+              // stays open across a re-render.
+              <details className="box-toggle">
+                <summary>
+                  <span className="box-caret" aria-hidden="true">
+                    ▸
+                  </span>
+                  Full box score
+                </summary>
+                <BoxScoreTable box={box} />
+              </details>
+            )}
           </div>
         );
       })}

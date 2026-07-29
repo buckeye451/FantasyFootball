@@ -1,5 +1,10 @@
 import { notFound } from 'next/navigation';
-import { regularSeasonWeeks, resolveActiveLeague, weekBreakdown } from '@/lib/stats';
+import {
+  matchupBoxScore,
+  regularSeasonWeeks,
+  resolveActiveLeague,
+  weekBreakdown,
+} from '@/lib/stats';
 import { MatchupBreakdownList } from '@/components/MatchupBreakdown';
 import { PageNav } from '@/components/PageNav';
 
@@ -20,6 +25,9 @@ export default function WeekPage({
   if (!weeks.includes(week)) notFound();
 
   const breakdowns = weekBreakdown(league.leagueId, week);
+  const boxScores = breakdowns.map((b) =>
+    matchupBoxScore(league.leagueId, week, b.teams.map((t) => t.team.rosterId))
+  );
 
   return (
     <>
@@ -37,7 +45,11 @@ export default function WeekPage({
           href: `/week/${w}?season=${league.season}`,
         }))}
       />
-      <MatchupBreakdownList breakdowns={breakdowns} season={league.season} />
+      <MatchupBreakdownList
+        breakdowns={breakdowns}
+        season={league.season}
+        boxScores={boxScores}
+      />
     </>
   );
 }
