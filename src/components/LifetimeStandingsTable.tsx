@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { LifetimeRow } from '@/lib/stats';
+import { managerClass, winRateClass } from '@/lib/thresholds';
 
 type SortKey =
   | 'manager'
@@ -114,8 +115,14 @@ export function LifetimeStandingsTable({ rows }: { rows: LifetimeRow[] }) {
                 {r.wins}-{r.losses}
                 {r.ties ? `-${r.ties}` : ''}
               </td>
-              <td className="num">{r.winPct.toFixed(1)}%</td>
-              <td className="num">{r.managerPerformance.toFixed(1)}%</td>
+              <td className="num">
+                <span className={winRateClass(r.winPct)}>{r.winPct.toFixed(1)}%</span>
+              </td>
+              <td className="num">
+                <span className={managerClass(r.managerPerformance)}>
+                  {r.managerPerformance.toFixed(1)}%
+                </span>
+              </td>
               <td className="num">{r.pointsFor.toFixed(1)}</td>
               <td className="num">{r.pointsAgainst.toFixed(1)}</td>
               <td className="num">{r.avgPoints.toFixed(1)}</td>
