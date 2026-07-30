@@ -3418,3 +3418,38 @@ tr.playoff-cut td {
   font-weight: 650;
   color: var(--recap-tile-muted);
 }
+
+/* Phones: the four rank tiles go 2x2 rather than a 475px stack, and shed the
+   padding and type size that made each one so tall. Forced to two columns
+   rather than left to auto-fit, which can't fit two 178px tracks on a phone
+   and would drop back to one. */
+@media (max-width: 640px) {
+  .rank-tiles {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .rank-tiles .feature-tile {
+    padding: 9px 11px 10px;
+  }
+
+  .rank-tiles .feature-tile-label {
+    font-size: 9.5px;
+    letter-spacing: 0.4px;
+  }
+
+  .rank-tiles .feature-tile-name {
+    margin-top: 1px;
+    font-size: 17px;
+  }
+
+  .rank-tiles .feature-tile-of {
+    margin-left: 4px;
+    font-size: 10.5px;
+  }
+
+  .rank-tiles .feature-tile-value {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+}
