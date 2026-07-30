@@ -20,7 +20,7 @@ import { TeamWeekPicker } from '@/components/TeamWeekPicker';
 import { PageNav } from '@/components/PageNav';
 import { RankTiles, type RankTile } from '@/components/RankTiles';
 import { HeadToHead } from '@/components/HeadToHead';
-import { managerClass, winPctClass } from '@/lib/thresholds';
+import { WeeklyResultsTable } from '@/components/WeeklyResultsTable';
 
 export const dynamic = 'force-dynamic';
 
@@ -161,7 +161,6 @@ export default function TeamPage({
 
   // Helpers that preserve the selected season across links.
   const sq = `?season=${seasonYear}`;
-  const weekHref = (w: number) => `/team/${team.slug}?week=${w}&season=${seasonYear}#week-detail`;
 
   return (
     <>
@@ -205,89 +204,7 @@ export default function TeamPage({
 
       <section className="card">
         <h2 className="card-title">Weekly results</h2>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Week</th>
-                <th>Opponent</th>
-                <th></th>
-                <th className="num">Score</th>
-                <th className="num">Opp</th>
-                <th className="num" title="Percent of the other teams this score would have beaten">
-                  % vs ROL
-                </th>
-                <th className="num" title="Score ÷ best-possible lineup (max 100%)">
-                  Manager %
-                </th>
-                <th className="num">Optimal</th>
-                <th className="center" title="Best lineup wins? Would the best-possible lineup have won this matchup?">
-                  BLW?
-                </th>
-                <th
-                  className="num"
-                  title="Percent of the other teams the best-possible lineup would have beaten"
-                >
-                  Optimal ROL %
-                </th>
-                <th className="num">Benched pts</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {season.weeks.map((w) => (
-                <tr key={w.week}>
-                  <td>W{w.week}</td>
-                  <td className="team-cell">
-                    {w.opponent ? (
-                      <Link href={`/team/${w.opponent.slug}${sq}`}>{w.opponent.displayName}</Link>
-                    ) : (
-                      <span className="sub">bye</span>
-                    )}
-                  </td>
-                  <td>{w.result && <span className={`badge ${w.result.toLowerCase()}`}>{w.result}</span>}</td>
-                  <td className="num">{w.points.toFixed(2)}</td>
-                  <td className="num">{w.opponentPoints != null ? w.opponentPoints.toFixed(2) : '—'}</td>
-                  <td className="num">
-                    <span className={winPctClass(w.winPctVsLeague)}>
-                      {w.winPctVsLeague.toFixed(0)}%
-                    </span>
-                  </td>
-                  <td className="num">
-                    <span className={managerClass(w.managerPct)}>{w.managerPct.toFixed(1)}%</span>
-                  </td>
-                  <td className="num">{w.optimalPoints.toFixed(2)}</td>
-                  <td className="center">
-                    {w.bestLineupWins === null ? (
-                      <span className="flat">–</span>
-                    ) : w.bestLineupWins === 'yes' ? (
-                      <span className="up">Yes</span>
-                    ) : (
-                      <span className="down">No</span>
-                    )}
-                  </td>
-                  <td className="num">
-                    <span className={winPctClass(w.optimalWinPctVsLeague)}>
-                      {w.optimalWinPctVsLeague.toFixed(0)}%
-                    </span>
-                  </td>
-                  <td className="num">
-                    {w.benchPointsLost > 0 ? (
-                      <span className="down">{w.benchPointsLost.toFixed(2)}</span>
-                    ) : (
-                      <span className="flat">0</span>
-                    )}
-                  </td>
-                  <td>
-                    <Link className="sub" href={weekHref(w.week)}>
-                      view lineup →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <WeeklyResultsTable weeks={season.weeks} slug={team.slug} season={seasonYear} />
       </section>
 
       {mine && mine.opponents.length > 0 && (
