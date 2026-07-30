@@ -61,6 +61,18 @@ export function latestRecap(season: string): Recap | null {
   return row ? toRecap(row) : null;
 }
 
+/**
+ * The most recent post across every season, for the header's notification
+ * bell. Deliberately not season-scoped: a new post is news whatever season
+ * you happen to be looking at.
+ */
+export function newestRecap(): Recap | null {
+  const row = getDb()
+    .prepare('SELECT * FROM recaps ORDER BY created_at DESC, id DESC LIMIT 1')
+    .get() as Record<string, unknown> | undefined;
+  return row ? toRecap(row) : null;
+}
+
 export function createRecap(input: {
   season: string;
   title: string;

@@ -2,6 +2,7 @@
 import { resolveActiveLeague } from '@/lib/stats';
 import { listRecaps } from '@/lib/recaps';
 import { RecapEditor } from '@/components/RecapEditor';
+import { ScrollToHash } from '@/components/ScrollToHash';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,7 @@ export default function RecapsPage({ searchParams }: { searchParams: { season?: 
 
   return (
     <>
+      <ScrollToHash />
       <div className="dash-controls">
         <div>
           <h1 className="page-title">Recaps</h1>

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { defaultSeason, getSeasons, getTeams, playoffRounds, regularSeasonWeeks } from '@/lib/stats';
 import { ensureAutoSync } from '@/lib/autosync';
 import { SiteHeader, type HeaderSeason } from '@/components/SiteHeader';
+import { newestRecap } from '@/lib/recaps';
+import type { BellRecap } from '@/components/RecapBell';
 import './globals.css';
 
 export const dynamic = 'force-dynamic';
@@ -14,6 +16,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   let seasons: HeaderSeason[] = [];
   let fallbackSeason: string | null = null;
+  let bellRecap: BellRecap | null = null;
   try {
     ensureAutoSync();
     fallbackSeason = defaultSeason();
@@ -23,6 +26,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       weeks: regularSeasonWeeks(s.leagueId),
       playoffRounds: playoffRounds(s.leagueId).map((r) => ({ round: r.round, name: r.name })),
     }));
+    const latest = newestRecap();
+    bellRecap = latest
+      ? {
+          id: latest.id,
+          season: latest.season,
+          title: latest.title,
+          preheader: latest.preheader,
+          createdAt: latest.createdAt,
+        }
+      : null;
   } catch {
     // fresh checkout with no database yet — render the shell anyway
   }
@@ -38,7 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <SiteHeader seasons={seasons} defaultSeason={fallbackSeason} />
+        <SiteHeader seasons={seasons} defaultSeason={fallbackSeason} newestRecap={bellRecap} />
         <main>{children}</main>
       </body>
     </html>

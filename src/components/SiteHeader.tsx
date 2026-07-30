@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { RecapBell, type BellRecap } from '@/components/RecapBell';
 
 export interface HeaderSeason {
   season: string;
@@ -75,9 +76,12 @@ function LinkSection({
 export function SiteHeader({
   seasons,
   defaultSeason,
+  newestRecap,
 }: {
   seasons: HeaderSeason[];
   defaultSeason: string | null;
+  /** Most recent post across all seasons, for the notification bell. */
+  newestRecap: BellRecap | null;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -130,6 +134,7 @@ export function SiteHeader({
           >
             <img src="/hero/logo.svg" alt={active?.name ?? 'BMCFF'} className="brand-logo" />
           </Link>
+          <RecapBell recap={newestRecap} />
           <ThemeToggle />
           {seasons.length > 0 && (
             <label className="season-picker">
