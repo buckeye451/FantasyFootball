@@ -3453,3 +3453,81 @@ tr.playoff-cut td {
     line-height: 1.3;
   }
 }
+
+/* "See full rankings" link, pinned to the bottom-right of each rank tile */
+.rank-tiles .feature-tile {
+  display: flex;
+  flex-direction: column;
+}
+
+.rank-more {
+  align-self: flex-end;
+  margin-top: auto;
+  padding: 6px 0 0;
+  border: none;
+  background: none;
+  color: var(--recap-tile-muted);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  text-align: right;
+}
+
+.rank-more:hover {
+  color: var(--recap-tile-ink);
+  text-decoration: underline;
+}
+
+/* Borrows the record book's list layout but not its palette — that neutral
+   near-black scheme is meant to be that page's identity, and it reads as a
+   foreign object over the purple team page. */
+.rank-modal {
+  background: var(--surface-opaque);
+  border-color: var(--baseline);
+}
+
+.rank-modal .record-modal-sub,
+.rank-modal .record-rank,
+.rank-modal .record-lines {
+  color: var(--muted);
+}
+
+.rank-modal .record-holder,
+.rank-modal .record-value {
+  color: var(--ink);
+}
+
+.rank-modal .record-list li {
+  border-bottom-color: var(--grid);
+}
+
+/* The team whose page opened the board */
+.rank-list .is-you {
+  background: var(--accent-wash);
+  box-shadow: inset 3px 0 0 var(--series-1);
+}
+
+.rank-list .is-you .record-holder {
+  color: var(--series-1);
+}
+
+.rank-you {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--series-1);
+  color: var(--surface-opaque);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  vertical-align: 1px;
+}
+
+@media (max-width: 640px) {
+  .rank-more {
+    font-size: 10px;
+    padding-top: 5px;
+  }
+}

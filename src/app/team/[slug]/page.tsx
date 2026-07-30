@@ -5,8 +5,8 @@ import {
   getTeamBySlug,
   getTeams,
   mostStartedByPosition,
+  rankBoards,
   resolveActiveLeague,
-  teamRanks,
   teamSeason,
   teamWeekDetail,
   weeklyMedians,
@@ -16,6 +16,7 @@ import { LineupAsSet, OptimalLineup } from '@/components/RosterTables';
 import { MostStartedPlayers } from '@/components/PlayerCards';
 import { TeamWeekPicker } from '@/components/TeamWeekPicker';
 import { PageNav } from '@/components/PageNav';
+import { RankTiles, type RankTile } from '@/components/RankTiles';
 import { managerClass, winPctClass } from '@/lib/thresholds';
 
 export const dynamic = 'force-dynamic';
@@ -45,14 +46,94 @@ export default function TeamPage({
   const meta = getPlayerMeta(seasonYear);
 
   const mostStarted = mostStartedByPosition(leagueId, team.rosterId);
-  // Where this team sits in the league on each headline metric.
-  const ranks = teamRanks(leagueId, team.rosterId);
-  const standing = ranks.standing;
-  const place = (n: number | null) => (n == null ? '—' : `#${n}`);
-  // Every tile figure comes from the standings, not teamSeason: teamSeason
-  // sums points across the postseason too, so pairing its totals with a
-  // regular-season rank would show one number and rank on another.
-  const benchPoints = standing ? Math.max(0, standing.optimalPoints - standing.pointsFor) : null;
+  // Where this team sits in the league on each headline metric, plus the full
+  // board behind each one for the popups. Every figure comes from the
+  // standings rather than teamSeason: teamSeason sums points across the
+  // postseason while its record and rank are regular-season only, so pairing
+  // its totals with a league rank would show one number and rank on another.
+  const boards = rankBoards(leagueId);
+  const rankOf = (rows: typeof boards.place) =>
+    rows.find((r) => r.rosterId === team.rosterId)?.rank ?? null;
+  const bench = (s: (typeof boards.place)[number]['standing']) =>
+    Math.max(0, s.optimalPoints - s.pointsFor);
+  const standing = boards.place.find((r) => r.rosterId === team.rosterId)?.standing ?? null;
+
+  const tiles: RankTile[] = [
+    {
+      key: 'place',
+      label: 'Current Place',
+      rank: rankOf(boards.place),
+      lines: standing
+        ? [`${standing.wins}-${standing.losses}${standing.ties ? `-${standing.ties}` : ''}`]
+        : ['—'],
+      note: 'League standings, best record first',
+      board: boards.place.map((r) => ({
+        rosterId: r.rosterId,
+        rank: r.rank,
+        name: r.name,
+        value: `${r.standing.wins}-${r.standing.losses}${r.standing.ties ? `-${r.standing.ties}` : ''}`,
+        detail: `${r.standing.pointsFor.toFixed(1)} points for`,
+      })),
+    },
+    {
+      key: 'points',
+      label: 'Points Per Game',
+      rank: rankOf(boards.points),
+      lines: standing
+        ? [`${standing.avgPoints.toFixed(1)} per game`, `${standing.pointsFor.toFixed(1)} total`]
+        : ['—'],
+      note: 'Ranked on total points scored this season',
+      board: boards.points.map((r) => ({
+        rosterId: r.rosterId,
+        rank: r.rank,
+        name: r.name,
+        value: `${r.standing.pointsFor.toFixed(1)}`,
+        detail: `${r.standing.avgPoints.toFixed(1)} per game`,
+      })),
+    },
+    {
+      key: 'manager',
+      label: 'Manager Rank',
+      rank: rankOf(boards.manager),
+      lines: standing
+        ? [
+            `${standing.managerPerformance.toFixed(1)}% manager`,
+            `${bench(standing).toFixed(1)} left on the bench`,
+          ]
+        : ['—'],
+      note: 'Points scored ÷ best-possible lineup',
+      board: boards.manager.map((r) => ({
+        rosterId: r.rosterId,
+        rank: r.rank,
+        name: r.name,
+        value: `${r.standing.managerPerformance.toFixed(1)}%`,
+        detail: `${bench(r.standing).toFixed(1)} left on the bench`,
+      })),
+    },
+    {
+      key: 'performance',
+      label: 'Performance %',
+      rank: rankOf(boards.performance),
+      lines:
+        standing && standing.perfProjected > 0
+          ? [
+              `${standing.perfPoints.toFixed(1)} scored`,
+              `${standing.perfProjected.toFixed(1)} projected`,
+            ]
+          : ['no projections'],
+      note: 'Points scored ÷ points projected',
+      board: boards.performance.map((r) => ({
+        rosterId: r.rosterId,
+        rank: r.rank,
+        name: r.name,
+        value: r.standing.performance == null ? '—' : `${r.standing.performance.toFixed(1)}%`,
+        detail:
+          r.standing.perfProjected > 0
+            ? `${r.standing.perfPoints.toFixed(1)} of ${r.standing.perfProjected.toFixed(1)} projected`
+            : 'no projections',
+      })),
+    },
+  ];
 
   const medians = new Map(weeklyMedians(leagueId).map((m) => [m.week, m.median]));
   const chartData = season.weeks.map((w) => ({
@@ -86,63 +167,7 @@ export default function TeamPage({
         }))}
       />
 
-      <div className="feature-tiles rank-tiles">
-        <div className="feature-tile">
-          <div className="feature-tile-label">Current Place</div>
-          <div className="feature-tile-name">
-            {place(ranks.place)}
-            <span className="feature-tile-of">of {ranks.teams}</span>
-          </div>
-          <div className="feature-tile-value">
-            {season.wins}-{season.losses}
-            {season.ties ? `-${season.ties}` : ''}
-          </div>
-        </div>
-
-        <div className="feature-tile">
-          <div className="feature-tile-label">Points Per Game</div>
-          <div className="feature-tile-name">
-            {place(ranks.pointsRank)}
-            <span className="feature-tile-of">of {ranks.teams}</span>
-          </div>
-          <div className="feature-tile-value">
-            {standing ? `${standing.avgPoints.toFixed(1)} per game` : '—'}
-          </div>
-          <div className="feature-tile-value">
-            {standing ? `${standing.pointsFor.toFixed(1)} total` : '—'}
-          </div>
-        </div>
-
-        <div className="feature-tile">
-          <div className="feature-tile-label">Manager Rank</div>
-          <div className="feature-tile-name">
-            {place(ranks.managerRank)}
-            <span className="feature-tile-of">of {ranks.teams}</span>
-          </div>
-          <div className="feature-tile-value">
-            {standing ? `${standing.managerPerformance.toFixed(1)}% manager` : '—'}
-          </div>
-          <div className="feature-tile-value">
-            {benchPoints != null ? `${benchPoints.toFixed(1)} left on the bench` : '—'}
-          </div>
-        </div>
-
-        <div className="feature-tile">
-          <div className="feature-tile-label">Performance %</div>
-          <div className="feature-tile-name">
-            {place(ranks.performanceRank)}
-            <span className="feature-tile-of">of {ranks.teams}</span>
-          </div>
-          <div className="feature-tile-value">
-            {standing?.perfProjected ? `${standing.perfPoints.toFixed(1)} scored` : '—'}
-          </div>
-          <div className="feature-tile-value">
-            {standing?.perfProjected
-              ? `${standing.perfProjected.toFixed(1)} projected`
-              : 'no projections'}
-          </div>
-        </div>
-      </div>
+      <RankTiles tiles={tiles} rosterId={team.rosterId} teams={boards.teams} />
 
       <section className="card">
         <h2 className="card-title">Season, week by week</h2>

@@ -537,46 +537,54 @@ export interface TeamSeason {
   efficiency: number;
 }
 
-export interface TeamRanks {
-  /** Teams in the league, so a rank can be shown as "#3 of 10". */
+export interface RankBoardRow {
+  rosterId: number;
+  name: string;
+  rank: number;
+  standing: Standing;
+}
+
+export interface RankBoards {
   teams: number;
-  place: number | null;
-  pointsRank: number | null;
-  managerRank: number | null;
-  performanceRank: number | null;
-  standing: Standing | null;
+  place: RankBoardRow[];
+  points: RankBoardRow[];
+  manager: RankBoardRow[];
+  performance: RankBoardRow[];
 }
 
 /**
- * Where one team sits in the league on each headline metric.
+ * Every team ordered on each headline metric.
  *
  * Ranked by competition rules — a rank is one more than the number of teams
  * strictly ahead — so teams level on a metric share a place instead of being
- * split by whatever order the standings happened to be in.
+ * split by whatever order the standings happened to be in. Built from a single
+ * standings pass, since computing them is the expensive part.
  */
-export function teamRanks(leagueId: string, rosterId: number): TeamRanks {
+export function rankBoards(leagueId: string): RankBoards {
   const standings = currentStandings(leagueId);
-  const mine = standings.find((s) => s.team.rosterId === rosterId) ?? null;
 
-  const rankBy = (value: (s: Standing) => number | null): number | null => {
-    if (!mine) return null;
-    const v = value(mine);
-    if (v == null) return null;
-    return (
-      standings.filter((s) => {
-        const other = value(s);
-        return other != null && other > v;
-      }).length + 1
-    );
-  };
+  const board = (value: (s: Standing) => number | null): RankBoardRow[] =>
+    standings
+      .map((s) => {
+        const mine = value(s);
+        const ahead =
+          mine == null
+            ? standings.length - 1 // no figure at all sorts to the bottom
+            : standings.filter((o) => {
+                const other = value(o);
+                return other != null && other > mine;
+              }).length;
+        return { rosterId: s.team.rosterId, name: s.team.displayName, rank: ahead + 1, standing: s };
+      })
+      .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
 
   return {
     teams: standings.length,
-    place: mine?.rank ?? null,
-    pointsRank: rankBy((s) => s.pointsFor),
-    managerRank: rankBy((s) => s.managerPerformance),
-    performanceRank: rankBy((s) => s.performance),
-    standing: mine,
+    // Standings rank counts up, so it's negated to rank like the others.
+    place: board((s) => -s.rank),
+    points: board((s) => s.pointsFor),
+    manager: board((s) => s.managerPerformance),
+    performance: board((s) => s.performance),
   };
 }
 
