@@ -62,6 +62,9 @@
   --box-bench-bg: rgba(0, 0, 0, 0.2);
   /* Zebra striping on the long tables. */
   --row-stripe: rgba(255, 255, 255, 0.045);
+  /* --surface is translucent in dark mode; this is the colour it composites to
+     over the page, for frozen cells that have to be genuinely opaque. */
+  --card-solid: #342053;
   /* Record book runs a neutral near-black scheme of its own in dark mode
      rather than the purple surfaces, with mint figures. Light mode maps these
      straight back to the shared tokens. */
@@ -132,6 +135,7 @@
   --progress-post: #b8860b;
   --box-bench-bg: rgba(30, 28, 20, 0.08);
   --row-stripe: rgba(30, 28, 20, 0.035);
+  --card-solid: #faf7ef; /* light --surface is already opaque */
   /* Light mode keeps the shared palette — these just point back at it. */
   --record-bg: var(--surface);
   --record-border: var(--border);
@@ -3277,4 +3281,54 @@ tr.playoff-cut td {
   .trade-player-name {
     font-size: 12.5px;
   }
+}
+
+/* ---------- frozen rank/team columns in the standings ---------- */
+/*
+ * Offsets come from --sticky-N, measured in the component: a pinned column has
+ * to clear the real width of the ones before it, and those depend on rendered
+ * content.
+ *
+ * The backgrounds are layered rather than set outright — an opaque base so
+ * scrolling cells can't show through, with the row's own tint painted over it
+ * as a background-image. Setting the tint as a plain colour would make the
+ * cell translucent again and defeat the whole thing.
+ */
+.standings-table .sticky-col {
+  position: sticky;
+  z-index: 1;
+  background-color: var(--card-solid);
+}
+
+.standings-table thead .sticky-col {
+  z-index: 2;
+}
+
+.standings-table .sticky-col-0 {
+  left: var(--sticky-0, 0px);
+}
+
+.standings-table .sticky-col-1 {
+  left: var(--sticky-1, 0px);
+}
+
+/* Last pinned column carries the edge, so it reads as a seam rather than a
+   column that happens to have stopped moving — but only while the table is
+   actually scrolled, so a wide screen looks exactly as it did before. */
+.standings-table .sticky-col-2 {
+  left: var(--sticky-2, 0px);
+}
+
+.standings-table.is-pinned .sticky-col-2 {
+  box-shadow: 6px 0 8px -6px var(--sunken);
+  border-right: 1px solid var(--grid);
+}
+
+.standings-table tbody tr:nth-child(even) > .sticky-col {
+  background-image: linear-gradient(var(--row-stripe), var(--row-stripe));
+}
+
+.standings-table tbody tr.champ-row > .sticky-col {
+  background-color: var(--card-solid);
+  background-image: linear-gradient(var(--champ-wash), var(--champ-wash));
 }
