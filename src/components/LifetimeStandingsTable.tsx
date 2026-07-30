@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { LifetimeRow } from '@/lib/stats';
-import { managerClass, winRateClass } from '@/lib/thresholds';
+import { managerClass, performanceClass, winRateClass } from '@/lib/thresholds';
 import { useStickyColumns } from '@/components/useStickyColumns';
 
 /**
@@ -22,6 +22,8 @@ type SortKey =
   | 'mgr'
   | 'pf'
   | 'pa'
+  | 'perf'
+  | 'opp'
   | 'avg'
   | 'high'
   | 'best';
@@ -35,6 +37,8 @@ const ACCESSORS: Record<SortKey, (r: LifetimeRow) => number | string> = {
   mgr: (r) => r.managerPerformance,
   pf: (r) => r.pointsFor,
   pa: (r) => r.pointsAgainst,
+  perf: (r) => r.performance ?? -1,
+  opp: (r) => r.opponentPerformance ?? -1,
   avg: (r) => r.avgPoints,
   high: (r) => r.highScore,
   best: (r) => r.bestFinish ?? 999,
@@ -49,6 +53,8 @@ const DEFAULT_DIR: Record<SortKey, 'asc' | 'desc'> = {
   mgr: 'desc',
   pf: 'desc',
   pa: 'desc',
+  perf: 'desc',
+  opp: 'desc',
   avg: 'desc',
   high: 'desc',
   best: 'asc', // #1 is best
@@ -113,6 +119,15 @@ export function LifetimeStandingsTable({ rows }: { rows: LifetimeRow[] }) {
             })}
             {th('pf', 'PF', { num: true })}
             {th('pa', 'PA', { num: true })}
+            {th('perf', 'Perf %', {
+              num: true,
+              title: 'Career performance: points scored ÷ points projected',
+            })}
+            {th('opp', 'Opp. %', {
+              num: true,
+              title:
+                "Career opponent performance: points scored against you ÷ your opponents' projected points",
+            })}
             {th('avg', 'Avg', { num: true })}
             {th('high', 'High', { num: true })}
             {th('best', 'Best', { num: true, title: 'Best regular-season finish' })}
@@ -140,6 +155,24 @@ export function LifetimeStandingsTable({ rows }: { rows: LifetimeRow[] }) {
               </td>
               <td className="num">{r.pointsFor.toFixed(1)}</td>
               <td className="num">{r.pointsAgainst.toFixed(1)}</td>
+              <td className="num">
+                {r.performance == null ? (
+                  '—'
+                ) : (
+                  <span className={performanceClass(r.performance)}>
+                    {r.performance.toFixed(1)}%
+                  </span>
+                )}
+              </td>
+              <td className="num">
+                {r.opponentPerformance == null ? (
+                  '—'
+                ) : (
+                  <span className={performanceClass(r.opponentPerformance)}>
+                    {r.opponentPerformance.toFixed(1)}%
+                  </span>
+                )}
+              </td>
               <td className="num">{r.avgPoints.toFixed(1)}</td>
               <td className="num">{r.highScore.toFixed(1)}</td>
               <td className="num">{r.bestFinish != null ? `#${r.bestFinish}` : '—'}</td>

@@ -264,6 +264,10 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
         // The mirror image: what opponents put up against you, over what they
         // were projected for. Above 100% means the schedule ran hot.
         opponentPerformance: oppProjSum > 0 ? round2((oppProjPa / oppProjSum) * 100) : null,
+        perfPoints: round2(projPf),
+        perfProjected: round2(projSum),
+        oppPerfPoints: round2(oppProjPa),
+        oppPerfProjected: round2(oppProjSum),
       };
     });
 
@@ -1661,6 +1665,10 @@ export interface LifetimeRow {
   avgPoints: number;
   highScore: number;
   managerPerformance: number; // career points ÷ best-possible-lineup points, %
+  /** Career points ÷ career projected points, % (null = no projections). */
+  performance: number | null;
+  /** Career points against ÷ career opponent projections, %. */
+  opponentPerformance: number | null;
   bestFinish: number | null;
   trophies: number;
 }
@@ -1672,7 +1680,17 @@ export interface LifetimeRow {
  */
 export function lifetimeStandings(): LifetimeRow[] {
   const seasons = getSeasons().filter((s) => s.hasGames);
-  const byOwner = new Map<string, LifetimeRow & { games: number; optimalSum: number }>();
+  const byOwner = new Map<
+    string,
+    LifetimeRow & {
+      games: number;
+      optimalSum: number;
+      perfPoints: number;
+      perfProjected: number;
+      oppPerfPoints: number;
+      oppPerfProjected: number;
+    }
+  >();
 
   // Oldest season first so the newest display name wins.
   for (const season of [...seasons].sort((a, b) => Number(a.season) - Number(b.season))) {
@@ -1693,10 +1711,16 @@ export function lifetimeStandings(): LifetimeRow[] {
           avgPoints: 0,
           highScore: 0,
           managerPerformance: 0,
+          performance: null,
+          opponentPerformance: null,
           bestFinish: null,
           trophies: 0,
           games: 0,
           optimalSum: 0,
+          perfPoints: 0,
+          perfProjected: 0,
+          oppPerfPoints: 0,
+          oppPerfProjected: 0,
         };
         byOwner.set(key, row);
       }
@@ -1713,6 +1737,13 @@ export function lifetimeStandings(): LifetimeRow[] {
       row.games += s.wins + s.losses + s.ties;
       // Back out this season's best-possible-lineup total from its manager %.
       row.optimalSum += s.managerPerformance > 0 ? (s.pointsFor * 100) / s.managerPerformance : s.pointsFor;
+      // Summed rather than averaged across seasons: a career ratio is total
+      // points over total projected, so a short season can't weigh as much as
+      // a full one.
+      row.perfPoints += s.perfPoints;
+      row.perfProjected += s.perfProjected;
+      row.oppPerfPoints += s.oppPerfPoints;
+      row.oppPerfProjected += s.oppPerfProjected;
     }
   }
 
@@ -1723,6 +1754,9 @@ export function lifetimeStandings(): LifetimeRow[] {
       avgPoints: r.games ? round2(r.pointsFor / r.games) : 0,
       managerPerformance:
         r.optimalSum > 0 ? Math.min(100, round2((r.pointsFor / r.optimalSum) * 100)) : 100,
+      performance: r.perfProjected > 0 ? round2((r.perfPoints / r.perfProjected) * 100) : null,
+      opponentPerformance:
+        r.oppPerfProjected > 0 ? round2((r.oppPerfPoints / r.oppPerfProjected) * 100) : null,
       trophies: trophiesFor(r.displayName),
     }))
     .sort((a, b) => b.trophies - a.trophies || b.winPct - a.winPct || b.pointsFor - a.pointsFor);

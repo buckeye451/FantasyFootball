@@ -170,6 +170,15 @@ export interface Standing {
   performance: number | null; // season points ÷ season projected points, % (null = no projections)
   /** Points scored against you ÷ your opponents' projected points, %. */
   opponentPerformance: number | null;
+  /**
+   * Raw sums behind the two performance figures, so career totals can be
+   * aggregated exactly rather than re-derived from rounded percentages.
+   * Each pair only counts weeks where the relevant projection existed.
+   */
+  perfPoints: number;
+  perfProjected: number;
+  oppPerfPoints: number;
+  oppPerfProjected: number;
   rank: number;
   movement: number; // vs. previous week's rank; positive = climbed
 }
