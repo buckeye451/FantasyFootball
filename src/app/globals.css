@@ -2887,3 +2887,185 @@ tr.playoff-cut td {
 .finish-case .finish-label {
   color: var(--trophy-tile-muted);
 }
+
+/* ---------- the record book ---------- */
+.record-section {
+  margin-bottom: 26px;
+}
+
+.record-group-label {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* auto-fill (not auto-fit) so every card is the same width whatever a group's
+   count is — a four-record group leaves space on the right rather than
+   stretching its cards wider than the six-record one below it. The track
+   width is sized so all six player records land on one row at full width. */
+.record-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.record-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 15px 11px;
+}
+
+.record-card-label {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  /* Floor of two lines, so a one-line label doesn't lift its value above the
+     cards beside it. Longer labels still push the card taller. */
+  min-height: 2.7em;
+}
+
+.record-card-value {
+  margin: 5px 0 7px;
+  color: var(--good);
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.record-card-holder {
+  font-size: 14px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.record-card-line {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.record-more {
+  align-self: flex-start;
+  margin-top: 9px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--series-1);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.record-more:hover {
+  text-decoration: underline;
+}
+
+/* Top-25 popup */
+.record-modal {
+  max-width: 520px;
+}
+
+.record-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.record-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.record-modal-sub {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.record-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.record-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--grid);
+}
+
+.record-list li:last-child {
+  border-bottom: none;
+}
+
+.record-list li:nth-child(even) {
+  background: var(--row-stripe);
+}
+
+.record-rank {
+  flex: none;
+  width: 22px;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.record-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.record-holder {
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.record-lines {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.record-value {
+  flex: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .record-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .record-card {
+    padding: 11px 12px 10px;
+  }
+
+  .record-card-value {
+    font-size: 22px;
+  }
+}

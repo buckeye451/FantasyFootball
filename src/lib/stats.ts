@@ -1034,6 +1034,285 @@ export function seasonProgress(leagueId: string): SeasonProgress | null {
   return { segments, completed, total, pct: (completed / total) * 100 };
 }
 
+// ---------------------------------------------------------------------------
+// Record book — all-time single records over regular-season play
+// ---------------------------------------------------------------------------
+
+export interface RecordEntry {
+  /** Sort key. Formatting lives in `display` so ties order predictably. */
+  value: number;
+  display: string;
+  /** Who holds it, and where their page is. */
+  holder: string;
+  slug: string;
+  /** Context under the name: opponent, season/week, the raw scores. */
+  lines: string[];
+}
+
+export interface RecordDef {
+  key: string;
+  label: string;
+  entries: RecordEntry[];
+}
+
+export interface RecordGroup {
+  key: string;
+  label: string;
+  records: RecordDef[];
+}
+
+const RECORD_DEPTH = 25;
+
+/** Row shape gathered in one pass, before being sliced into each record. */
+interface SeasonTeamRow {
+  team: TeamInfo;
+  season: string;
+  points: number;
+  wins: number;
+  losses: number;
+  ties: number;
+  games: number;
+}
+
+interface GameRow {
+  team: TeamInfo;
+  opponent: TeamInfo | null;
+  season: string;
+  week: number;
+  score: number;
+  opponentScore: number | null;
+}
+
+interface PlayerGameRow {
+  name: string;
+  position: string;
+  season: string;
+  week: number;
+  points: number;
+  manager: TeamInfo;
+}
+
+function topBy(
+  rows: RecordEntry[],
+  direction: 'desc' | 'asc',
+  depth = RECORD_DEPTH
+): RecordEntry[] {
+  const sorted = [...rows].sort((a, b) =>
+    direction === 'desc' ? b.value - a.value : a.value - b.value
+  );
+  return sorted.slice(0, depth);
+}
+
+/**
+ * Every all-time record, each with its top 25.
+ *
+ * Regular season only — playoff weeks are a different sample size and would
+ * let a three-week run sit alongside a full season. Everything is gathered in
+ * a single pass over the matchups, then sliced per record.
+ */
+export function recordBook(): RecordGroup[] {
+  const seasonTeams: SeasonTeamRow[] = [];
+  const games: GameRow[] = [];
+  const playerGames: PlayerGameRow[] = [];
+
+  for (const s of getSeasons()) {
+    if (!s.hasGames) continue;
+    const teams = new Map(getTeams(s.leagueId).map((t) => [t.rosterId, t]));
+    const matchups = getMatchups(s.leagueId);
+    const weeks = new Set(regularSeasonWeeks(s.leagueId, matchups));
+    const meta = getPlayerMeta(s.season);
+
+    const totals = new Map<number, SeasonTeamRow>();
+    for (const m of matchups) {
+      if (!weeks.has(m.week)) continue;
+      const team = teams.get(m.rosterId);
+      if (!team) continue;
+
+      const opp = opponentOf(
+        m,
+        matchups.filter((x) => x.week === m.week)
+      );
+      const oppTeam = opp ? teams.get(opp.rosterId) ?? null : null;
+
+      games.push({
+        team,
+        opponent: oppTeam,
+        season: s.season,
+        week: m.week,
+        score: round2(m.points),
+        opponentScore: opp ? round2(opp.points) : null,
+      });
+
+      let row = totals.get(m.rosterId);
+      if (!row) {
+        row = { team, season: s.season, points: 0, wins: 0, losses: 0, ties: 0, games: 0 };
+        totals.set(m.rosterId, row);
+      }
+      row.points = round2(row.points + m.points);
+      if (opp) {
+        row.games += 1;
+        if (m.points > opp.points) row.wins += 1;
+        else if (m.points < opp.points) row.losses += 1;
+        else row.ties += 1;
+      }
+
+      for (const pid of m.starters) {
+        if (!pid || pid === '0') continue;
+        const pm = meta.get(pid);
+        playerGames.push({
+          name: pm?.name ?? pid,
+          position: pm?.position ?? '',
+          season: s.season,
+          week: m.week,
+          points: round2(m.playersPoints[pid] ?? 0),
+          manager: team,
+        });
+      }
+    }
+    seasonTeams.push(...totals.values());
+  }
+
+  const record = (season: string, week: number) => `${season} · Wk ${week}`;
+  const fmt1 = (n: number) => n.toFixed(1);
+  const fmt2 = (n: number) => n.toFixed(2);
+
+  // --- season -------------------------------------------------------------
+  const seasonPointRows = seasonTeams.map(
+    (r): RecordEntry => ({
+      value: r.points,
+      display: fmt2(r.points),
+      holder: r.team.displayName,
+      slug: r.team.slug,
+      lines: [`${r.season} · ${r.wins}-${r.losses}${r.ties ? `-${r.ties}` : ''}`],
+    })
+  );
+
+  // A short season shouldn't win "best record" on a 2-0 start.
+  const completeSeasons = seasonTeams.filter((r) => r.games > 0);
+  const seasonRecordRows = completeSeasons.map((r): RecordEntry => {
+    const pct = ((r.wins + r.ties * 0.5) / r.games) * 100;
+    return {
+      value: round2(pct),
+      display: `${fmt1(pct)}%`,
+      holder: r.team.displayName,
+      slug: r.team.slug,
+      lines: [`${r.season} · ${r.wins}-${r.losses}${r.ties ? `-${r.ties}` : ''}`],
+    };
+  });
+
+  // --- single game --------------------------------------------------------
+  const gameRows = games.map(
+    (g): RecordEntry => ({
+      value: g.score,
+      display: fmt2(g.score),
+      holder: g.team.displayName,
+      slug: g.team.slug,
+      lines: [g.opponent ? `vs ${g.opponent.displayName}` : 'no opponent', record(g.season, g.week)],
+    })
+  );
+
+  // --- head to head -------------------------------------------------------
+  // One row per team-week, so each meeting appears twice — once from each
+  // side. Dedupe on the pairing so a blowout isn't listed as its own runner-up.
+  const seen = new Set<string>();
+  const pairings = games.filter((g) => {
+    if (!g.opponent || g.opponentScore == null) return false;
+    const key = `${g.season}|${g.week}|${[g.team.rosterId, g.opponent.rosterId].sort((a, b) => a - b).join('-')}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const marginRows = pairings.map((g): RecordEntry => {
+    const margin = Math.abs(g.score - g.opponentScore!);
+    const winner = g.score >= g.opponentScore! ? g.team : g.opponent!;
+    const loser = g.score >= g.opponentScore! ? g.opponent! : g.team;
+    const hi = Math.max(g.score, g.opponentScore!);
+    const lo = Math.min(g.score, g.opponentScore!);
+    return {
+      value: round2(margin),
+      display: `${fmt2(margin)} pt margin`,
+      holder: winner.displayName,
+      slug: winner.slug,
+      lines: [`vs ${loser.displayName}`, `${record(g.season, g.week)} · ${fmt2(hi)}–${fmt2(lo)}`],
+    };
+  });
+
+  const combinedRows = pairings.map((g): RecordEntry => {
+    const total = round2(g.score + g.opponentScore!);
+    // Anchor on the higher scorer rather than whichever side the dedupe
+    // happened to keep, so the same matchup always reads the same way.
+    const lead = g.score >= g.opponentScore! ? g.team : g.opponent!;
+    const other = g.score >= g.opponentScore! ? g.opponent! : g.team;
+    const hi = Math.max(g.score, g.opponentScore!);
+    const lo = Math.min(g.score, g.opponentScore!);
+    return {
+      value: total,
+      display: fmt2(total),
+      holder: lead.displayName,
+      slug: lead.slug,
+      lines: [`vs ${other.displayName}`, `${record(g.season, g.week)} · ${fmt2(hi)} – ${fmt2(lo)}`],
+    };
+  });
+
+  // --- players ------------------------------------------------------------
+  const byPosition = (pos: string): RecordEntry[] =>
+    playerGames
+      .filter((p) => p.position === pos)
+      .map((p) => ({
+        value: p.points,
+        display: fmt2(p.points),
+        holder: p.name,
+        slug: p.manager.slug,
+        lines: [`${record(p.season, p.week)} · started by ${p.manager.displayName}`],
+      }));
+
+  const groups: RecordGroup[] = [
+    {
+      key: 'season',
+      label: 'Season',
+      records: [
+        { key: 'most-points', label: 'Most points in a season', entries: topBy(seasonPointRows, 'desc') },
+        { key: 'fewest-points', label: 'Fewest points in a season', entries: topBy(seasonPointRows, 'asc') },
+        { key: 'best-record', label: 'Best season record', entries: topBy(seasonRecordRows, 'desc') },
+        { key: 'worst-record', label: 'Worst season record', entries: topBy(seasonRecordRows, 'asc') },
+      ],
+    },
+    {
+      key: 'single-game',
+      label: 'Single game',
+      records: [
+        { key: 'highest-game', label: 'Highest single-game score', entries: topBy(gameRows, 'desc') },
+        { key: 'lowest-game', label: 'Lowest single-game score', entries: topBy(gameRows, 'asc') },
+      ],
+    },
+    {
+      key: 'head-to-head',
+      label: 'Head-to-head',
+      records: [
+        { key: 'blowout', label: 'Biggest blowout', entries: topBy(marginRows, 'desc') },
+        { key: 'closest', label: 'Closest game', entries: topBy(marginRows, 'asc') },
+        { key: 'highest-combined', label: 'Highest combined score', entries: topBy(combinedRows, 'desc') },
+        { key: 'lowest-combined', label: 'Lowest combined score', entries: topBy(combinedRows, 'asc') },
+      ],
+    },
+    {
+      key: 'players',
+      label: 'Players',
+      records: ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'].map((pos) => ({
+        key: `top-${pos.toLowerCase()}`,
+        label: `Top ${pos} game`,
+        entries: topBy(byPosition(pos), 'desc'),
+      })),
+    },
+  ];
+
+  // Drop anything with no data rather than showing an empty tile.
+  return groups
+    .map((g) => ({ ...g, records: g.records.filter((r) => r.entries.length > 0) }))
+    .filter((g) => g.records.length > 0);
+}
+
 export interface Podium {
   champion: TeamInfo | null;
   runnerUp: TeamInfo | null;
