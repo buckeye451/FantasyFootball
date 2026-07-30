@@ -1,4 +1,10 @@
+'use client';
+
 import type { DraftRankPick, DraftRankRow } from '@/lib/stats';
+import { useStickyColumns } from '@/components/useStickyColumns';
+
+/** Rank and manager stay put; the pick columns are the wide ones that scroll. */
+const STICKY_COLS = 2;
 
 function ValueSpan({ v }: { v: number }) {
   return (
@@ -35,13 +41,14 @@ export function DraftRankingsTable({
   showSeason?: boolean;
   showDrafts?: boolean;
 }) {
+  const tableRef = useStickyColumns(STICKY_COLS);
   return (
     <div className="table-wrap">
-      <table className="draft-table draft-compact">
+      <table className="draft-table draft-compact sticky-table" ref={tableRef}>
         <thead>
           <tr>
-            <th className="num">Rank</th>
-            <th>Manager</th>
+            <th className="num sticky-col sticky-col-0">Rank</th>
+            <th className="sticky-col sticky-col-1 sticky-col-last">Manager</th>
             {showDrafts && (
               <th className="num" title="Drafts included in this total">
                 Drafts
@@ -57,8 +64,8 @@ export function DraftRankingsTable({
         <tbody>
           {rows.map((r, i) => (
             <tr key={r.ownerId || r.manager}>
-              <td className="num">{i + 1}</td>
-              <td className="team-cell">{r.manager}</td>
+              <td className="num sticky-col sticky-col-0">{i + 1}</td>
+              <td className="team-cell sticky-col sticky-col-1 sticky-col-last">{r.manager}</td>
               {showDrafts && <td className="num sub">{r.drafts}</td>}
               <td className="num strong">
                 <ValueSpan v={r.score} />

@@ -3332,3 +3332,16 @@ tr.playoff-cut td {
   background-color: var(--card-solid);
   background-image: linear-gradient(var(--champ-wash), var(--champ-wash));
 }
+
+/* Head-to-head rows carry their own backgrounds (stripe, hover, expanded), all
+   of which are translucent. Restate them on the pinned cell as a tint over the
+   opaque base, or the row state would punch a hole in the frozen column. */
+.sticky-table tbody tr.h2h-row.alt > .sticky-col {
+  background-image: linear-gradient(var(--row-stripe), var(--row-stripe));
+}
+
+.sticky-table tbody tr.h2h-row:hover > .sticky-col,
+.sticky-table tbody tr.h2h-row.open > .sticky-col {
+  background-color: var(--card-solid);
+  background-image: linear-gradient(var(--surface-2), var(--surface-2));
+}

@@ -3,6 +3,10 @@
 import { Fragment, useState } from 'react';
 import type { H2HOpponent, ManagerH2H } from '@/lib/stats';
 import { managerClass, performanceClass } from '@/lib/thresholds';
+import { useStickyColumns } from '@/components/useStickyColumns';
+
+/** The opponent's name leads the table, so pinning it alone is enough. */
+const STICKY_COLS = 1;
 
 function Pct({ n, tone }: { n: number | null; tone: (v: number | null) => string | undefined }) {
   if (n == null) return <>—</>;
@@ -34,6 +38,7 @@ const DEFAULT_DIR: Record<SortKey, 'asc' | 'desc'> = {
 export function HeadToHead({ data }: { data: ManagerH2H[] }) {
   const [managerKey, setManagerKey] = useState(data[0]?.key ?? '');
   const [openOpp, setOpenOpp] = useState<string | null>(null);
+  const tableRef = useStickyColumns(STICKY_COLS);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
 
@@ -58,11 +63,17 @@ export function HeadToHead({ data }: { data: ManagerH2H[] }) {
       })
     : active.opponents;
 
-  const th = (key: SortKey, label: string, opts?: { num?: boolean; center?: boolean; title?: string }) => (
+  const stickyCell = 'sticky-col sticky-col-0 sticky-col-last';
+
+  const th = (
+    key: SortKey,
+    label: string,
+    opts?: { num?: boolean; center?: boolean; title?: string; sticky?: boolean }
+  ) => (
     <th
       className={`sortable${opts?.num ? ' num' : ''}${opts?.center ? ' center' : ''}${
         sortKey === key ? ' sorted' : ''
-      }`}
+      }${opts?.sticky ? ` ${stickyCell}` : ''}`}
       onClick={() => clickSort(key)}
       title={opts?.title}
       aria-sort={sortKey === key ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
@@ -95,10 +106,10 @@ export function HeadToHead({ data }: { data: ManagerH2H[] }) {
       </div>
 
       <div className="table-wrap">
-        <table className="h2h-table">
+        <table className="h2h-table sticky-table" ref={tableRef}>
           <thead>
             <tr>
-              {th('opponent', 'vs Opponent')}
+              {th('opponent', 'vs Opponent', { sticky: true })}
               {th('record', 'Record')}
               {th('pf', 'PF', { num: true })}
               {th('pa', 'PA', { num: true })}
@@ -119,7 +130,7 @@ export function HeadToHead({ data }: { data: ManagerH2H[] }) {
                     className={`h2h-row${open ? ' open' : ''}${i % 2 === 1 ? ' alt' : ''}`}
                     onClick={() => setOpenOpp(open ? null : o.key)}
                   >
-                    <td className="team-cell">
+                    <td className={`team-cell ${stickyCell}`}>
                       <span className={`caret${open ? ' open' : ''}`}>▸</span> {o.displayName}
                     </td>
                     <td>
