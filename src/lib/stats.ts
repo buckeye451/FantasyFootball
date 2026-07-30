@@ -2121,6 +2121,53 @@ interface H2HAgg {
  * their meetings in chronological order. Managers are keyed by Sleeper user
  * id so renames stay the same person.
  */
+export interface MatchupExtreme {
+  opponent: H2HOpponent;
+  /** (wins + half a tie) ÷ games, as a percentage. */
+  winPct: number;
+  /** Points for less points against across the series. */
+  differential: number;
+}
+
+/**
+ * A manager's kindest and cruelest opponent.
+ *
+ * Ordered on win rate rather than raw wins, so a 2-0 series isn't beaten by a
+ * 3-5 one purely on volume. Level records break on points differential — best
+ * takes the highest, worst the lowest — which is what separates a comfortable
+ * 2-0 from a pair of one-point escapes.
+ */
+export function matchupExtremes(
+  manager: ManagerH2H | null
+): { best: MatchupExtreme | null; worst: MatchupExtreme | null } {
+  if (!manager) return { best: null, worst: null };
+  const rows: MatchupExtreme[] = manager.opponents
+    .filter((o) => o.matches.length > 0)
+    .map((o) => {
+      const games = o.wins + o.losses + o.ties;
+      return {
+        opponent: o,
+        winPct: games ? ((o.wins + o.ties * 0.5) / games) * 100 : 0,
+        differential: round2(o.pointsFor - o.pointsAgainst),
+      };
+    });
+  if (rows.length === 0) return { best: null, worst: null };
+
+  const best = [...rows].sort(
+    (a, b) =>
+      b.winPct - a.winPct ||
+      b.differential - a.differential ||
+      a.opponent.displayName.localeCompare(b.opponent.displayName)
+  )[0];
+  const worst = [...rows].sort(
+    (a, b) =>
+      a.winPct - b.winPct ||
+      a.differential - b.differential ||
+      a.opponent.displayName.localeCompare(b.opponent.displayName)
+  )[0];
+  return { best, worst };
+}
+
 export function headToHead(): ManagerH2H[] {
   const seasons = getSeasons()
     .filter((s) => s.hasGames)

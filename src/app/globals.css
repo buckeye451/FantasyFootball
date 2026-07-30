@@ -3531,3 +3531,9 @@ tr.playoff-cut td {
 .trade-rank-tiles {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
+
+/* Best/worst matchup tiles above the team page's head-to-head */
+.matchup-tiles {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 14px;
+}

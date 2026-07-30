@@ -35,14 +35,21 @@ const DEFAULT_DIR: Record<SortKey, 'asc' | 'desc'> = {
   games: 'desc',
 };
 
-export function HeadToHead({ data }: { data: ManagerH2H[] }) {
-  const [managerKey, setManagerKey] = useState(data[0]?.key ?? '');
+/**
+ * All-time record against each opponent.
+ *
+ * `fixedKey` pins it to one manager and drops the picker — the team page
+ * already is a manager, so choosing one there would be asking a question the
+ * page has already answered.
+ */
+export function HeadToHead({ data, fixedKey }: { data: ManagerH2H[]; fixedKey?: string }) {
+  const [managerKey, setManagerKey] = useState(fixedKey ?? data[0]?.key ?? '');
   const [openOpp, setOpenOpp] = useState<string | null>(null);
   const tableRef = useStickyColumns(STICKY_COLS);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
 
-  const active = data.find((m) => m.key === managerKey) ?? data[0];
+  const active = data.find((m) => m.key === (fixedKey ?? managerKey)) ?? data[0];
   if (!active) return <p className="card-note">Not enough matchups yet.</p>;
 
   const clickSort = (key: SortKey) => {
@@ -85,6 +92,7 @@ export function HeadToHead({ data }: { data: ManagerH2H[] }) {
 
   return (
     <>
+      {fixedKey == null && (
       <div className="h2h-controls">
         <label className="week-select">
           <span className="week-select-label">Manager</span>
@@ -104,6 +112,7 @@ export function HeadToHead({ data }: { data: ManagerH2H[] }) {
           </select>
         </label>
       </div>
+      )}
 
       <div className="table-wrap">
         <table className="h2h-table sticky-table" ref={tableRef}>

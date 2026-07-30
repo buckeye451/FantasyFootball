@@ -4,6 +4,8 @@ import {
   getPlayerMeta,
   getTeamBySlug,
   getTeams,
+  headToHead,
+  matchupExtremes,
   mostStartedByPosition,
   rankBoards,
   resolveActiveLeague,
@@ -17,6 +19,7 @@ import { MostStartedPlayers } from '@/components/PlayerCards';
 import { TeamWeekPicker } from '@/components/TeamWeekPicker';
 import { PageNav } from '@/components/PageNav';
 import { RankTiles, type RankTile } from '@/components/RankTiles';
+import { HeadToHead } from '@/components/HeadToHead';
 import { managerClass, winPctClass } from '@/lib/thresholds';
 
 export const dynamic = 'force-dynamic';
@@ -138,6 +141,16 @@ export default function TeamPage({
       })),
     },
   ];
+
+  // All-time head to head, pinned to this manager. Keyed by owner so it
+  // follows the person across seasons, not the roster slot.
+  const h2h = headToHead();
+  const ownerKey = team.ownerId || team.displayName.toLowerCase();
+  const mine = h2h.find((m) => m.key === ownerKey) ?? null;
+  const { best, worst } = matchupExtremes(mine);
+  const seriesLine = (o: { wins: number; losses: number; ties: number }) =>
+    `${o.wins}-${o.losses}${o.ties ? `-${o.ties}` : ''}`;
+  const diffLine = (d: number) => `${d > 0 ? '+' : ''}${d.toFixed(1)} points`;
 
   const medians = new Map(weeklyMedians(leagueId).map((m) => [m.week, m.median]));
   const chartData = season.weeks.map((w) => ({
@@ -276,6 +289,40 @@ export default function TeamPage({
           </table>
         </div>
       </section>
+
+      {mine && mine.opponents.length > 0 && (
+        <>
+          {(best || worst) && (
+            <div className="feature-tiles matchup-tiles">
+              {best && (
+                <div className="feature-tile">
+                  <div className="feature-tile-label">😎 Best Matchup</div>
+                  <div className="feature-tile-name">{best.opponent.displayName}</div>
+                  <div className="feature-tile-value">{seriesLine(best.opponent)}</div>
+                  <div className="feature-tile-value">{diffLine(best.differential)}</div>
+                </div>
+              )}
+              {worst && (
+                <div className="feature-tile">
+                  <div className="feature-tile-label">😤 Worst Matchup</div>
+                  <div className="feature-tile-name">{worst.opponent.displayName}</div>
+                  <div className="feature-tile-value">{seriesLine(worst.opponent)}</div>
+                  <div className="feature-tile-value">{diffLine(worst.differential)}</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <section className="card">
+            <h2 className="card-title">Head to head</h2>
+            <p className="card-note">
+              {team.displayName}&rsquo;s all-time record against each opponent, across every
+              season — expand a row for every meeting in order.
+            </p>
+            <HeadToHead data={h2h} fixedKey={ownerKey} />
+          </section>
+        </>
+      )}
 
       <section className="card" id="week-detail">
         <h2 className="card-title">Week {selectedWeek} lineup</h2>
