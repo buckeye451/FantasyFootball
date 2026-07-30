@@ -175,31 +175,9 @@ export function SiteHeader({
           Dashboard
         </Link>
 
-        <LinkSection title="Lifetime Stats" href={withSeason('/lifetime')}>
-          <Link href={withSeason('/rankings')} className="drawer-sublink">
-            Best Player Rankings
-          </Link>
-        </LinkSection>
-
-        <Link href={withSeason('/records')} className="drawer-link">
-          The Record Book
-        </Link>
-
-        <Link href={withSeason('/drafts')} className="drawer-link">
-          Drafts
-        </Link>
-
         <Link href={withSeason('/recaps')} className="drawer-link">
           Recaps
         </Link>
-
-        <Section title="Players">
-          {(active?.teams ?? []).map((t) => (
-            <Link key={t.slug} href={withSeason(`/team/${t.slug}`)} className="drawer-sublink">
-              {t.name}
-            </Link>
-          ))}
-        </Section>
 
         <Section title="Weekly Scores">
           {(active?.weeks ?? []).map((w) => (
@@ -208,6 +186,14 @@ export function SiteHeader({
             </Link>
           ))}
           {(active?.weeks ?? []).length === 0 && <span className="drawer-empty">No games yet</span>}
+        </Section>
+
+        <Section title="Players">
+          {(active?.teams ?? []).map((t) => (
+            <Link key={t.slug} href={withSeason(`/team/${t.slug}`)} className="drawer-sublink">
+              {t.name}
+            </Link>
+          ))}
         </Section>
 
         <Section title="Playoffs">
@@ -230,6 +216,20 @@ export function SiteHeader({
             <span className="drawer-empty">No playoffs yet</span>
           )}
         </Section>
+
+        <Link href={withSeason('/drafts')} className="drawer-link">
+          Drafts
+        </Link>
+
+        <LinkSection title="Lifetime Stats" href={withSeason('/lifetime')}>
+          <Link href={withSeason('/rankings')} className="drawer-sublink">
+            Best Player Rankings
+          </Link>
+        </LinkSection>
+
+        <Link href={withSeason('/records')} className="drawer-link">
+          The Record Book
+        </Link>
       </aside>
     </header>
   );
