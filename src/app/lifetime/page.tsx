@@ -5,6 +5,7 @@ import {
   headToHead,
   lifetimeDraftRankings,
   lifetimeStandings,
+  lifetimeTradeSummary,
   seasonPointsSeries,
 } from '@/lib/stats';
 import { POSITION_ORDER } from '@/components/PlayerCards';
@@ -24,6 +25,7 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
   const leaders = bestSeasonsByPosition(5);
   const h2h = headToHead();
   const draftRanks = lifetimeDraftRankings();
+  const { mostTrades, bestTrader } = lifetimeTradeSummary();
   const seasonPoints = seasonPointsSeries();
 
   if (rows.length === 0) {
@@ -95,6 +97,38 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
         </p>
         <HeadToHead data={h2h} />
       </section>
+
+      {(mostTrades || bestTrader) && (
+        <section>
+          <h2 className="card-title">All-time trades</h2>
+          <p className="card-note">
+            Every completed trade across every season. Points gained is what a manager&rsquo;s
+            acquisitions went on to average per week, less what the players they gave up went on
+            to average.
+          </p>
+          <div className="trade-tiles">
+            {mostTrades && (
+              <div className="trade-tile">
+                <div className="trade-tile-label">🔁 Trade Happy</div>
+                <div className="trade-tile-name">{mostTrades.team.displayName}</div>
+                <div className="trade-tile-value">
+                  {mostTrades.trades} trade{mostTrades.trades === 1 ? '' : 's'}
+                </div>
+              </div>
+            )}
+            {bestTrader && (
+              <div className="trade-tile">
+                <div className="trade-tile-label">📈 Best Trader</div>
+                <div className="trade-tile-name">{bestTrader.team.displayName}</div>
+                <div className="trade-tile-value">
+                  {bestTrader.pointsGained > 0 ? '+' : ''}
+                  {bestTrader.pointsGained.toFixed(1)} points gained
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {draftRanks.length > 0 && (
         <section className="card">

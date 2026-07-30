@@ -3356,6 +3356,11 @@ tr.playoff-cut td {
   margin-bottom: 18px;
 }
 
+/* Inside a titled section the heading already supplies the top gap. */
+.card-note + .trade-tiles {
+  margin-top: 12px;
+}
+
 .trade-tile {
   background: var(--recap-tile-bg);
   color: var(--recap-tile-ink);

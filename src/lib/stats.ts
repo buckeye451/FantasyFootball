@@ -1235,22 +1235,31 @@ export interface TradeSummary {
   bestTrader: TradeLeader | null;
 }
 
-/** Who dealt the most, and who came out furthest ahead. */
+/**
+ * Who dealt the most, and who came out furthest ahead.
+ *
+ * Keyed by manager rather than roster id, which is only unique within a
+ * season — so the same list can cover one year or all of them.
+ */
 export function tradeSummary(trades: TradeView[]): TradeSummary {
-  const byRoster = new Map<number, TradeLeader>();
+  const byManager = new Map<string, TradeLeader>();
   for (const t of trades) {
     for (const s of t.sides) {
-      let row = byRoster.get(s.team.rosterId);
+      const key = s.team.ownerId || s.team.displayName.toLowerCase();
+      let row = byManager.get(key);
       if (!row) {
         row = { team: s.team, trades: 0, pointsGained: 0 };
-        byRoster.set(s.team.rosterId, row);
+        byManager.set(key, row);
       }
+      // Overwritten as later seasons are walked, so a manager who renamed
+      // shows under the name they go by now.
+      row.team = s.team;
       row.trades++;
       const sum = (list: TradeAsset[]) => list.reduce((n, p) => n + (p.avgAfter ?? 0), 0);
       row.pointsGained += sum(s.players) - sum(s.gave);
     }
   }
-  const rows = [...byRoster.values()].map((r) => ({ ...r, pointsGained: round2(r.pointsGained) }));
+  const rows = [...byManager.values()].map((r) => ({ ...r, pointsGained: round2(r.pointsGained) }));
   if (rows.length === 0) return { mostTrades: null, bestTrader: null };
 
   // Ties break on the other metric, then the name, so the pick is stable.
@@ -1267,6 +1276,16 @@ export function tradeSummary(trades: TradeView[]): TradeSummary {
       a.team.displayName.localeCompare(b.team.displayName)
   )[0];
   return { mostTrades, bestTrader };
+}
+
+/** Trade leaders across every synced season. */
+export function lifetimeTradeSummary(): TradeSummary {
+  const all: TradeView[] = [];
+  // Oldest season first, so the newest display name is the one that sticks.
+  for (const s of [...getSeasons()].sort((a, b) => Number(a.season) - Number(b.season))) {
+    all.push(...seasonTrades(s.leagueId));
+  }
+  return tradeSummary(all);
 }
 
 // ---------------------------------------------------------------------------
