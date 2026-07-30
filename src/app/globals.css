@@ -2875,3 +2875,15 @@ tr.playoff-cut td {
     overflow-y: auto;
   }
 }
+
+/* Final standings (playoff bracket) borrows the trophy case's inverted
+   container — .trophy-case supplies the flipped background, title and note;
+   these pin the tiles inside it the way .trophy-tile is pinned. */
+.finish-case .finish-tile {
+  color: var(--trophy-tile-ink);
+  border-color: var(--border);
+}
+
+.finish-case .finish-label {
+  color: var(--trophy-tile-muted);
+}

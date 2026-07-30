@@ -54,7 +54,7 @@ export default function PlayoffsPage({ searchParams }: { searchParams: { season?
       </p>
 
       {hasResults && (
-        <section className="card">
+        <section className="card trophy-case finish-case">
           <h2 className="card-title">Final standings</h2>
           <p className="card-note">
             How the {league.season} postseason finished — plus the consolation bracket winner.
