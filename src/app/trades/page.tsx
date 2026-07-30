@@ -15,8 +15,9 @@ export default function TradesPage({ searchParams }: { searchParams: { season?: 
       <h1 className="page-title">Trades</h1>
       <p className="page-subtitle">
         {league.name} · {league.season} · every completed trade between managers. Averages are
-        points per week of the season — total points before the trade over the weeks before it,
-        and from the trade week on over the weeks remaining.
+        points per week of the season — everything the player scored before the trade over the
+        weeks before it, then from the trade week on over the weeks remaining. Weeks nobody
+        rostered them still count.
       </p>
       <TradesList trades={trades} />
     </>

@@ -44,6 +44,12 @@ export const sleeper = {
     get<Record<string, Record<string, number | undefined>>>(
       `${BASE}/stats/nfl/regular/${season}`
     ),
+  // Actual per-player scoring for ONE NFL week, every player — same shape as
+  // seasonStats. Used to measure production over weeks nobody rostered them.
+  weekStats: (season: string, week: number) =>
+    get<Record<string, Record<string, number | undefined>>>(
+      `${BASE}/stats/nfl/regular/${season}/${week}`
+    ),
   // Per-player projections for one NFL week. Undocumented endpoint; each item
   // carries pre-computed fantasy points for std / half-ppr / ppr scoring.
   projections: (season: string, week: number) => {

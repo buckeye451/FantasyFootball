@@ -20,6 +20,7 @@ import {
   upsertProjections,
   upsertRosters,
   upsertSeasonStats,
+  upsertWeekStats,
   upsertUsers,
 } from '../src/lib/sync';
 import { getDb } from '../src/lib/db';
@@ -352,6 +353,20 @@ function seedSeason(cfg: SeasonConfig): void {
   TRADES[1].aGives = [nthAtPos(TRADES[1].a, 'QB', 0)];
   TRADES[1].bGives = [nthAtPos(TRADES[1].b, 'QB', 1), nthAtPos(TRADES[1].b, 'TE', 1)];
 
+  // Mirror each rostered player's week into the league-wide weekly stats, so
+  // the trades page can average production over weeks nobody rostered them.
+  // A real sync pulls this from Sleeper for every NFL player, every week —
+  // including the postseason, hence calling this from both loops.
+  const storeWeekStats = (week: number, rows: SleeperMatchup[]) => {
+    const weekStats: Record<string, Record<string, number>> = {};
+    for (const r of rows) {
+      for (const [pid, pts] of Object.entries(r.players_points ?? {})) {
+        weekStats[pid] = { pts_std: pts, pts_half_ppr: pts, pts_ppr: pts };
+      }
+    }
+    upsertWeekStats(cfg.season, week, weekStats);
+  };
+
   for (let week = 1; week <= WEEKS; week++) {
     for (const [i, t] of TRADES.entries()) {
       if (t.week === week) applyTrade(t, `${cfg.leagueId}-trade-${i + 1}`);
@@ -393,6 +408,7 @@ function seedSeason(cfg: SeasonConfig): void {
     });
     upsertMatchups(cfg.leagueId, week, rows);
     storeProjections(week);
+    storeWeekStats(week, rows);
   }
 
   upsertTrades(cfg.leagueId, trades);
@@ -445,6 +461,7 @@ function seedSeason(cfg: SeasonConfig): void {
     });
     upsertMatchups(cfg.leagueId, week, rows);
     storeProjections(week);
+    storeWeekStats(week, rows);
   }
 
   const winnerOf = (week: number, a: number, b: number) => (scoreAt[week][a] >= scoreAt[week][b] ? a : b);

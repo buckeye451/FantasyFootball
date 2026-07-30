@@ -28,7 +28,7 @@ function AssetRow({ p }: { p: TradeAsset }) {
         </span>
         <span
           className="trade-player-avg"
-          title="Points per week of the season — before the trade, then from the trade week on. Weeks with no score count as zero."
+          title="Points per week of the season — before the trade, then from the trade week on. Counts every NFL week, including weeks nobody in the league rostered them."
         >
           <Avg v={p.avgBefore} /> <span className="trade-avg-arrow">→</span>{' '}
           <span

@@ -278,6 +278,36 @@ export function upsertSeasonStats(
   upsertPlayers(dump, referenced);
 }
 
+/**
+ * Weekly actual scoring for every NFL player. Unlike season stats this keeps
+ * zero-point weeks: a week the player was active and scored nothing is a real
+ * data point when averaging production, not an absence.
+ */
+export function upsertWeekStats(
+  season: string,
+  week: number,
+  stats: Record<string, Record<string, number | undefined>>
+): void {
+  const db = getDb();
+  const stmt = db.prepare(
+    `INSERT INTO player_week_stats (season, week, player_id, pts_std, pts_half, pts_ppr)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(season, week, player_id) DO UPDATE SET
+       pts_std = excluded.pts_std, pts_half = excluded.pts_half, pts_ppr = excluded.pts_ppr`
+  );
+  for (const [pid, st] of Object.entries(stats)) {
+    if (st.pts_std == null && st.pts_half_ppr == null && st.pts_ppr == null) continue;
+    stmt.run(season, week, pid, st.pts_std ?? null, st.pts_half_ppr ?? null, st.pts_ppr ?? null);
+  }
+}
+
+export function hasWeekStats(season: string, week: number): boolean {
+  const row = getDb()
+    .prepare('SELECT COUNT(*) AS c FROM player_week_stats WHERE season = ? AND week = ?')
+    .get(season, week) as { c: number };
+  return row.c > 0;
+}
+
 export function hasSeasonStats(season: string): boolean {
   const row = getDb()
     .prepare('SELECT COUNT(*) AS c FROM player_season_stats WHERE season = ?')
@@ -391,6 +421,16 @@ export async function syncLeague(leagueId: string, full = false): Promise<string
       upsertTrades(leagueId, await sleeper.transactions(leagueId, week));
     } catch {
       // transactions endpoint unavailable
+    }
+    // Actual weekly scoring for every NFL player, so a traded player's
+    // production can be measured over weeks nobody in the league rostered him.
+    // Shared across leagues for the same NFL season/week, like projections.
+    if (full || !hasWeekStats(league.season, week)) {
+      try {
+        upsertWeekStats(league.season, week, await sleeper.weekStats(league.season, week));
+      } catch {
+        // weekly stats unavailable — averages fall back to rostered weeks only
+      }
     }
     // Projected points for Performance %. Shared across leagues for the same
     // NFL season/week, so fetch each week's projections at most once (unless

@@ -1092,32 +1092,52 @@ export function seasonTrades(leagueId: string): TradeView[] {
   // live season isn't divided by weeks that haven't happened yet.
   const lastWeek = matchups.reduce((mx, m) => Math.max(mx, m.week), 0);
 
-  // player -> (week -> points), across the whole season including playoffs.
-  const weekly = new Map<string, Map<number, number>>();
+  // player -> (week -> points) as scored in THIS league, for weeks someone
+  // rostered them. Exact, because Sleeper applied the league's scoring.
+  const rostered = new Map<string, Map<number, number>>();
   for (const m of matchups) {
     for (const [pid, pts] of Object.entries(m.playersPoints)) {
-      if (!weekly.has(pid)) weekly.set(pid, new Map());
-      weekly.get(pid)!.set(m.week, pts);
+      if (!rostered.has(pid)) rostered.set(pid, new Map());
+      rostered.get(pid)!.set(m.week, pts);
     }
   }
 
+  // League-wide NFL scoring, covering weeks nobody in the league had them.
+  const fmt = scoringFormat(leagueId);
+  const col = fmt === 'ppr' ? 'pts_ppr' : fmt === 'half_ppr' ? 'pts_half' : 'pts_std';
+  const leagueWide = new Map<string, Map<number, number>>();
+  for (const r of getDb()
+    .prepare(`SELECT week, player_id, ${col} AS pts FROM player_week_stats WHERE season = ?`)
+    .all(league.season) as Array<Record<string, unknown>>) {
+    const pid = r.player_id as string;
+    const pts = r.pts as number | null;
+    if (pts == null) continue;
+    if (!leagueWide.has(pid)) leagueWide.set(pid, new Map());
+    leagueWide.get(pid)!.set(r.week as number, pts);
+  }
+
   /**
-   * Points across a week range divided by the length of that range.
+   * Everything the player scored across a week range, over the length of that
+   * range.
    *
-   * The denominator is every week in the window, not just the weeks the player
-   * scored — a week unrostered, on bye, or inactive counts as a zero. Averaging
-   * only the weeks with data lets one big game right before a trade stand in
-   * for a whole half-season, which is what made the old numbers read wrong.
+   * Counts every NFL week, not only the weeks someone in the league had him —
+   * a player picked up in week 5 was still producing in weeks 1–4, and scoring
+   * those as zero understated him badly.
+   *
+   * Weeks he was rostered use the points this league actually awarded, so they
+   * match the box score exactly; weeks he wasn't fall back to league-wide
+   * scoring in the same format. A genuine zero — bye, inactive, played and
+   * scored nothing — stays a zero either way.
    */
   const avgOver = (pid: string, from: number, to: number): number | null => {
     const weeks = to - from + 1;
     if (weeks <= 0) return null; // no window at all (e.g. a week 1 trade)
+    const mine = rostered.get(pid);
+    const nfl = leagueWide.get(pid);
     let sum = 0;
-    const games = weekly.get(pid);
-    if (games) {
-      for (const [w, pts] of games) {
-        if (w >= from && w <= to) sum += pts;
-      }
+    for (let w = from; w <= to; w++) {
+      const own = mine?.get(w);
+      sum += own != null ? own : nfl?.get(w) ?? 0;
     }
     // Left unrounded — the UI renders one decimal, and rounding twice can
     // shift the displayed figure by 0.1.
