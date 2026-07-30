@@ -3532,8 +3532,13 @@ tr.playoff-cut td {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-/* Best/worst matchup tiles above the team page's head-to-head */
+/* Best/worst matchup tiles above the team page's head-to-head.
+   These are a plain div, so the `section + section` rhythm never reached them
+   and they sat flush against the weekly results table. The top gap is larger
+   than the bottom one on purpose: it separates them from the table above while
+   keeping them grouped with the head-to-head they introduce. */
 .matchup-tiles {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 26px;
   margin-bottom: 14px;
 }
