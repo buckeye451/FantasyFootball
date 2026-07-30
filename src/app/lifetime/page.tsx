@@ -58,6 +58,16 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
         </div>
       </section>
 
+      <Link
+        className="records-link"
+        href={season ? `/records?season=${season}` : '/records'}
+      >
+        <span className="records-link-text">View the All-Time Records Here</span>
+        <span className="records-link-arrow" aria-hidden="true">
+          →
+        </span>
+      </Link>
+
       <section className="card">
         <h2 className="card-title">All-time standings</h2>
         <p className="card-note">

@@ -1408,29 +1408,33 @@ th.sortable.sorted {
 }
 
 /* Lifetime page: trophy case */
+/* Kept deliberately compact — the case sits at the top of the page and every
+   new champion adds a tile, so height here pushes the actual stats down. The
+   150px track also gets phones to two columns instead of one. */
 .trophy-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
 }
 
 .trophy-tile {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 18px 16px;
+  border-radius: 10px;
+  padding: 10px 12px;
   text-align: center;
 }
 
 .trophy-emojis {
-  font-size: 34px;
+  font-size: 21px;
   line-height: 1;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
 }
 
 .trophy-name {
-  font-size: 16px;
+  font-size: 14.5px;
   font-weight: 700;
+  line-height: 1.25;
 }
 
 /* Head-to-head (Lifetime page) */
@@ -2156,8 +2160,8 @@ tr.playoff-cut td {
   color: var(--trophy-tile-ink);
 }
 .trophy-years {
-  margin-top: 2px;
-  font-size: 13px;
+  margin-top: 1px;
+  font-size: 12px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
   color: var(--trophy-tile-ink);
@@ -3101,4 +3105,39 @@ tr.playoff-cut td {
    in the app's lavender while everything below it is neutral. */
 .record-page .page-subtitle {
   color: var(--record-line);
+}
+
+/* "View the All-Time Records Here" tile, under the trophy case */
+.records-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 16px;
+  margin-bottom: 18px;
+}
+
+.records-link:hover {
+  border-color: var(--muted);
+}
+
+.records-link-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.records-link-arrow {
+  flex: none;
+  font-size: 20px;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.records-link:hover .records-link-arrow {
+  transform: translateX(3px);
+  color: var(--ink);
 }
