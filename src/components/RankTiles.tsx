@@ -108,9 +108,8 @@ export function RankTiles({
         {tiles.map((t) => (
           <div className="feature-tile" key={t.key}>
             <div className="feature-tile-label">{t.label}</div>
-            <div className="feature-tile-name">
+            <div className="feature-tile-name rank-figure">
               {t.rank == null ? '—' : `#${t.rank}`}
-              <span className="feature-tile-of">of {teams}</span>
             </div>
             {t.lines.map((line, i) => (
               <div className="feature-tile-value" key={i}>

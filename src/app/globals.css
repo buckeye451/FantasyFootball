@@ -3412,11 +3412,11 @@ tr.playoff-cut td {
   grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
 }
 
-.feature-tile-of {
-  margin-left: 6px;
-  font-size: 12px;
-  font-weight: 650;
-  color: var(--recap-tile-muted);
+/* The rank carries the tile on its own now, so it's sized to lead. */
+.rank-figure {
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: -0.5px;
 }
 
 /* Phones: the four rank tiles go 2x2 rather than a 475px stack, and shed the
@@ -3438,14 +3438,9 @@ tr.playoff-cut td {
     letter-spacing: 0.4px;
   }
 
-  .rank-tiles .feature-tile-name {
+  .rank-tiles .rank-figure {
     margin-top: 1px;
-    font-size: 17px;
-  }
-
-  .rank-tiles .feature-tile-of {
-    margin-left: 4px;
-    font-size: 10.5px;
+    font-size: 24px;
   }
 
   .rank-tiles .feature-tile-value {
