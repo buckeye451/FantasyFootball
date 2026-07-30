@@ -6,6 +6,7 @@ import type {
   PlayerMeta,
   SleeperBracketMatch,
   SleeperBracketSlot,
+  SleeperTransaction,
   Standing,
   TeamInfo,
   WeekResult,
@@ -1032,6 +1033,130 @@ export function seasonProgress(leagueId: string): SeasonProgress | null {
   const completed = segments.filter((s) => s.done).length;
   const total = segments.length;
   return { segments, completed, total, pct: (completed / total) * 100 };
+}
+
+// ---------------------------------------------------------------------------
+// Trades
+// ---------------------------------------------------------------------------
+
+export interface TradeAsset {
+  playerId: string;
+  name: string;
+  position: string;
+  /** NFL team that season. */
+  team: string;
+  espnId: string | null;
+  /** Mean weekly score while rostered, before / from the trade week on. */
+  avgBefore: number | null;
+  avgAfter: number | null;
+}
+
+export interface TradeSide {
+  team: TeamInfo;
+  players: TradeAsset[];
+  /** FAAB dollars received in the deal, when any moved. */
+  faab: number;
+  /** Future draft picks received, e.g. "2026 round 3". */
+  picks: string[];
+}
+
+export interface TradeView {
+  transactionId: string;
+  week: number;
+  sides: TradeSide[];
+}
+
+/**
+ * Every completed trade of a season, newest first, each side listing what it
+ * received.
+ *
+ * The before/after averages come from the weekly matchup rows — a player
+ * scores in `players_points` for every week they sit on any roster, bench
+ * included, so the mean covers exactly their rostered weeks. Before is weeks
+ * 1..(trade week - 1); after starts at the trade week itself, since Sleeper
+ * processes a trade for the leg it takes effect.
+ */
+export function seasonTrades(leagueId: string): TradeView[] {
+  const league = getLeagueInfo(leagueId);
+  if (!league) return [];
+  const rows = getDb()
+    .prepare('SELECT transaction_id, week, data FROM trades WHERE league_id = ? ORDER BY week DESC, transaction_id DESC')
+    .all(leagueId) as Array<Record<string, unknown>>;
+  if (rows.length === 0) return [];
+
+  const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
+  const meta = getPlayerMeta(league.season);
+
+  // player -> (week -> points), across the whole season including playoffs.
+  const weekly = new Map<string, Map<number, number>>();
+  for (const m of getMatchups(leagueId)) {
+    for (const [pid, pts] of Object.entries(m.playersPoints)) {
+      if (!weekly.has(pid)) weekly.set(pid, new Map());
+      weekly.get(pid)!.set(m.week, pts);
+    }
+  }
+
+  const avg = (pid: string, from: number, to: number): number | null => {
+    const games = weekly.get(pid);
+    if (!games) return null;
+    let sum = 0;
+    let n = 0;
+    for (const [w, pts] of games) {
+      if (w < from || w > to) continue;
+      sum += pts;
+      n++;
+    }
+    return n > 0 ? round2(sum / n) : null;
+  };
+
+  const out: TradeView[] = [];
+  for (const r of rows) {
+    let data: SleeperTransaction;
+    try {
+      data = JSON.parse(r.data as string) as SleeperTransaction;
+    } catch {
+      continue;
+    }
+    const week = r.week as number;
+
+    const sides = new Map<number, TradeSide>();
+    const side = (rosterId: number): TradeSide | null => {
+      const team = teams.get(rosterId);
+      if (!team) return null;
+      if (!sides.has(rosterId)) sides.set(rosterId, { team, players: [], faab: 0, picks: [] });
+      return sides.get(rosterId)!;
+    };
+    for (const rid of data.roster_ids ?? []) side(rid);
+
+    for (const [pid, rosterId] of Object.entries(data.adds ?? {})) {
+      const s = side(rosterId);
+      if (!s) continue;
+      const m = meta.get(pid);
+      s.players.push({
+        playerId: pid,
+        name: m?.name ?? pid,
+        position: m?.position ?? '',
+        team: m?.team ?? '',
+        espnId: m?.espnId ?? null,
+        avgBefore: avg(pid, 1, week - 1),
+        avgAfter: avg(pid, week, 99),
+      });
+    }
+    for (const wb of data.waiver_budget ?? []) {
+      const s = side(wb.receiver);
+      if (s) s.faab += wb.amount;
+    }
+    for (const dp of data.draft_picks ?? []) {
+      const s = side(dp.owner_id);
+      if (s) s.picks.push(`${dp.season} round ${dp.round}`);
+    }
+
+    const list = [...sides.values()];
+    if (list.length < 2) continue; // not a manager-to-manager deal we can render
+    for (const s of list) s.players.sort((a, b) => (b.avgAfter ?? 0) - (a.avgAfter ?? 0));
+    out.push({ transactionId: r.transaction_id as string, week, sides: list });
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------

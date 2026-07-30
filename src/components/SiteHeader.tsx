@@ -104,6 +104,7 @@ export function SiteHeader({
     '/rankings',
     '/recaps',
     '/records',
+    '/trades',
   ];
   const seasonHref = (season: string) =>
     SEASON_STABLE.includes(pathname) ? `${pathname}?season=${season}` : `/dashboard?season=${season}`;
@@ -219,6 +220,10 @@ export function SiteHeader({
 
         <Link href={withSeason('/drafts')} className="drawer-link">
           Drafts
+        </Link>
+
+        <Link href={withSeason('/trades')} className="drawer-link">
+          Trades
         </Link>
 
         <LinkSection title="Lifetime Stats" href={withSeason('/lifetime')}>

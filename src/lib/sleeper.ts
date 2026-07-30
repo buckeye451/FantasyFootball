@@ -8,6 +8,7 @@ import type {
   SleeperProjection,
   SleeperRoster,
   SleeperState,
+  SleeperTransaction,
   SleeperUser,
 } from './types';
 
@@ -51,6 +52,9 @@ export const sleeper = {
       `${PROJECTIONS_BASE}/projections/nfl/${season}/${week}?season_type=regular&${qs}`
     );
   },
+  // All transactions processed for one week (trades, waivers, free agency).
+  transactions: (leagueId: string, week: number) =>
+    get<SleeperTransaction[]>(`${BASE}/league/${leagueId}/transactions/${week}`),
   // A league's drafts (usually one). Newest first.
   drafts: (leagueId: string) => get<SleeperDraft[]>(`${BASE}/league/${leagueId}/drafts`),
   // Every pick in a draft, in overall order.

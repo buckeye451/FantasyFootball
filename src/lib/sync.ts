@@ -5,6 +5,7 @@ import { sleeper } from './sleeper';
 import { seasonTeams } from './nflverse';
 import { canonicalTeam } from './nflTeams';
 import type {
+  SleeperTransaction,
   SleeperBracketMatch,
   SleeperDraftPick,
   SleeperLeague,
@@ -78,6 +79,21 @@ export function upsertRosters(leagueId: string, rosters: SleeperRoster[], users:
     const u = r.owner_id ? byId.get(r.owner_id) : undefined;
     const display = u?.display_name ?? `Team ${r.roster_id}`;
     stmt.run(leagueId, r.roster_id, r.owner_id ?? null, display, u?.metadata?.team_name ?? null);
+  }
+}
+
+/** Store the completed trades from one week's transaction feed. */
+export function upsertTrades(leagueId: string, transactions: SleeperTransaction[]): void {
+  const db = getDb();
+  const stmt = db.prepare(
+    `INSERT INTO trades (league_id, transaction_id, week, data)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(league_id, transaction_id) DO UPDATE SET
+       week = excluded.week, data = excluded.data`
+  );
+  for (const t of transactions) {
+    if (t.type !== 'trade' || t.status !== 'complete') continue;
+    stmt.run(leagueId, t.transaction_id, t.leg, JSON.stringify(t));
   }
 }
 
@@ -368,6 +384,13 @@ export async function syncLeague(leagueId: string, full = false): Promise<string
     for (const m of matchups) {
       for (const id of m.players ?? []) referenced.add(id);
       for (const id of m.starters ?? []) referenced.add(id);
+    }
+    // Trades processed for this week. Optional — the trades page just stays
+    // empty for a season whose feed is unavailable.
+    try {
+      upsertTrades(leagueId, await sleeper.transactions(leagueId, week));
+    } catch {
+      // transactions endpoint unavailable
     }
     // Projected points for Performance %. Shared across leagues for the same
     // NFL season/week, so fetch each week's projections at most once (unless

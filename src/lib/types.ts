@@ -131,6 +131,22 @@ export interface MatchupRow {
   playersPoints: Record<string, number>;
 }
 
+export interface SleeperTransaction {
+  transaction_id: string;
+  type: string; // 'trade' | 'waiver' | 'free_agent'
+  status: string; // 'complete' | 'failed' | ...
+  /** The week the transaction was processed for. */
+  leg: number;
+  roster_ids: number[];
+  /** player_id -> roster_id receiving the player. */
+  adds: Record<string, number> | null;
+  /** player_id -> roster_id giving the player up. */
+  drops: Record<string, number> | null;
+  draft_picks?: Array<{ season: string; round: number; owner_id: number; previous_owner_id: number }>;
+  waiver_budget?: Array<{ sender: number; receiver: number; amount: number }>;
+  created?: number;
+}
+
 export interface PlayerMeta {
   playerId: string;
   name: string;

@@ -7,7 +7,7 @@ export const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', '
 // Bump when the schema changes in a way that needs a rebuild. All data here is
 // re-fetchable from Sleeper, so migrating just drops the re-syncable tables and
 // lets the next sync repopulate them.
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 9;
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS league (
@@ -115,6 +115,14 @@ CREATE TABLE IF NOT EXISTS draft_picks (
   position TEXT,
   PRIMARY KEY (league_id, pick_no)
 );
+-- Completed trades between managers (from Sleeper's transactions feed).
+CREATE TABLE IF NOT EXISTS trades (
+  league_id TEXT NOT NULL,
+  transaction_id TEXT NOT NULL,
+  week INTEGER NOT NULL,
+  data TEXT NOT NULL,
+  PRIMARY KEY (league_id, transaction_id)
+);
 -- Weekly recap posts. UNLIKE every other table here this is user-authored and
 -- cannot be re-fetched from anywhere, so it must never be dropped by migrate().
 CREATE TABLE IF NOT EXISTS recaps (
@@ -148,6 +156,7 @@ function migrate(db: DatabaseSync): void {
       DROP TABLE IF EXISTS brackets;
       DROP TABLE IF EXISTS player_season_stats;
       DROP TABLE IF EXISTS draft_picks;
+      DROP TABLE IF EXISTS trades;
       DROP TABLE IF EXISTS players;
       DROP TABLE IF EXISTS player_season_teams;
     `);

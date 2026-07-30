@@ -13,6 +13,7 @@
 import {
   upsertBracket,
   upsertDraftPicks,
+  upsertTrades,
   upsertLeague,
   upsertMatchups,
   upsertPlayers,
@@ -22,7 +23,12 @@ import {
   upsertUsers,
 } from '../src/lib/sync';
 import { getDb } from '../src/lib/db';
-import type { SleeperBracketMatch, SleeperMatchup, SleeperPlayer } from '../src/lib/types';
+import type {
+  SleeperBracketMatch,
+  SleeperMatchup,
+  SleeperPlayer,
+  SleeperTransaction,
+} from '../src/lib/types';
 
 const MANAGERS = ['Sam', 'Cam', 'Lapel', 'Parker', 'Evan', 'Colin', 'Jack', 'Keith', 'Preston', 'Chris'];
 
@@ -293,7 +299,63 @@ function seedSeason(cfg: SeasonConfig): void {
     upsertProjections(cfg.season, week, projections);
   };
 
+  // Two mid-season trades, so the trades page has data. Sides pick players by
+  // positional depth on the CURRENT roster (2nd-best RB for 2nd-best WR, etc.),
+  // which keeps the spec valid however the draft dealt the pools out. Managers
+  // rotate with the season so each year's deals differ.
+  const mgrAt = (i: number) => MANAGERS[(i + cfg.rotate) % MANAGERS.length];
+  const nthAtPos = (mgr: string, pos: string, n: number): Player => {
+    const list = rosters.get(mgr)!.filter((p) => p.position === pos).sort((a, b) => a.tier - b.tier);
+    return list[Math.min(n, list.length - 1)];
+  };
+  const TRADES: Array<{ week: number; a: string; b: string; aGives: Player[]; bGives: Player[] }> = [
+    { week: 5, a: mgrAt(0), b: mgrAt(4), aGives: [], bGives: [] },
+    { week: 9, a: mgrAt(2), b: mgrAt(7), aGives: [], bGives: [] },
+  ];
+  const trades: SleeperTransaction[] = [];
+  const applyTrade = (t: (typeof TRADES)[number], id: string) => {
+    const move = (players: Player[], from: string, to: string) => {
+      const src = rosters.get(from)!;
+      const dst = rosters.get(to)!;
+      for (const p of players) {
+        src.splice(src.indexOf(p), 1);
+        dst.push(p);
+      }
+    };
+    move(t.aGives, t.a, t.b);
+    move(t.bGives, t.b, t.a);
+    const rid = (m: string) => MANAGERS.indexOf(m) + 1;
+    const adds: Record<string, number> = {};
+    const drops: Record<string, number> = {};
+    for (const p of t.aGives) {
+      adds[p.id] = rid(t.b);
+      drops[p.id] = rid(t.a);
+    }
+    for (const p of t.bGives) {
+      adds[p.id] = rid(t.a);
+      drops[p.id] = rid(t.b);
+    }
+    trades.push({
+      transaction_id: id,
+      type: 'trade',
+      status: 'complete',
+      leg: t.week,
+      roster_ids: [rid(t.a), rid(t.b)],
+      adds,
+      drops,
+    });
+  };
+  // Week 5: a 2-for-1 — RB2 + WR3 for the other side's WR1.
+  TRADES[0].aGives = [nthAtPos(TRADES[0].a, 'RB', 1), nthAtPos(TRADES[0].a, 'WR', 2)];
+  TRADES[0].bGives = [nthAtPos(TRADES[0].b, 'WR', 0)];
+  // Week 9: a QB swap with a TE sweetener.
+  TRADES[1].aGives = [nthAtPos(TRADES[1].a, 'QB', 0)];
+  TRADES[1].bGives = [nthAtPos(TRADES[1].b, 'QB', 1), nthAtPos(TRADES[1].b, 'TE', 1)];
+
   for (let week = 1; week <= WEEKS; week++) {
+    for (const [i, t] of TRADES.entries()) {
+      if (t.week === week) applyTrade(t, `${cfg.leagueId}-trade-${i + 1}`);
+    }
     const matchupIds = new Map<string, number>();
     let nextMatchup = 1;
     for (const mgr of MANAGERS) {
@@ -332,6 +394,19 @@ function seedSeason(cfg: SeasonConfig): void {
     upsertMatchups(cfg.leagueId, week, rows);
     storeProjections(week);
   }
+
+  upsertTrades(cfg.leagueId, trades);
+  // Rosters were upserted pre-trade; store the end-of-season state.
+  upsertRosters(
+    cfg.leagueId,
+    MANAGERS.map((m, i) => ({
+      roster_id: i + 1,
+      owner_id: `demo-u${i + 1}`,
+      league_id: cfg.leagueId,
+      players: rosters.get(m)!.map((p) => p.id),
+    })),
+    users
+  );
 
   // ---- Playoffs: top-6 bracket over weeks 15–17 ----
   const rid = (mgr: string) => MANAGERS.indexOf(mgr) + 1;
