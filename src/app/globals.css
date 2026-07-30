@@ -3526,3 +3526,8 @@ tr.playoff-cut td {
     padding-top: 5px;
   }
 }
+
+/* Trade leader tiles: two wide, and led by a name rather than a rank. */
+.trade-rank-tiles {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}

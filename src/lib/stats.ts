@@ -1285,6 +1285,9 @@ export interface TradeLeader {
 export interface TradeSummary {
   mostTrades: TradeLeader | null;
   bestTrader: TradeLeader | null;
+  /** Everyone who traded, ordered each way, for the full boards. */
+  byTrades: TradeLeader[];
+  byGain: TradeLeader[];
 }
 
 /**
@@ -1312,22 +1315,24 @@ export function tradeSummary(trades: TradeView[]): TradeSummary {
     }
   }
   const rows = [...byManager.values()].map((r) => ({ ...r, pointsGained: round2(r.pointsGained) }));
-  if (rows.length === 0) return { mostTrades: null, bestTrader: null };
+  if (rows.length === 0) {
+    return { mostTrades: null, bestTrader: null, byTrades: [], byGain: [] };
+  }
 
-  // Ties break on the other metric, then the name, so the pick is stable.
-  const mostTrades = [...rows].sort(
+  // Ties break on the other metric, then the name, so the order is stable.
+  const byTrades = [...rows].sort(
     (a, b) =>
       b.trades - a.trades ||
       b.pointsGained - a.pointsGained ||
       a.team.displayName.localeCompare(b.team.displayName)
-  )[0];
-  const bestTrader = [...rows].sort(
+  );
+  const byGain = [...rows].sort(
     (a, b) =>
       b.pointsGained - a.pointsGained ||
       b.trades - a.trades ||
       a.team.displayName.localeCompare(b.team.displayName)
-  )[0];
-  return { mostTrades, bestTrader };
+  );
+  return { mostTrades: byTrades[0], bestTrader: byGain[0], byTrades, byGain };
 }
 
 /** Trade leaders across every synced season. */

@@ -15,6 +15,7 @@ import { SeasonPointsChart } from '@/components/FocusCharts';
 import { DraftRankingsTable } from '@/components/DraftRankingsTable';
 import { NflTeam } from '@/components/NflTeam';
 import Link from 'next/link';
+import { RankTiles, type RankTile } from '@/components/RankTiles';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,8 +26,45 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
   const leaders = bestSeasonsByPosition(5);
   const h2h = headToHead();
   const draftRanks = lifetimeDraftRankings();
-  const { mostTrades, bestTrader } = lifetimeTradeSummary();
+  const trades = lifetimeTradeSummary();
   const seasonPoints = seasonPointsSeries();
+
+  // Capped at ten, so a league that grows past ten managers still shows a
+  // top ten rather than an ever-longer list.
+  const TOP = 10;
+  const gain = (n: number) => `${n > 0 ? '+' : ''}${n.toFixed(1)}`;
+  const tradeTiles: RankTile[] = [
+    {
+      key: 'most-trades',
+      label: '🔁 Trade Happy',
+      headline: trades.mostTrades?.team.displayName ?? '—',
+      lines: trades.mostTrades
+        ? [`${trades.mostTrades.trades} trade${trades.mostTrades.trades === 1 ? '' : 's'}`]
+        : [],
+      note: 'Completed trades, all seasons',
+      board: trades.byTrades.slice(0, TOP).map((r, i) => ({
+        key: r.team.ownerId || r.team.displayName.toLowerCase(),
+        rank: i + 1,
+        name: r.team.displayName,
+        value: `${r.trades}`,
+        detail: `${gain(r.pointsGained)} points gained`,
+      })),
+    },
+    {
+      key: 'best-trader',
+      label: '📈 Best Trader',
+      headline: trades.bestTrader?.team.displayName ?? '—',
+      lines: trades.bestTrader ? [`${gain(trades.bestTrader.pointsGained)} points gained`] : [],
+      note: 'Points per week gained across every trade',
+      board: trades.byGain.slice(0, TOP).map((r, i) => ({
+        key: r.team.ownerId || r.team.displayName.toLowerCase(),
+        rank: i + 1,
+        name: r.team.displayName,
+        value: gain(r.pointsGained),
+        detail: `${r.trades} trade${r.trades === 1 ? '' : 's'}`,
+      })),
+    },
+  ];
 
   if (rows.length === 0) {
     return (
@@ -98,7 +136,7 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
         <HeadToHead data={h2h} />
       </section>
 
-      {(mostTrades || bestTrader) && (
+      {trades.byTrades.length > 0 && (
         <section>
           <h2 className="card-title">All-time trades</h2>
           <p className="card-note">
@@ -106,27 +144,7 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
             acquisitions went on to average per week, less what the players they gave up went on
             to average.
           </p>
-          <div className="feature-tiles">
-            {mostTrades && (
-              <div className="feature-tile">
-                <div className="feature-tile-label">🔁 Trade Happy</div>
-                <div className="feature-tile-name">{mostTrades.team.displayName}</div>
-                <div className="feature-tile-value">
-                  {mostTrades.trades} trade{mostTrades.trades === 1 ? '' : 's'}
-                </div>
-              </div>
-            )}
-            {bestTrader && (
-              <div className="feature-tile">
-                <div className="feature-tile-label">📈 Best Trader</div>
-                <div className="feature-tile-name">{bestTrader.team.displayName}</div>
-                <div className="feature-tile-value">
-                  {bestTrader.pointsGained > 0 ? '+' : ''}
-                  {bestTrader.pointsGained.toFixed(1)} points gained
-                </div>
-              </div>
-            )}
-          </div>
+          <RankTiles className="trade-rank-tiles" tiles={tradeTiles} />
         </section>
       )}
 

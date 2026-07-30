@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 
 export interface RankBoardEntry {
-  rosterId: number;
+  /** Stable identity for the row — a roster id within a season, a manager
+   *  across them. Matched against `highlightKey` to mark "you". */
+  key: string;
   rank: number;
   name: string;
   /** Headline figure for this category. */
@@ -15,8 +17,11 @@ export interface RankBoardEntry {
 export interface RankTile {
   key: string;
   label: string;
-  rank: number | null;
-  /** The one or two figures shown under the rank. */
+  /** Already formatted — a rank like "#7", or a name. */
+  headline: string;
+  /** Render the headline at display size, for a tile led by a rank. */
+  big?: boolean;
+  /** The one or two figures shown under the headline. */
   lines: string[];
   /** What the full board is measuring, for the popup's subheading. */
   note: string;
@@ -25,13 +30,11 @@ export interface RankTile {
 
 function RankModal({
   tile,
-  rosterId,
-  teams,
+  highlightKey,
   onClose,
 }: {
   tile: RankTile;
-  rosterId: number;
-  teams: number;
+  highlightKey?: string;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -52,7 +55,7 @@ function RankModal({
         className="modal record-modal rank-modal"
         role="dialog"
         aria-modal="true"
-        aria-label={`${tile.label} — all ${teams} teams`}
+        aria-label={`${tile.label} — full rankings`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="record-modal-head">
@@ -66,9 +69,9 @@ function RankModal({
         </div>
         <ol className="record-list rank-list">
           {tile.board.map((e) => {
-            const you = e.rosterId === rosterId;
+            const you = highlightKey != null && e.key === highlightKey;
             return (
-              <li key={e.rosterId} className={you ? 'is-you' : undefined}>
+              <li key={e.key} className={you ? 'is-you' : undefined}>
                 <span className="record-rank">{e.rank}</span>
                 <span className="record-who">
                   <span className="record-holder">
@@ -88,29 +91,28 @@ function RankModal({
 }
 
 /**
- * The team page's four rank tiles, each opening the full league board for its
- * category with the team whose page you're on marked.
+ * Tiles that each open the full league board behind them. Used for the team
+ * page's four ranks and the lifetime page's trade leaders; `highlightKey`
+ * marks a row as the reader's own, and is left unset where there isn't one.
  */
 export function RankTiles({
   tiles,
-  rosterId,
-  teams,
+  highlightKey,
+  className = 'rank-tiles',
 }: {
   tiles: RankTile[];
-  rosterId: number;
-  teams: number;
+  highlightKey?: string;
+  className?: string;
 }) {
   const [open, setOpen] = useState<RankTile | null>(null);
 
   return (
     <>
-      <div className="feature-tiles rank-tiles">
+      <div className={`feature-tiles ${className}`}>
         {tiles.map((t) => (
           <div className="feature-tile" key={t.key}>
             <div className="feature-tile-label">{t.label}</div>
-            <div className="feature-tile-name rank-figure">
-              {t.rank == null ? '—' : `#${t.rank}`}
-            </div>
+            <div className={`feature-tile-name${t.big ? ' rank-figure' : ''}`}>{t.headline}</div>
             {t.lines.map((line, i) => (
               <div className="feature-tile-value" key={i}>
                 {line}
@@ -129,7 +131,7 @@ export function RankTiles({
       </div>
 
       {open && (
-        <RankModal tile={open} rosterId={rosterId} teams={teams} onClose={() => setOpen(null)} />
+        <RankModal tile={open} highlightKey={highlightKey} onClose={() => setOpen(null)} />
       )}
     </>
   );

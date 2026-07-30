@@ -62,13 +62,14 @@ export default function TeamPage({
     {
       key: 'place',
       label: 'Current Place',
-      rank: rankOf(boards.place),
+      headline: `#${rankOf(boards.place) ?? '—'}`,
+      big: true,
       lines: standing
         ? [`${standing.wins}-${standing.losses}${standing.ties ? `-${standing.ties}` : ''}`]
         : ['—'],
       note: 'League standings, best record first',
       board: boards.place.map((r) => ({
-        rosterId: r.rosterId,
+        key: String(r.rosterId),
         rank: r.rank,
         name: r.name,
         value: `${r.standing.wins}-${r.standing.losses}${r.standing.ties ? `-${r.standing.ties}` : ''}`,
@@ -78,13 +79,14 @@ export default function TeamPage({
     {
       key: 'points',
       label: 'Points Per Game',
-      rank: rankOf(boards.points),
+      headline: `#${rankOf(boards.points) ?? '—'}`,
+      big: true,
       lines: standing
         ? [`${standing.avgPoints.toFixed(1)} per game`, `${standing.pointsFor.toFixed(1)} total`]
         : ['—'],
       note: 'Ranked on total points scored this season',
       board: boards.points.map((r) => ({
-        rosterId: r.rosterId,
+        key: String(r.rosterId),
         rank: r.rank,
         name: r.name,
         value: `${r.standing.pointsFor.toFixed(1)}`,
@@ -94,7 +96,8 @@ export default function TeamPage({
     {
       key: 'manager',
       label: 'Manager Rank',
-      rank: rankOf(boards.manager),
+      headline: `#${rankOf(boards.manager) ?? '—'}`,
+      big: true,
       lines: standing
         ? [
             `${standing.managerPerformance.toFixed(1)}% manager`,
@@ -103,7 +106,7 @@ export default function TeamPage({
         : ['—'],
       note: 'Points scored ÷ best-possible lineup',
       board: boards.manager.map((r) => ({
-        rosterId: r.rosterId,
+        key: String(r.rosterId),
         rank: r.rank,
         name: r.name,
         value: `${r.standing.managerPerformance.toFixed(1)}%`,
@@ -113,7 +116,8 @@ export default function TeamPage({
     {
       key: 'performance',
       label: 'Performance %',
-      rank: rankOf(boards.performance),
+      headline: `#${rankOf(boards.performance) ?? '—'}`,
+      big: true,
       lines:
         standing && standing.perfProjected > 0
           ? [
@@ -123,7 +127,7 @@ export default function TeamPage({
           : ['no projections'],
       note: 'Points scored ÷ points projected',
       board: boards.performance.map((r) => ({
-        rosterId: r.rosterId,
+        key: String(r.rosterId),
         rank: r.rank,
         name: r.name,
         value: r.standing.performance == null ? '—' : `${r.standing.performance.toFixed(1)}%`,
@@ -167,7 +171,7 @@ export default function TeamPage({
         }))}
       />
 
-      <RankTiles tiles={tiles} rosterId={team.rosterId} teams={boards.teams} />
+      <RankTiles tiles={tiles} highlightKey={String(team.rosterId)} />
 
       <section className="card">
         <h2 className="card-title">Season, week by week</h2>
