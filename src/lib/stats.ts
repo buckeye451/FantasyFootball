@@ -259,6 +259,7 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
         // Season-cumulative manager performance: points scored ÷ best-possible
         // lineup points, through these weeks (naturally ≤ 100%).
         managerPerformance: optimalSum > 0 ? Math.min(100, round2((pf / optimalSum) * 100)) : 100,
+        optimalPoints: round2(optimalSum),
         // Season performance: points scored ÷ points projected.
         performance: projSum > 0 ? round2((projPf / projSum) * 100) : null,
         // The mirror image: what opponents put up against you, over what they
@@ -534,6 +535,49 @@ export interface TeamSeason {
   totalPointsLost: number;
   /** actual / optimal across the season */
   efficiency: number;
+}
+
+export interface TeamRanks {
+  /** Teams in the league, so a rank can be shown as "#3 of 10". */
+  teams: number;
+  place: number | null;
+  pointsRank: number | null;
+  managerRank: number | null;
+  performanceRank: number | null;
+  standing: Standing | null;
+}
+
+/**
+ * Where one team sits in the league on each headline metric.
+ *
+ * Ranked by competition rules — a rank is one more than the number of teams
+ * strictly ahead — so teams level on a metric share a place instead of being
+ * split by whatever order the standings happened to be in.
+ */
+export function teamRanks(leagueId: string, rosterId: number): TeamRanks {
+  const standings = currentStandings(leagueId);
+  const mine = standings.find((s) => s.team.rosterId === rosterId) ?? null;
+
+  const rankBy = (value: (s: Standing) => number | null): number | null => {
+    if (!mine) return null;
+    const v = value(mine);
+    if (v == null) return null;
+    return (
+      standings.filter((s) => {
+        const other = value(s);
+        return other != null && other > v;
+      }).length + 1
+    );
+  };
+
+  return {
+    teams: standings.length,
+    place: mine?.rank ?? null,
+    pointsRank: rankBy((s) => s.pointsFor),
+    managerRank: rankBy((s) => s.managerPerformance),
+    performanceRank: rankBy((s) => s.performance),
+    standing: mine,
+  };
 }
 
 export function teamSeason(leagueId: string, rosterId: number): TeamSeason | null {

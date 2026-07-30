@@ -6,6 +6,7 @@ import {
   getTeams,
   mostStartedByPosition,
   resolveActiveLeague,
+  teamRanks,
   teamSeason,
   teamWeekDetail,
   weeklyMedians,
@@ -44,6 +45,14 @@ export default function TeamPage({
   const meta = getPlayerMeta(seasonYear);
 
   const mostStarted = mostStartedByPosition(leagueId, team.rosterId);
+  // Where this team sits in the league on each headline metric.
+  const ranks = teamRanks(leagueId, team.rosterId);
+  const standing = ranks.standing;
+  const place = (n: number | null) => (n == null ? '—' : `#${n}`);
+  // Every tile figure comes from the standings, not teamSeason: teamSeason
+  // sums points across the postseason too, so pairing its totals with a
+  // regular-season rank would show one number and rank on another.
+  const benchPoints = standing ? Math.max(0, standing.optimalPoints - standing.pointsFor) : null;
 
   const medians = new Map(weeklyMedians(leagueId).map((m) => [m.week, m.median]));
   const chartData = season.weeks.map((w) => ({
@@ -77,31 +86,61 @@ export default function TeamPage({
         }))}
       />
 
-      <div className="tile-grid">
-        <div className="tile">
-          <div className="tile-label">Record</div>
-          <div className="tile-value">
+      <div className="feature-tiles rank-tiles">
+        <div className="feature-tile">
+          <div className="feature-tile-label">Current Place</div>
+          <div className="feature-tile-name">
+            {place(ranks.place)}
+            <span className="feature-tile-of">of {ranks.teams}</span>
+          </div>
+          <div className="feature-tile-value">
             {season.wins}-{season.losses}
             {season.ties ? `-${season.ties}` : ''}
           </div>
-          <div className="tile-sub">{season.rank ? `#${season.rank} overall` : 'unranked'}</div>
         </div>
-        <div className="tile">
-          <div className="tile-label">Points for</div>
-          <div className="tile-value">{season.pointsFor.toFixed(1)}</div>
-          <div className="tile-sub">
-            {season.avgPoints.toFixed(1)} avg · high {season.highScore.toFixed(1)}
+
+        <div className="feature-tile">
+          <div className="feature-tile-label">Points Per Game</div>
+          <div className="feature-tile-name">
+            {place(ranks.pointsRank)}
+            <span className="feature-tile-of">of {ranks.teams}</span>
+          </div>
+          <div className="feature-tile-value">
+            {standing ? `${standing.avgPoints.toFixed(1)} per game` : '—'}
+          </div>
+          <div className="feature-tile-value">
+            {standing ? `${standing.pointsFor.toFixed(1)} total` : '—'}
           </div>
         </div>
-        <div className="tile">
-          <div className="tile-label">Lineup efficiency</div>
-          <div className="tile-value">{season.efficiency.toFixed(1)}%</div>
-          <div className="tile-sub">of the best possible {season.totalOptimal.toFixed(1)} pts</div>
+
+        <div className="feature-tile">
+          <div className="feature-tile-label">Manager Rank</div>
+          <div className="feature-tile-name">
+            {place(ranks.managerRank)}
+            <span className="feature-tile-of">of {ranks.teams}</span>
+          </div>
+          <div className="feature-tile-value">
+            {standing ? `${standing.managerPerformance.toFixed(1)}% manager` : '—'}
+          </div>
+          <div className="feature-tile-value">
+            {benchPoints != null ? `${benchPoints.toFixed(1)} left on the bench` : '—'}
+          </div>
         </div>
-        <div className="tile">
-          <div className="tile-label">Left on the bench</div>
-          <div className="tile-value">{season.totalPointsLost.toFixed(1)}</div>
-          <div className="tile-sub">points this season</div>
+
+        <div className="feature-tile">
+          <div className="feature-tile-label">Performance %</div>
+          <div className="feature-tile-name">
+            {place(ranks.performanceRank)}
+            <span className="feature-tile-of">of {ranks.teams}</span>
+          </div>
+          <div className="feature-tile-value">
+            {standing?.perfProjected ? `${standing.perfPoints.toFixed(1)} scored` : '—'}
+          </div>
+          <div className="feature-tile-value">
+            {standing?.perfProjected
+              ? `${standing.perfProjected.toFixed(1)} projected`
+              : 'no projections'}
+          </div>
         </div>
       </div>
 

@@ -3349,7 +3349,7 @@ tr.playoff-cut td {
 /* ---------- trades page: leader tiles ---------- */
 /* Inverted against the page like the recap tile and trophy case — forest green
    in light, white in dark — so they read as a header above the deals. */
-.trade-tiles {
+.feature-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
@@ -3357,11 +3357,11 @@ tr.playoff-cut td {
 }
 
 /* Inside a titled section the heading already supplies the top gap. */
-.card-note + .trade-tiles {
+.card-note + .feature-tiles {
   margin-top: 12px;
 }
 
-.trade-tile {
+.feature-tile {
   background: var(--recap-tile-bg);
   color: var(--recap-tile-ink);
   border: 1px solid var(--recap-tile-border);
@@ -3369,7 +3369,7 @@ tr.playoff-cut td {
   padding: 13px 16px 14px;
 }
 
-.trade-tile-label {
+.feature-tile-label {
   color: var(--recap-tile-muted);
   font-size: 11px;
   font-weight: 700;
@@ -3377,14 +3377,14 @@ tr.playoff-cut td {
   letter-spacing: 0.6px;
 }
 
-.trade-tile-name {
+.feature-tile-name {
   margin-top: 3px;
   font-size: 21px;
   font-weight: 700;
   line-height: 1.15;
 }
 
-.trade-tile-value {
+.feature-tile-value {
   margin-top: 1px;
   font-size: 13.5px;
   font-weight: 650;
@@ -3405,4 +3405,16 @@ tr.playoff-cut td {
 
 .trade-trend.down {
   color: var(--arrow-down);
+}
+
+/* Four across on the team page, where each tile is a rank plus two figures. */
+.rank-tiles {
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+}
+
+.feature-tile-of {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--recap-tile-muted);
 }

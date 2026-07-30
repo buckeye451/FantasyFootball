@@ -21,21 +21,21 @@ export default function TradesPage({ searchParams }: { searchParams: { season?: 
         rostered them still count.
       </p>
       {(mostTrades || bestTrader) && (
-        <div className="trade-tiles">
+        <div className="feature-tiles">
           {mostTrades && (
-            <div className="trade-tile">
-              <div className="trade-tile-label">🔁 Trade Happy</div>
-              <div className="trade-tile-name">{mostTrades.team.displayName}</div>
-              <div className="trade-tile-value">
+            <div className="feature-tile">
+              <div className="feature-tile-label">🔁 Trade Happy</div>
+              <div className="feature-tile-name">{mostTrades.team.displayName}</div>
+              <div className="feature-tile-value">
                 {mostTrades.trades} trade{mostTrades.trades === 1 ? '' : 's'}
               </div>
             </div>
           )}
           {bestTrader && (
-            <div className="trade-tile">
-              <div className="trade-tile-label">📈 Best Trader</div>
-              <div className="trade-tile-name">{bestTrader.team.displayName}</div>
-              <div className="trade-tile-value">
+            <div className="feature-tile">
+              <div className="feature-tile-label">📈 Best Trader</div>
+              <div className="feature-tile-name">{bestTrader.team.displayName}</div>
+              <div className="feature-tile-value">
                 {bestTrader.pointsGained > 0 ? '+' : ''}
                 {bestTrader.pointsGained.toFixed(1)} points gained
               </div>
