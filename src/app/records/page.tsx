@@ -19,7 +19,7 @@ export default function RecordsPage() {
   const years = played.map((s) => s.season).sort();
 
   return (
-    <>
+    <div className="record-page">
       <h1 className="page-title">The Record Book</h1>
       <p className="page-subtitle">
         All-time single records across the league&rsquo;s regular-season history
@@ -27,6 +27,6 @@ export default function RecordsPage() {
         excluded, so a three-week run can&rsquo;t sit alongside a full season.
       </p>
       <RecordBook groups={groups} />
-    </>
+    </div>
   );
 }

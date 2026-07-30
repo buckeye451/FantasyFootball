@@ -62,6 +62,18 @@
   --box-bench-bg: rgba(0, 0, 0, 0.2);
   /* Zebra striping on the long tables. */
   --row-stripe: rgba(255, 255, 255, 0.045);
+  /* Record book runs a neutral near-black scheme of its own in dark mode
+     rather than the purple surfaces, with mint figures. Light mode maps these
+     straight back to the shared tokens. */
+  --record-bg: #141614;
+  --record-border: rgba(255, 255, 255, 0.1);
+  --record-value: #58c97c;
+  --record-label: #93999a;
+  --record-line: #868d8e;
+  --record-holder: #edefee;
+  --record-link: #4fbf72;
+  --record-modal-bg: #16181a;
+  --record-divider: rgba(255, 255, 255, 0.09);
 }
 
 /* Light theme — same layout, lighter surfaces. Every colour the app uses is a
@@ -120,6 +132,16 @@
   --progress-post: #b8860b;
   --box-bench-bg: rgba(30, 28, 20, 0.08);
   --row-stripe: rgba(30, 28, 20, 0.035);
+  /* Light mode keeps the shared palette — these just point back at it. */
+  --record-bg: var(--surface);
+  --record-border: var(--border);
+  --record-value: var(--good);
+  --record-label: var(--muted);
+  --record-line: var(--muted);
+  --record-holder: var(--ink);
+  --record-link: var(--series-1);
+  --record-modal-bg: var(--surface-opaque);
+  --record-divider: var(--grid);
 }
 
 * {
@@ -2895,7 +2917,7 @@ tr.playoff-cut td {
 
 .record-group-label {
   margin: 0 0 10px;
-  color: var(--muted);
+  color: var(--record-label);
   font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
@@ -2915,14 +2937,14 @@ tr.playoff-cut td {
 .record-card {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--record-bg);
+  border: 1px solid var(--record-border);
   border-radius: 12px;
   padding: 13px 15px 11px;
 }
 
 .record-card-label {
-  color: var(--muted);
+  color: var(--record-label);
   font-size: 10.5px;
   font-weight: 700;
   line-height: 1.35;
@@ -2935,7 +2957,7 @@ tr.playoff-cut td {
 
 .record-card-value {
   margin: 5px 0 7px;
-  color: var(--good);
+  color: var(--record-value);
   font-size: 27px;
   font-weight: 700;
   line-height: 1.1;
@@ -2944,13 +2966,14 @@ tr.playoff-cut td {
 }
 
 .record-card-holder {
+  color: var(--record-holder);
   font-size: 14px;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
 .record-card-line {
-  color: var(--muted);
+  color: var(--record-line);
   font-size: 11.5px;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -2962,7 +2985,7 @@ tr.playoff-cut td {
   padding: 0;
   border: none;
   background: none;
-  color: var(--series-1);
+  color: var(--record-link);
   font-family: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -2976,6 +2999,8 @@ tr.playoff-cut td {
 /* Top-25 popup */
 .record-modal {
   max-width: 520px;
+  background: var(--record-modal-bg);
+  border-color: var(--record-border);
 }
 
 .record-modal-head {
@@ -2994,7 +3019,7 @@ tr.playoff-cut td {
 
 .record-modal-sub {
   margin: 2px 0 0;
-  color: var(--muted);
+  color: var(--record-label);
   font-size: 12px;
 }
 
@@ -3009,7 +3034,7 @@ tr.playoff-cut td {
   align-items: baseline;
   gap: 10px;
   padding: 7px 0;
-  border-bottom: 1px solid var(--grid);
+  border-bottom: 1px solid var(--record-divider);
 }
 
 .record-list li:last-child {
@@ -3023,7 +3048,7 @@ tr.playoff-cut td {
 .record-rank {
   flex: none;
   width: 22px;
-  color: var(--muted);
+  color: var(--record-label);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -3038,18 +3063,20 @@ tr.playoff-cut td {
 }
 
 .record-holder {
+  color: var(--record-holder);
   font-size: 13.5px;
   font-weight: 650;
 }
 
 .record-lines {
-  color: var(--muted);
+  color: var(--record-line);
   font-size: 11.5px;
   line-height: 1.35;
 }
 
 .record-value {
   flex: none;
+  color: var(--record-value);
   font-size: 13.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -3068,4 +3095,10 @@ tr.playoff-cut td {
   .record-card-value {
     font-size: 22px;
   }
+}
+
+/* The page's own heading follows the record scheme, so the header doesn't sit
+   in the app's lavender while everything below it is neutral. */
+.record-page .page-subtitle {
+  color: var(--record-line);
 }
