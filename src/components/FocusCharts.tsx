@@ -231,6 +231,10 @@ function TeamsLineChart({
                 type="monotone"
                 dataKey={t.slug}
                 stroke={selected ? p.slots[slot] : p.context}
+                // Ten overlapping context lines read as noise at full strength.
+                // Fading them lets a selected line stay legible where it
+                // crosses the pack, without losing the shape of the field.
+                strokeOpacity={selected ? 1 : 0.45}
                 strokeWidth={selected ? 2.5 : 1.5}
                 dot={false}
                 activeDot={{ r: 4, strokeWidth: 2, stroke: p.surface2 }}
