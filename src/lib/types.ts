@@ -168,6 +168,8 @@ export interface Standing {
   lowScore: number;
   managerPerformance: number; // season points ÷ best-possible lineup points, %
   performance: number | null; // season points ÷ season projected points, % (null = no projections)
+  /** Points scored against you ÷ your opponents' projected points, %. */
+  opponentPerformance: number | null;
   rank: number;
   movement: number; // vs. previous week's rank; positive = climbed
 }

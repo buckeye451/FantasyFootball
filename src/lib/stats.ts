@@ -205,6 +205,10 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
       // have projection data, so the ratio compares like with like.
       let projSum = 0,
         projPf = 0;
+      // Same treatment for the opposite side of the ledger: what opponents
+      // scored against this team vs what they were projected to score.
+      let oppProjSum = 0,
+        oppProjPa = 0;
       let high = -Infinity,
         low = Infinity;
       for (const w of throughWeeks) {
@@ -231,6 +235,11 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
         }
         if (opp) {
           pa += opp.points;
+          const oppProjected = wp ? projectedTotal(opp.starters, wp, fmt) : null;
+          if (oppProjected != null && oppProjected > 0) {
+            oppProjSum += oppProjected;
+            oppProjPa += opp.points;
+          }
           if (mine.points > opp.points) wins++;
           else if (mine.points < opp.points) losses++;
           else ties++;
@@ -252,6 +261,9 @@ export function standingsThroughWeek(leagueId: string, week: number): Standing[]
         managerPerformance: optimalSum > 0 ? Math.min(100, round2((pf / optimalSum) * 100)) : 100,
         // Season performance: points scored ÷ points projected.
         performance: projSum > 0 ? round2((projPf / projSum) * 100) : null,
+        // The mirror image: what opponents put up against you, over what they
+        // were projected for. Above 100% means the schedule ran hot.
+        opponentPerformance: oppProjSum > 0 ? round2((oppProjPa / oppProjSum) * 100) : null,
       };
     });
 

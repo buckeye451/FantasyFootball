@@ -23,6 +23,7 @@ type SortKey =
   | 'pa'
   | 'diff'
   | 'perf'
+  | 'opp'
   | 'avg'
   | 'high'
   | 'low';
@@ -37,6 +38,7 @@ const ACCESSORS: Record<SortKey, (s: Standing) => number | string> = {
   pa: (s) => s.pointsAgainst,
   diff: (s) => s.pointsFor - s.pointsAgainst,
   perf: (s) => s.performance ?? -1,
+  opp: (s) => s.opponentPerformance ?? -1,
   avg: (s) => s.avgPoints,
   high: (s) => s.highScore,
   low: (s) => s.lowScore,
@@ -52,6 +54,7 @@ const DEFAULT_DIR: Record<SortKey, 'asc' | 'desc'> = {
   pa: 'desc',
   diff: 'desc',
   perf: 'desc',
+  opp: 'desc',
   avg: 'desc',
   high: 'desc',
   low: 'desc',
@@ -118,6 +121,11 @@ export function StandingsTable({
               num: true,
               title: 'Performance: points scored ÷ points projected',
             })}
+            {th('opp', 'Opp. %', {
+              num: true,
+              title:
+                "Opponent performance: points scored against you ÷ your opponents' projected points",
+            })}
             {th('avg', 'Avg', { num: true })}
             {th('high', 'High', { num: true })}
             {th('low', 'Low', { num: true })}
@@ -170,6 +178,15 @@ export function StandingsTable({
                   ) : (
                     <span className={performanceClass(s.performance)}>
                       {s.performance.toFixed(1)}%
+                    </span>
+                  )}
+                </td>
+                <td className="num">
+                  {s.opponentPerformance == null ? (
+                    '—'
+                  ) : (
+                    <span className={performanceClass(s.opponentPerformance)}>
+                      {s.opponentPerformance.toFixed(1)}%
                     </span>
                   )}
                 </td>
