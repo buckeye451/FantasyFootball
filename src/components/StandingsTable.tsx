@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import type { Standing } from '@/lib/types';
 import { managerClass, performanceClass } from '@/lib/thresholds';
+import { useStickyColumns } from '@/components/useStickyColumns';
 
 /** Teams that make the playoffs — the red line sits under this place. */
 const PLAYOFF_SPOTS = 6;
@@ -81,45 +82,7 @@ export function StandingsTable({
   const champKey = champion?.toLowerCase() ?? null;
   const [sortKey, setSortKey] = useState<SortKey>('rank');
   const [dir, setDir] = useState<'asc' | 'desc'>('asc');
-  const tableRef = useRef<HTMLTableElement>(null);
-
-  // Each pinned column has to be offset by the real width of the ones before
-  // it. Those widths depend on the rendered content, so they're measured
-  // rather than guessed, and re-measured whenever the table resizes.
-  useEffect(() => {
-    const table = tableRef.current;
-    if (!table) return;
-    const measure = () => {
-      const header = table.querySelector('thead tr');
-      if (!header) return;
-      const cells = Array.from(header.children) as HTMLElement[];
-      let offset = 0;
-      for (let i = 0; i < STICKY_COLS; i++) {
-        table.style.setProperty(`--sticky-${i}`, `${offset}px`);
-        offset += cells[i]?.getBoundingClientRect().width ?? 0;
-      }
-    };
-    // The seam on the last pinned column only earns its keep once something is
-    // actually hidden behind it — on a wide screen the table doesn't scroll and
-    // a divider there would imply a split that isn't real.
-    const wrap = table.parentElement;
-    const onScroll = () => {
-      table.classList.toggle('is-pinned', (wrap?.scrollLeft ?? 0) > 0);
-    };
-
-    measure();
-    onScroll();
-    const observer = new ResizeObserver(() => {
-      measure();
-      onScroll();
-    });
-    observer.observe(table);
-    wrap?.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      observer.disconnect();
-      wrap?.removeEventListener('scroll', onScroll);
-    };
-  }, []);
+  const tableRef = useStickyColumns(STICKY_COLS);
 
   const clickSort = (key: SortKey) => {
     if (key === sortKey) setDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -136,7 +99,8 @@ export function StandingsTable({
     return dir === 'asc' ? cmp : -cmp;
   });
 
-  const stick = (i: number) => `sticky-col sticky-col-${i}`;
+  const stick = (i: number) =>
+    `sticky-col sticky-col-${i}${i === STICKY_COLS - 1 ? ' sticky-col-last' : ''}`;
 
   const th = (key: SortKey, label: string, opts?: { num?: boolean; title?: string; stickyAt?: number }) => (
     <th
@@ -154,7 +118,7 @@ export function StandingsTable({
 
   return (
     <div className="table-wrap">
-      <table className="standings-table" ref={tableRef}>
+      <table className="sticky-table" ref={tableRef}>
         <thead>
           <tr>
             {th('rank', 'Rank', { num: true, stickyAt: 0 })}

@@ -4,6 +4,14 @@ import { useState } from 'react';
 import Link from 'next/link';
 import type { LifetimeRow } from '@/lib/stats';
 import { managerClass, winRateClass } from '@/lib/thresholds';
+import { useStickyColumns } from '@/components/useStickyColumns';
+
+/**
+ * Only the manager name is pinned here — unlike the season standings there's
+ * no rank or movement column ahead of it, so one column is all it takes to
+ * keep every row identifiable while the career numbers scroll past.
+ */
+const STICKY_COLS = 1;
 
 type SortKey =
   | 'manager'
@@ -49,6 +57,7 @@ const DEFAULT_DIR: Record<SortKey, 'asc' | 'desc'> = {
 export function LifetimeStandingsTable({ rows }: { rows: LifetimeRow[] }) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
+  const tableRef = useStickyColumns(STICKY_COLS);
 
   const clickSort = (key: SortKey) => {
     if (key === sortKey) setDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -68,11 +77,17 @@ export function LifetimeStandingsTable({ rows }: { rows: LifetimeRow[] }) {
       })
     : rows; // default: the incoming order (trophies, then win %)
 
-  const th = (key: SortKey, label: string, opts?: { num?: boolean; center?: boolean; title?: string }) => (
+  const stickyCell = 'sticky-col sticky-col-0 sticky-col-last';
+
+  const th = (
+    key: SortKey,
+    label: string,
+    opts?: { num?: boolean; center?: boolean; title?: string; sticky?: boolean }
+  ) => (
     <th
       className={`sortable${opts?.num ? ' num' : ''}${opts?.center ? ' center' : ''}${
         sortKey === key ? ' sorted' : ''
-      }`}
+      }${opts?.sticky ? ` ${stickyCell}` : ''}`}
       onClick={() => clickSort(key)}
       title={opts?.title}
       aria-sort={sortKey === key ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
@@ -84,10 +99,10 @@ export function LifetimeStandingsTable({ rows }: { rows: LifetimeRow[] }) {
 
   return (
     <div className="table-wrap">
-      <table>
+      <table className="sticky-table" ref={tableRef}>
         <thead>
           <tr>
-            {th('manager', 'Manager')}
+            {th('manager', 'Manager', { sticky: true })}
             {th('trophies', '🏆', { center: true })}
             {th('seasons', 'Seasons', { num: true })}
             {th('record', 'Record')}
@@ -106,7 +121,7 @@ export function LifetimeStandingsTable({ rows }: { rows: LifetimeRow[] }) {
         <tbody>
           {sorted.map((r) => (
             <tr key={r.slug + r.displayName}>
-              <td className="team-cell">
+              <td className={`team-cell ${stickyCell}`}>
                 <Link href={`/team/${r.slug}`}>{r.displayName}</Link>
               </td>
               <td className="center">{r.trophies > 0 ? '🏆'.repeat(r.trophies) : ''}</td>
