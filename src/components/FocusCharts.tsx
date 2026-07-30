@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTheme, type Theme } from '@/components/ThemeToggle';
+import { useStickyColumns } from '@/components/useStickyColumns';
 import {
   Bar,
   BarChart,
@@ -166,11 +167,14 @@ function TeamsLineChart({
   teams,
   selection,
   reversed,
+  showLabels = true,
 }: {
   data: Row[];
   teams: ChartTeam[];
   selection: Record<string, number>;
   reversed?: boolean;
+  /** Name tags at the end of each highlighted line. */
+  showLabels?: boolean;
 }) {
   // Draw unselected context lines first so selected lines sit on top.
   const ordered = useMemo(
@@ -188,7 +192,9 @@ function TeamsLineChart({
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={data}
-          margin={{ top: 12, right: isMobile ? 58 : 84, bottom: 4, left: 0 }}
+          // The right margin exists to hold the end-of-line name tags; with
+          // them off it's dead space, so the plot takes it back.
+          margin={{ top: 12, right: showLabels ? (isMobile ? 58 : 84) : 12, bottom: 4, left: 0 }}
           accessibilityLayer
         >
           <CartesianGrid stroke={p.grid} vertical={false} />
@@ -228,7 +234,7 @@ function TeamsLineChart({
                 dot={false}
                 activeDot={{ r: 4, strokeWidth: 2, stroke: p.surface2 }}
                 isAnimationActive={false}
-                label={selected ? endLabel(t.name, lastIndex, p) : undefined}
+                label={selected && showLabels ? endLabel(t.name, lastIndex, p) : undefined}
               />
             );
           })}
@@ -239,14 +245,18 @@ function TeamsLineChart({
 }
 
 function DataTable({ data, teams, prefix }: { data: Row[]; teams: ChartTeam[]; prefix?: string }) {
+  // A row is a week per column, so the team name is the only thing anchoring
+  // it once you scroll. Measured on open — the table has no width while the
+  // <details> is closed, and the observer re-measures when it gets one.
+  const tableRef = useStickyColumns(1);
   return (
     <details className="table-view">
       <summary>View as table</summary>
       <div className="table-wrap">
-        <table>
+        <table className="sticky-table" ref={tableRef}>
           <thead>
             <tr>
-              <th>Team</th>
+              <th className="sticky-col sticky-col-0 sticky-col-last">Team</th>
               {data.map((d) => (
                 <th key={d.week} className="num">
                   W{d.week}
@@ -257,7 +267,7 @@ function DataTable({ data, teams, prefix }: { data: Row[]; teams: ChartTeam[]; p
           <tbody>
             {teams.map((t) => (
               <tr key={t.slug}>
-                <td className="team-cell">{t.name}</td>
+                <td className="team-cell sticky-col sticky-col-0 sticky-col-last">{t.name}</td>
                 {data.map((d) => (
                   <td key={d.week} className="num">
                     {d[t.slug] != null ? `${prefix ?? ''}${d[t.slug]}` : '—'}
@@ -339,7 +349,7 @@ export function LeagueChartsBoard({
       <section className="card">
         <h2 className="card-title">Weekly scores</h2>
         <p className="card-note">Points scored by each team, week by week.</p>
-        <TeamsLineChart data={scoreData} teams={teams} selection={selection} />
+        <TeamsLineChart data={scoreData} teams={teams} selection={selection} showLabels={false} />
         <DataTable data={scoreData} teams={teams} />
       </section>
 
