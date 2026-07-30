@@ -312,6 +312,9 @@ function seedSeason(cfg: SeasonConfig): void {
   const TRADES: Array<{ week: number; a: string; b: string; aGives: Player[]; bGives: Player[] }> = [
     { week: 5, a: mgrAt(0), b: mgrAt(4), aGives: [], bGives: [] },
     { week: 9, a: mgrAt(2), b: mgrAt(7), aGives: [], bGives: [] },
+    // Third deal for the manager who already traded in week 5, so the
+    // most-trades tile has an outright winner to find.
+    { week: 12, a: mgrAt(0), b: mgrAt(6), aGives: [], bGives: [] },
   ];
   const trades: SleeperTransaction[] = [];
   const applyTrade = (t: (typeof TRADES)[number], id: string) => {
@@ -369,7 +372,14 @@ function seedSeason(cfg: SeasonConfig): void {
 
   for (let week = 1; week <= WEEKS; week++) {
     for (const [i, t] of TRADES.entries()) {
-      if (t.week === week) applyTrade(t, `${cfg.leagueId}-trade-${i + 1}`);
+      if (t.week !== week) continue;
+      // Resolved here rather than up front, so a manager's second deal picks
+      // from the roster their first one left them with.
+      if (t.week === 12) {
+        t.aGives = [nthAtPos(t.a, 'RB', 0)];
+        t.bGives = [nthAtPos(t.b, 'WR', 0), nthAtPos(t.b, 'TE', 0)];
+      }
+      applyTrade(t, `${cfg.leagueId}-trade-${i + 1}`);
     }
     const matchupIds = new Map<string, number>();
     let nextMatchup = 1;

@@ -1070,6 +1070,8 @@ export interface TradeAsset {
 export interface TradeSide {
   team: TeamInfo;
   players: TradeAsset[];
+  /** What this side gave up — the mirror of the other sides' `players`. */
+  gave: TradeAsset[];
   /** FAAB dollars received in the deal, when any moved. */
   faab: number;
   /** Future draft picks received, e.g. "2026 round 3". */
@@ -1174,16 +1176,14 @@ export function seasonTrades(leagueId: string): TradeView[] {
     const side = (rosterId: number): TradeSide | null => {
       const team = teams.get(rosterId);
       if (!team) return null;
-      if (!sides.has(rosterId)) sides.set(rosterId, { team, players: [], faab: 0, picks: [] });
+      if (!sides.has(rosterId)) sides.set(rosterId, { team, players: [], gave: [], faab: 0, picks: [] });
       return sides.get(rosterId)!;
     };
     for (const rid of data.roster_ids ?? []) side(rid);
 
     for (const [pid, rosterId] of Object.entries(data.adds ?? {})) {
-      const s = side(rosterId);
-      if (!s) continue;
       const m = meta.get(pid);
-      s.players.push({
+      const asset: TradeAsset = {
         playerId: pid,
         name: m?.name ?? pid,
         position: m?.position ?? '',
@@ -1191,7 +1191,12 @@ export function seasonTrades(leagueId: string): TradeView[] {
         espnId: m?.espnId ?? null,
         avgBefore: avgOver(pid, 1, week - 1),
         avgAfter: avgOver(pid, week, lastWeek),
-      });
+      };
+      side(rosterId)?.players.push(asset);
+      // The same player on the giving side's ledger, so what a manager let go
+      // can be weighed against what they brought in.
+      const from = data.drops?.[pid];
+      if (from != null && from !== rosterId) side(from)?.gave.push(asset);
     }
     for (const wb of data.waiver_budget ?? []) {
       const s = side(wb.receiver);
@@ -1204,10 +1209,64 @@ export function seasonTrades(leagueId: string): TradeView[] {
 
     const list = [...sides.values()];
     if (list.length < 2) continue; // not a manager-to-manager deal we can render
-    for (const s of list) s.players.sort((a, b) => (b.avgAfter ?? 0) - (a.avgAfter ?? 0));
+    for (const s of list) {
+      s.players.sort((a, b) => (b.avgAfter ?? 0) - (a.avgAfter ?? 0));
+      s.gave.sort((a, b) => (b.avgAfter ?? 0) - (a.avgAfter ?? 0));
+    }
     out.push({ transactionId: r.transaction_id as string, week, sides: list });
   }
   return out;
+}
+
+export interface TradeLeader {
+  team: TeamInfo;
+  trades: number;
+  /**
+   * Points per week gained across every trade: what the players they acquired
+   * went on to average, less what the players they gave up went on to average.
+   * Both sides are measured after the deal, so it scores the outcome rather
+   * than the reputations going in.
+   */
+  pointsGained: number;
+}
+
+export interface TradeSummary {
+  mostTrades: TradeLeader | null;
+  bestTrader: TradeLeader | null;
+}
+
+/** Who dealt the most, and who came out furthest ahead. */
+export function tradeSummary(trades: TradeView[]): TradeSummary {
+  const byRoster = new Map<number, TradeLeader>();
+  for (const t of trades) {
+    for (const s of t.sides) {
+      let row = byRoster.get(s.team.rosterId);
+      if (!row) {
+        row = { team: s.team, trades: 0, pointsGained: 0 };
+        byRoster.set(s.team.rosterId, row);
+      }
+      row.trades++;
+      const sum = (list: TradeAsset[]) => list.reduce((n, p) => n + (p.avgAfter ?? 0), 0);
+      row.pointsGained += sum(s.players) - sum(s.gave);
+    }
+  }
+  const rows = [...byRoster.values()].map((r) => ({ ...r, pointsGained: round2(r.pointsGained) }));
+  if (rows.length === 0) return { mostTrades: null, bestTrader: null };
+
+  // Ties break on the other metric, then the name, so the pick is stable.
+  const mostTrades = [...rows].sort(
+    (a, b) =>
+      b.trades - a.trades ||
+      b.pointsGained - a.pointsGained ||
+      a.team.displayName.localeCompare(b.team.displayName)
+  )[0];
+  const bestTrader = [...rows].sort(
+    (a, b) =>
+      b.pointsGained - a.pointsGained ||
+      b.trades - a.trades ||
+      a.team.displayName.localeCompare(b.team.displayName)
+  )[0];
+  return { mostTrades, bestTrader };
 }
 
 // ---------------------------------------------------------------------------

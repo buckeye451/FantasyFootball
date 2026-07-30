@@ -3345,3 +3345,44 @@ tr.playoff-cut td {
   background-color: var(--card-solid);
   background-image: linear-gradient(var(--surface-2), var(--surface-2));
 }
+
+/* ---------- trades page: leader tiles ---------- */
+/* Inverted against the page like the recap tile and trophy case — forest green
+   in light, white in dark — so they read as a header above the deals. */
+.trade-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.trade-tile {
+  background: var(--recap-tile-bg);
+  color: var(--recap-tile-ink);
+  border: 1px solid var(--recap-tile-border);
+  border-radius: 12px;
+  padding: 13px 16px 14px;
+}
+
+.trade-tile-label {
+  color: var(--recap-tile-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.trade-tile-name {
+  margin-top: 3px;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.trade-tile-value {
+  margin-top: 1px;
+  font-size: 13.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--recap-tile-muted);
+}
