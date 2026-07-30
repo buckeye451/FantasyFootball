@@ -192,8 +192,9 @@ function TeamsLineChart({
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={data}
-          // The right margin exists to hold the end-of-line name tags; with
-          // them off it's dead space, so the plot takes it back.
+          // The right margin holds the end-of-line name tags; without them it
+          // only has to clear the overhang of the last x tick, which is
+          // centred on its point.
           margin={{ top: 12, right: showLabels ? (isMobile ? 58 : 84) : 12, bottom: 4, left: 0 }}
           accessibilityLayer
         >
@@ -387,7 +388,7 @@ export function TeamWeeklyChart({
       </div>
       <div className="chart-box" style={{ height: 300 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 12, right: 16, bottom: 4, left: 0 }} accessibilityLayer>
+          <LineChart data={data} margin={{ top: 12, right: 12, bottom: 4, left: 0 }} accessibilityLayer>
             <CartesianGrid stroke={p.grid} vertical={false} />
             <XAxis
               dataKey="week"
@@ -543,7 +544,7 @@ export function SeasonPointsChart({
   return (
     <div className="chart-box">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 16, right: 8, bottom: 4, left: 0 }} accessibilityLayer>
+        <BarChart data={data} margin={{ top: 16, right: 4, bottom: 4, left: 0 }} accessibilityLayer>
           <CartesianGrid stroke={p.grid} vertical={false} />
           {axis.minor.map((v) => (
             <ReferenceLine key={v} y={v} stroke={p.grid} strokeOpacity={0.45} strokeWidth={1} />
