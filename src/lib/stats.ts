@@ -1070,10 +1070,9 @@ export interface TradeView {
  * Every completed trade of a season, newest first, each side listing what it
  * received.
  *
- * The before/after averages come from the weekly matchup rows — a player
- * scores in `players_points` for every week they sit on any roster, bench
- * included, so the mean covers exactly their rostered weeks. Before is weeks
- * 1..(trade week - 1); after starts at the trade week itself, since Sleeper
+ * The before/after averages divide points by the number of weeks in each
+ * window: weeks 1..(trade week - 1) before, and the trade week through the end
+ * of the season after. After starts at the trade week itself because Sleeper
  * processes a trade for the leg it takes effect.
  */
 export function seasonTrades(leagueId: string): TradeView[] {
@@ -1086,27 +1085,43 @@ export function seasonTrades(leagueId: string): TradeView[] {
 
   const teams = new Map(getTeams(leagueId).map((t) => [t.rosterId, t]));
   const meta = getPlayerMeta(league.season);
+  const matchups = getMatchups(leagueId);
+
+  // Last week the season played — 17 for a finished season (14 regular plus
+  // three postseason), or the latest week so far for one in progress, so a
+  // live season isn't divided by weeks that haven't happened yet.
+  const lastWeek = matchups.reduce((mx, m) => Math.max(mx, m.week), 0);
 
   // player -> (week -> points), across the whole season including playoffs.
   const weekly = new Map<string, Map<number, number>>();
-  for (const m of getMatchups(leagueId)) {
+  for (const m of matchups) {
     for (const [pid, pts] of Object.entries(m.playersPoints)) {
       if (!weekly.has(pid)) weekly.set(pid, new Map());
       weekly.get(pid)!.set(m.week, pts);
     }
   }
 
-  const avg = (pid: string, from: number, to: number): number | null => {
-    const games = weekly.get(pid);
-    if (!games) return null;
+  /**
+   * Points across a week range divided by the length of that range.
+   *
+   * The denominator is every week in the window, not just the weeks the player
+   * scored — a week unrostered, on bye, or inactive counts as a zero. Averaging
+   * only the weeks with data lets one big game right before a trade stand in
+   * for a whole half-season, which is what made the old numbers read wrong.
+   */
+  const avgOver = (pid: string, from: number, to: number): number | null => {
+    const weeks = to - from + 1;
+    if (weeks <= 0) return null; // no window at all (e.g. a week 1 trade)
     let sum = 0;
-    let n = 0;
-    for (const [w, pts] of games) {
-      if (w < from || w > to) continue;
-      sum += pts;
-      n++;
+    const games = weekly.get(pid);
+    if (games) {
+      for (const [w, pts] of games) {
+        if (w >= from && w <= to) sum += pts;
+      }
     }
-    return n > 0 ? round2(sum / n) : null;
+    // Left unrounded — the UI renders one decimal, and rounding twice can
+    // shift the displayed figure by 0.1.
+    return sum / weeks;
   };
 
   const out: TradeView[] = [];
@@ -1138,8 +1153,8 @@ export function seasonTrades(leagueId: string): TradeView[] {
         position: m?.position ?? '',
         team: m?.team ?? '',
         espnId: m?.espnId ?? null,
-        avgBefore: avg(pid, 1, week - 1),
-        avgAfter: avg(pid, week, 99),
+        avgBefore: avgOver(pid, 1, week - 1),
+        avgAfter: avgOver(pid, week, lastWeek),
       });
     }
     for (const wb of data.waiver_budget ?? []) {
