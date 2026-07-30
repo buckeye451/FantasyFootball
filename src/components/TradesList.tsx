@@ -6,7 +6,22 @@ function Avg({ v }: { v: number | null }) {
   return <>{v == null ? '—' : v.toFixed(1)}</>;
 }
 
+/**
+ * Which way the player's weekly average moved across the trade. Compares the
+ * figures as displayed, so a marker can't contradict the numbers beside it —
+ * 12.44 and 12.38 both render as 12.4 and count as unchanged. Nothing is shown
+ * when a side has no window to average, or when the two are level.
+ */
+function trend(before: number | null, after: number | null): 'up' | 'down' | null {
+  if (before == null || after == null) return null;
+  const shown = (v: number) => Math.round(v * 10) / 10;
+  const [b, a] = [shown(before), shown(after)];
+  if (a === b) return null;
+  return a > b ? 'up' : 'down';
+}
+
 function AssetRow({ p }: { p: TradeAsset }) {
+  const dir = trend(p.avgBefore, p.avgAfter);
   return (
     <li className="trade-player">
       <PlayerHeadshot
@@ -21,7 +36,21 @@ function AssetRow({ p }: { p: TradeAsset }) {
         size={38}
       />
       <span className="trade-player-body">
-        <span className="trade-player-name">{p.name}</span>
+        <span className="trade-player-name">
+          {p.name}
+          {dir && (
+            <span
+              className={`trade-trend ${dir}`}
+              title={
+                dir === 'up'
+                  ? 'Averaging more per week since the trade'
+                  : 'Averaging less per week since the trade'
+              }
+            >
+              {dir === 'up' ? '▲' : '▼'}
+            </span>
+          )}
+        </span>
         <span className="trade-player-meta">
           <span className={`draft-pos draft-pos-${p.position}`}>{p.position}</span>
           <NflTeam code={p.team} />
@@ -31,15 +60,7 @@ function AssetRow({ p }: { p: TradeAsset }) {
           title="Points per week of the season — before the trade, then from the trade week on. Counts every NFL week, including weeks nobody in the league rostered them."
         >
           <Avg v={p.avgBefore} /> <span className="trade-avg-arrow">→</span>{' '}
-          <span
-            className={
-              p.avgBefore != null && p.avgAfter != null
-                ? p.avgAfter >= p.avgBefore
-                  ? 'up'
-                  : 'down'
-                : undefined
-            }
-          >
+          <span className={dir ?? undefined}>
             <Avg v={p.avgAfter} />
           </span>{' '}
           <span className="trade-avg-label">avg/wk</span>

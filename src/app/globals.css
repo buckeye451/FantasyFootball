@@ -3386,3 +3386,18 @@ tr.playoff-cut td {
   font-variant-numeric: tabular-nums;
   color: var(--recap-tile-muted);
 }
+
+/* Direction marker beside a traded player's name */
+.trade-trend {
+  margin-left: 5px;
+  font-size: 9.5px;
+  vertical-align: 1px;
+}
+
+.trade-trend.up {
+  color: var(--arrow-up);
+}
+
+.trade-trend.down {
+  color: var(--arrow-down);
+}
