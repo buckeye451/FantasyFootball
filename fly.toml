@@ -26,7 +26,10 @@ primary_region = 'ord'
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 0
+  # Never scale the last machine to zero: the first visit after a quiet spell
+  # doesn't wait on a cold start, and the background sync keeps running when
+  # nobody is on the site.
+  min_machines_running = 1
   processes = ['app']
 
 [[vm]]
