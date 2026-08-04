@@ -164,24 +164,29 @@ export default function TeamPage({
 
   return (
     <>
-      <h1 className="page-title">{team.teamName}</h1>
-      <p className="page-subtitle">
-        {seasonYear} · managed by {team.displayName}
-        {season.rank ? ` · #${season.rank} in the league` : ''}
-      </p>
+      <div className="manager-head">
+        <div className="manager-head-id">
+          <div className="kicker">
+            Manager · {seasonYear}
+            {season.rank ? ` · #${season.rank} in the league` : ''}
+          </div>
+          <h1 className="manager-name">{team.displayName}</h1>
+          <p className="page-subtitle">{team.teamName}</p>
+        </div>
 
-      {/* Carries the selected week across, so you can hold a week steady and
-          step through managers to compare them. */}
-      <PageNav
-        label="Manager"
-        value={team.slug}
-        ariaLabel="Jump to another manager"
-        options={getTeams(leagueId).map((t) => ({
-          value: t.slug,
-          label: t.displayName,
-          href: `/team/${t.slug}?week=${selectedWeek}&season=${seasonYear}`,
-        }))}
-      />
+        {/* Carries the selected week across, so you can hold a week steady and
+            step through managers to compare them. */}
+        <PageNav
+          label="Manager"
+          value={team.slug}
+          ariaLabel="Jump to another manager"
+          options={getTeams(leagueId).map((t) => ({
+            value: t.slug,
+            label: t.displayName,
+            href: `/team/${t.slug}?week=${selectedWeek}&season=${seasonYear}`,
+          }))}
+        />
+      </div>
 
       <RankTiles tiles={tiles} highlightKey={String(team.rosterId)} />
 

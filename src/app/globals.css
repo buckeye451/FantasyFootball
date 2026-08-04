@@ -4206,3 +4206,167 @@ tr.playoff-cut td {
     padding-bottom: 86px;
   }
 }
+
+/* ---------- manager page head ---------- */
+.manager-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.manager-head-id {
+  min-width: 0;
+}
+
+.manager-head .page-nav {
+  margin-left: auto;
+  margin-bottom: 0;
+}
+
+.manager-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 4px 0 2px;
+}
+
+.manager-head .page-subtitle {
+  margin: 0;
+}
+
+/* Season totals under a Compact/Full table. */
+.table-totals {
+  margin: 10px 0 0;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .manager-name {
+    font-size: 38px;
+  }
+
+  .manager-head {
+    gap: 10px;
+  }
+
+  .manager-head .page-nav {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .table-totals {
+    text-align: left;
+  }
+}
+
+/* ---------- record book hero + category chips ---------- */
+.record-hero {
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  padding: 24px 26px;
+  margin-bottom: 18px;
+  /* Same literal-stop reasoning as .lead-story: the sampled tokens invert
+     between themes, so each theme names its own pair. */
+  background: linear-gradient(115deg, #4a2a86 0%, #17102a 62%);
+  color: #fff;
+}
+
+:root[data-theme='light'] .record-hero {
+  background: linear-gradient(115deg, #1e6b42 0%, #14512f 70%);
+}
+
+.record-hero-kicker {
+  color: var(--progress-post);
+}
+
+.record-hero-figure {
+  font-size: 62px;
+  margin: 6px 0 4px;
+}
+
+.record-hero-holder {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.record-hero-note {
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.record-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.record-chip {
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--baseline);
+  background: none;
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.record-chip.active {
+  background: var(--accent-wash);
+  box-shadow: inset 0 0 0 1px var(--series-1);
+  color: var(--ink);
+  border-color: transparent;
+}
+
+.record-chip:focus-visible {
+  outline: 2px solid var(--series-1);
+  outline-offset: 1px;
+}
+
+/* The Top-25 line must not wrap onto two lines beside the figure. */
+.record-more {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .record-hero {
+    padding: 18px;
+    border-radius: 12px;
+  }
+
+  .record-hero-figure {
+    font-size: 48px;
+  }
+
+  /* A centred dialog on a phone leaves the list scrolling in a tiny box;
+     a bottom sheet gives it the height it needs and lands under the thumb. */
+  .record-modal {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-width: none;
+    max-height: 82vh;
+    border-radius: 16px 16px 0 0;
+    transform: none;
+    margin: 0;
+  }
+
+  .modal-backdrop:has(.record-modal) {
+    align-items: flex-end;
+    padding: 0;
+  }
+}

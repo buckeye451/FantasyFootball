@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { LifetimeRow } from '@/lib/stats';
 import { managerClass, performanceClass, winRateClass } from '@/lib/thresholds';
 import { useStickyColumns } from '@/components/useStickyColumns';
+import { useCompactFull } from '@/components/SegTabs';
 
 /**
  * Only the manager name is pinned here — unlike the season standings there's
@@ -64,6 +65,8 @@ export function LifetimeStandingsTable({ rows }: { rows: LifetimeRow[] }) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
   const tableRef = useStickyColumns(STICKY_COLS);
+  const { mode, control } = useCompactFull('lifetime-standings', 'Full · 13 columns');
+  const compact = mode === 'compact';
 
   const clickSort = (key: SortKey) => {
     if (key === sortKey) setDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -104,82 +107,100 @@ export function LifetimeStandingsTable({ rows }: { rows: LifetimeRow[] }) {
   );
 
   return (
-    <div className="table-wrap">
-      <table className="sticky-table" ref={tableRef}>
-        <thead>
-          <tr>
-            {th('manager', 'Manager', { sticky: true })}
-            {th('trophies', '🏆', { center: true })}
-            {th('seasons', 'Seasons', { num: true })}
-            {th('record', 'Record')}
-            {th('winPct', 'Win %', { num: true })}
-            {th('mgr', 'Mgr %', {
-              num: true,
-              title: 'Career manager performance: points scored ÷ best-possible lineup',
-            })}
-            {th('pf', 'PF', { num: true })}
-            {th('pa', 'PA', { num: true })}
-            {th('perf', 'Perf %', {
-              num: true,
-              title: 'Career performance: points scored ÷ points projected',
-            })}
-            {th('opp', 'Opp. %', {
-              num: true,
-              title:
-                "Career opponent performance: points scored against you ÷ your opponents' projected points",
-            })}
-            {th('avg', 'Avg', { num: true })}
-            {th('high', 'High', { num: true })}
-            {th('best', 'Best', { num: true, title: 'Best regular-season finish' })}
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((r) => (
-            <tr key={r.slug + r.displayName}>
-              <td className={`team-cell ${stickyCell}`}>
-                <Link href={`/team/${r.slug}`}>{r.displayName}</Link>
-              </td>
-              <td className="center">{r.trophies > 0 ? '🏆'.repeat(r.trophies) : ''}</td>
-              <td className="num">{r.seasons}</td>
-              <td>
-                {r.wins}-{r.losses}
-                {r.ties ? `-${r.ties}` : ''}
-              </td>
-              <td className="num">
-                <span className={winRateClass(r.winPct)}>{r.winPct.toFixed(1)}%</span>
-              </td>
-              <td className="num">
-                <span className={managerClass(r.managerPerformance)}>
-                  {r.managerPerformance.toFixed(1)}%
-                </span>
-              </td>
-              <td className="num">{r.pointsFor.toFixed(1)}</td>
-              <td className="num">{r.pointsAgainst.toFixed(1)}</td>
-              <td className="num">
-                {r.performance == null ? (
-                  '—'
-                ) : (
-                  <span className={performanceClass(r.performance)}>
-                    {r.performance.toFixed(1)}%
-                  </span>
-                )}
-              </td>
-              <td className="num">
-                {r.opponentPerformance == null ? (
-                  '—'
-                ) : (
-                  <span className={performanceClass(r.opponentPerformance)}>
-                    {r.opponentPerformance.toFixed(1)}%
-                  </span>
-                )}
-              </td>
-              <td className="num">{r.avgPoints.toFixed(1)}</td>
-              <td className="num">{r.highScore.toFixed(1)}</td>
-              <td className="num">{r.bestFinish != null ? `#${r.bestFinish}` : '—'}</td>
+    <>
+      <div className="section-head">
+        {control}
+        <p className="section-note">
+          {compact
+            ? 'Trophies, record and win rate. Full adds the nine career rate columns.'
+            : 'Every career column · click a header to sort.'}
+        </p>
+      </div>
+      <div className="table-wrap">
+        <table className="sticky-table" ref={tableRef}>
+          <thead>
+            <tr>
+              {th('manager', 'Manager', { sticky: true })}
+              {th('trophies', '🏆', { center: true })}
+              {!compact && th('seasons', 'Seasons', { num: true })}
+              {th('record', 'Record')}
+              {th('winPct', 'Win %', { num: true })}
+              {!compact && (
+                <>
+                  {th('mgr', 'Mgr %', {
+                    num: true,
+                    title: 'Career manager performance: points scored ÷ best-possible lineup',
+                  })}
+                  {th('pf', 'PF', { num: true })}
+                  {th('pa', 'PA', { num: true })}
+                  {th('perf', 'Perf %', {
+                    num: true,
+                    title: 'Career performance: points scored ÷ points projected',
+                  })}
+                  {th('opp', 'Opp. %', {
+                    num: true,
+                    title:
+                      "Career opponent performance: points scored against you ÷ your opponents' projected points",
+                  })}
+                  {th('avg', 'Avg', { num: true })}
+                  {th('high', 'High', { num: true })}
+                  {th('best', 'Best', { num: true, title: 'Best regular-season finish' })}
+                </>
+              )}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {sorted.map((r) => (
+              <tr key={r.slug + r.displayName}>
+                <td className={`team-cell ${stickyCell}`}>
+                  <Link href={`/team/${r.slug}`}>{r.displayName}</Link>
+                </td>
+                <td className="center">{r.trophies > 0 ? '🏆'.repeat(r.trophies) : ''}</td>
+                {!compact && <td className="num">{r.seasons}</td>}
+                <td>
+                  {r.wins}-{r.losses}
+                  {r.ties ? `-${r.ties}` : ''}
+                </td>
+                <td className="num">
+                  <span className={winRateClass(r.winPct)}>{r.winPct.toFixed(1)}%</span>
+                </td>
+                {!compact && (
+                  <>
+                    <td className="num">
+                      <span className={managerClass(r.managerPerformance)}>
+                        {r.managerPerformance.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td className="num">{r.pointsFor.toFixed(1)}</td>
+                    <td className="num">{r.pointsAgainst.toFixed(1)}</td>
+                    <td className="num">
+                      {r.performance == null ? (
+                        '—'
+                      ) : (
+                        <span className={performanceClass(r.performance)}>
+                          {r.performance.toFixed(1)}%
+                        </span>
+                      )}
+                    </td>
+                    <td className="num">
+                      {r.opponentPerformance == null ? (
+                        '—'
+                      ) : (
+                        <span className={performanceClass(r.opponentPerformance)}>
+                          {r.opponentPerformance.toFixed(1)}%
+                        </span>
+                      )}
+                    </td>
+                    <td className="num">{r.avgPoints.toFixed(1)}</td>
+                    <td className="num">{r.highScore.toFixed(1)}</td>
+                    <td className="num">{r.bestFinish != null ? `#${r.bestFinish}` : '—'}</td>
+                  </>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
