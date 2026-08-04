@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Archivo, Barlow_Condensed } from 'next/font/google';
 import { defaultSeason, getSeasons, getTeams, playoffRounds, regularSeasonWeeks } from '@/lib/stats';
 import { ensureAutoSync } from '@/lib/autosync';
 import { SiteHeader, type HeaderSeason } from '@/components/SiteHeader';
@@ -7,6 +8,22 @@ import type { BellRecap } from '@/components/RecapBell';
 import './globals.css';
 
 export const dynamic = 'force-dynamic';
+
+/* Self-hosted at build time by next/font, so there's no render-blocking round
+   trip to Google and no layout shift. The CSS variables are what globals.css
+   reads — see --font-ui / --font-display. */
+const archivo = Archivo({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-archivo',
+  display: 'swap',
+});
+const barlowCondensed = Barlow_Condensed({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  variable: '--font-barlow-condensed',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'BMCF League',
@@ -40,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // fresh checkout with no database yet — render the shell anyway
   }
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en" data-theme="dark" className={`${archivo.variable} ${barlowCondensed.variable}`}>
       <head>
         {/* Apply the saved theme before first paint, so a light-mode user
             doesn't get a flash of the dark palette on every navigation. */}
