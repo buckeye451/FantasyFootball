@@ -1,0 +1,3556 @@
+/* BMCF League — committed dark theme.
+   Palette: validated dark-mode steps (categorical slots 1–4 used for chart
+   selection; status good/critical reserved for W/L and bench warnings). */
+:root {
+  color-scheme: dark;
+  --page: #0c0912;
+  /* Translucent "atomic purple" surfaces for cards / tables / tiles. */
+  --surface: rgba(99, 60, 160, 0.46);
+  --surface-2: rgba(126, 86, 192, 0.46);
+  /* Opaque variant for the sticky header + slide-out drawer (so scrolling
+     content and the page don't bleed through them). */
+  --surface-opaque: #17102a;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #a79bc4;
+  --grid: #40305f;
+  --baseline: #55447e;
+  --border: rgba(255, 255, 255, 0.1);
+  --series-1: #3987e5;
+  --series-2: #008300;
+  --series-3: #d55181;
+  --series-4: #c98500;
+  --context-line: #3f3f3b;
+  --good: #0ca30c;
+  --critical: #d03b3b;
+  --critical-wash: rgba(208, 59, 59, 0.14);
+  --accent-wash: rgba(57, 135, 229, 0.12);
+  /* Semantic extras, so light mode is a single block of overrides. */
+  --focus-ring: rgba(57, 135, 229, 0.45);
+  --good-wash: rgba(12, 163, 12, 0.14);
+  --good-wash-soft: rgba(12, 163, 12, 0.08);
+  --good-wash-mid: rgba(12, 163, 12, 0.12);
+  --backdrop: rgba(0, 0, 0, 0.55);
+  --sunken: rgba(0, 0, 0, 0.18);
+  --champ-wash: rgba(246, 201, 69, 0.1);
+  --headshot-bg: rgba(23, 16, 42, 0.9);
+  --pos-qb: #6b8cff;
+  --pos-rb: #f5d34e;
+  --pos-wr: #74e6a8;
+  --pos-te: #8fd3ff;
+  --arrow-up: #48d17a;
+  --arrow-warn: #f5a04e;
+  --arrow-down: #ff6b6b;
+  --val-good-fg: #6ff0a4;
+  --val-good-bg: rgba(72, 209, 122, 0.16);
+  --val-warn-fg: #ffb877;
+  --val-warn-bg: rgba(245, 160, 78, 0.16);
+  --val-bad-fg: #ff8f8f;
+  --val-bad-bg: rgba(255, 107, 107, 0.16);
+  /* Latest-recap tile: inverted against the page so it stands out. */
+  --recap-tile-bg: #ffffff;
+  --recap-tile-ink: #4a2a86;
+  --recap-tile-muted: #6f52ad;
+  --recap-tile-border: rgba(74, 42, 134, 0.25);
+  --trophy-tile-ink: #4a2a86;
+  --trophy-tile-muted: #6f52ad;
+  /* Season progress bar: empty dash, regular-season fill, postseason fill. */
+  --progress-empty: rgba(255, 255, 255, 0.13);
+  --progress-fill: #3987e5;
+  --progress-post: #f6c945;
+  /* Recessed shade behind the bench rows of a box score. */
+  --box-bench-bg: rgba(0, 0, 0, 0.2);
+  /* Zebra striping on the long tables. */
+  --row-stripe: rgba(255, 255, 255, 0.045);
+  /* --surface is translucent in dark mode; this is the colour it composites to
+     over the page, for frozen cells that have to be genuinely opaque. */
+  --card-solid: #342053;
+  /* Record book runs a neutral near-black scheme of its own in dark mode
+     rather than the purple surfaces, with mint figures. Light mode maps these
+     straight back to the shared tokens. */
+  --record-bg: #141614;
+  --record-border: rgba(255, 255, 255, 0.1);
+  --record-value: #58c97c;
+  --record-label: #93999a;
+  --record-line: #868d8e;
+  --record-holder: #edefee;
+  --record-link: #4fbf72;
+  --record-modal-bg: #16181a;
+  --record-divider: rgba(255, 255, 255, 0.09);
+}
+
+/* Light theme — same layout, lighter surfaces. Every colour the app uses is a
+   token above, so this block is the whole palette swap. */
+:root[data-theme='light'] {
+  color-scheme: light;
+  /* Warm sand page, near-white cream cards, deep forest-green accent. */
+  --page: #ece4d3;
+  --surface: #faf7ef;
+  --surface-2: #f2ecdd;
+  --surface-opaque: #ece4d3;
+  --ink: #16160f;
+  --ink-2: #3b3930;
+  --muted: #6d6756;
+  --grid: #ddd4c0;
+  --baseline: #c8bea7;
+  --border: rgba(30, 28, 20, 0.14);
+  --series-1: #1e6b42;
+  --series-2: #2f6fd0;
+  --series-3: #b23a6b;
+  --series-4: #a9700d;
+  --context-line: #cec5b1;
+  --good: #1e6b42;
+  --critical: #b3402f;
+  --critical-wash: rgba(179, 64, 47, 0.12);
+  --accent-wash: rgba(30, 107, 66, 0.1);
+  --focus-ring: rgba(30, 107, 66, 0.45);
+  --good-wash: rgba(30, 107, 66, 0.13);
+  --good-wash-soft: rgba(30, 107, 66, 0.07);
+  --good-wash-mid: rgba(30, 107, 66, 0.1);
+  --backdrop: rgba(30, 28, 20, 0.45);
+  --sunken: rgba(30, 28, 20, 0.06);
+  --champ-wash: rgba(196, 150, 40, 0.2);
+  --headshot-bg: rgba(228, 220, 201, 0.95);
+  --pos-qb: #2a56c6;
+  --pos-rb: #8a6100;
+  --pos-wr: #12734a;
+  --pos-te: #1c6a8c;
+  --arrow-up: #1e6b42;
+  --arrow-warn: #8a5a08;
+  --arrow-down: #b3402f;
+  --val-good-fg: #14683c;
+  --val-good-bg: rgba(30, 107, 66, 0.14);
+  --val-warn-fg: #855708;
+  --val-warn-bg: rgba(196, 150, 40, 0.2);
+  --val-bad-fg: #a33526;
+  --val-bad-bg: rgba(179, 64, 47, 0.14);
+  --recap-tile-bg: #1e6b42;
+  --recap-tile-ink: #ffffff;
+  --recap-tile-muted: rgba(255, 255, 255, 0.82);
+  --recap-tile-border: rgba(255, 255, 255, 0.24);
+  --trophy-tile-ink: #16160f;
+  --trophy-tile-muted: #6d6756;
+  --progress-empty: #ddd4c0;
+  --progress-fill: #1e6b42;
+  --progress-post: #b8860b;
+  --box-bench-bg: rgba(30, 28, 20, 0.08);
+  --row-stripe: rgba(30, 28, 20, 0.035);
+  --card-solid: #faf7ef; /* light --surface is already opaque */
+  /* Light mode keeps the shared palette — these just point back at it. */
+  --record-bg: var(--surface);
+  --record-border: var(--border);
+  --record-value: var(--good);
+  --record-label: var(--muted);
+  --record-line: var(--muted);
+  --record-holder: var(--ink);
+  --record-link: var(--series-1);
+  --record-modal-bg: var(--surface-opaque);
+  --record-divider: var(--grid);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---------- welcome splash ---------- */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+  background: radial-gradient(125% 125% at 66% 38%, #6a3a9c 0%, #401d67 46%, #1b0930 100%);
+}
+
+.splash-players {
+  position: absolute;
+  left: 0;
+  bottom: -2vh; /* let the players bleed slightly off the bottom edge */
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.splash-player {
+  height: var(--h, 70vh);
+  width: auto;
+  margin-left: calc(var(--overlap, 0vw) * -1);
+  filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.45));
+  animation: splashInLeft 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.splash-right {
+  position: absolute;
+  right: 4vw;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 34px;
+  text-align: center;
+}
+
+.splash-logo {
+  width: min(38vw, 440px);
+  height: auto;
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.4));
+  animation: splashInRight 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.45s;
+}
+
+.splash-cta {
+  display: inline-block;
+  padding: 16px 44px;
+  border-radius: 999px;
+  background: #f6f4ef;
+  color: #2a0d3a;
+  font-size: clamp(16px, 2.2vw, 24px);
+  font-weight: 800;
+  letter-spacing: 2px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  animation: splashFadeUp 0.7s ease both;
+  animation-delay: 1s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.splash-cta:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+}
+
+@keyframes splashInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-140px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes splashInRight {
+  from {
+    opacity: 0;
+    transform: translateX(120px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes splashFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 780px) {
+  .splash-right {
+    right: 0;
+    left: 0;
+    top: 7vh;
+    transform: none;
+    margin: 0 auto;
+    z-index: 5;
+  }
+  .splash-logo {
+    width: min(66vw, 320px);
+  }
+  .splash-players {
+    left: 0;
+    right: 0;
+    justify-content: center;
+    height: 60vh;
+  }
+  .splash-player {
+    height: calc(var(--h, 70vh) * 0.62);
+    /* overlap much harder on mobile so the players stack into a tight cluster */
+    margin-left: calc(var(--overlap, 0vw) * -2.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-player,
+  .splash-logo,
+  .splash-cta {
+    animation: none;
+  }
+}
+
+/* ---------- shell ---------- */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-opaque);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.site-header-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+}
+
+/* ---------- hamburger + drawer ---------- */
+.hamburger {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 38px;
+  height: 34px;
+  padding: 8px;
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+.hamburger span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--ink-2);
+  border-radius: 2px;
+}
+
+.hamburger:hover {
+  border-color: var(--muted);
+}
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--backdrop);
+  z-index: 40;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 290px;
+  max-width: 84vw;
+  background: var(--surface-opaque);
+  border-right: 1px solid var(--border);
+  z-index: 50;
+  transform: translateX(-100%);
+  transition: transform 0.18s ease;
+  overflow-y: auto;
+  padding: 16px 14px 40px;
+}
+
+.drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 4px 8px 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.drawer-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.drawer-season {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+
+.drawer-link {
+  display: block;
+  padding: 10px 8px;
+  border-radius: 8px;
+  font-weight: 650;
+  font-size: 14.5px;
+}
+
+.drawer-link:hover {
+  background: var(--surface-2);
+}
+
+.drawer-section {
+  border-top: 1px solid var(--grid);
+  margin-top: 4px;
+}
+
+.drawer-section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 11px 8px;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.drawer-section-toggle:hover {
+  color: var(--ink);
+}
+
+.caret {
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.caret.open {
+  transform: rotate(90deg);
+}
+
+.drawer-sublist {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 8px 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.drawer-sublink {
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.drawer-sublink:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.drawer-empty {
+  padding: 6px 10px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.brand-logo {
+  height: 42px;
+  width: auto;
+  display: block;
+}
+
+.brand-season {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.season-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+
+.season-picker-label {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.season-picker select {
+  appearance: none;
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+  padding: 5px 30px 5px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  /* chevron */
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: right 14px center, right 9px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.season-picker select:hover {
+  border-color: var(--muted);
+}
+
+.season-picker select:focus-visible {
+  outline: 2px solid var(--series-1);
+  outline-offset: 1px;
+}
+
+/* Header tweaks for phones: bigger hamburger, compact logo + season control */
+@media (max-width: 640px) {
+  .hamburger {
+    width: 50px;
+    height: 46px;
+    gap: 5px;
+    padding: 10px;
+  }
+  .hamburger span {
+    height: 3px;
+  }
+  .brand-logo {
+    height: 32px;
+  }
+  .season-picker {
+    gap: 5px;
+  }
+  .season-picker-label {
+    font-size: 10px;
+    letter-spacing: 0.4px;
+  }
+  .season-picker select {
+    padding: 4px 24px 4px 9px;
+    font-size: 13px;
+    background-position: right 11px center, right 7px center;
+  }
+}
+
+.team-nav {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scrollbar-width: thin;
+}
+
+.team-nav a {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.team-nav a:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.team-nav a.active {
+  background: var(--accent-wash);
+  border-color: var(--focus-ring);
+  color: var(--ink);
+}
+
+main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 26px 20px 60px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 2px;
+}
+
+.page-subtitle {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin: 0 0 22px;
+}
+
+.dash-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.dash-controls .page-subtitle {
+  margin: 0;
+}
+
+.week-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+}
+
+.week-select-label {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.week-select select {
+  appearance: none;
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+  padding: 5px 30px 5px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: right 14px center, right 9px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.week-select select:hover {
+  border-color: var(--muted);
+}
+
+.week-select select:focus-visible {
+  outline: 2px solid var(--series-1);
+  outline-offset: 1px;
+}
+
+/* ---------- cards & grids ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.card + .card,
+section + section {
+  margin-top: 22px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 650;
+  margin: 0 0 4px;
+}
+
+.card-note {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin: 0 0 14px;
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.tile-label {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.tile-value {
+  font-size: 27px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.tile-sub {
+  color: var(--ink-2);
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+/* Grid items default to min-width:auto, which lets a wide table force the
+   page wider than the viewport — wide content must scroll in .table-wrap. */
+.two-col > div {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- tables ---------- */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13.5px;
+}
+
+th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--baseline);
+  white-space: nowrap;
+}
+
+td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--grid);
+  white-space: nowrap;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+td.num,
+th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.team-cell {
+  font-weight: 650;
+}
+
+.team-cell a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sub {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 12px;
+}
+
+/* movement + result badges: color never alone — always paired with a glyph */
+.up {
+  color: var(--good);
+}
+
+.down {
+  color: var(--critical);
+}
+
+.flat {
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-block;
+  min-width: 22px;
+  text-align: center;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 6px;
+}
+
+.badge.w {
+  color: var(--good);
+  background: var(--good-wash);
+}
+
+.badge.l {
+  color: var(--critical);
+  background: var(--critical-wash);
+}
+
+.badge.t {
+  color: var(--ink-2);
+  background: var(--surface-2);
+}
+
+/* ---------- lineup tables ---------- */
+.slot-tag {
+  display: inline-block;
+  width: 44px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.pos-team {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+tr.benched-row td {
+  background: var(--critical-wash);
+  box-shadow: inset 3px 0 0 var(--critical);
+}
+
+.benched-tag {
+  color: var(--critical);
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* Narrow "left on the bench" flag column in the optimal lineup table */
+.bench-flag {
+  width: 26px;
+  text-align: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.week-picker-row {
+  margin: 4px 0 16px;
+}
+
+.bench-header td {
+  color: var(--muted);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--surface-2);
+}
+
+/* ---------- chips (chart legend / selection controls) ---------- */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--baseline);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.chip.selected {
+  color: var(--ink);
+  border-color: var(--chip-color, var(--series-1));
+  background: color-mix(in srgb, var(--chip-color, var(--series-1)) 16%, transparent);
+}
+
+.chip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--chip-color, var(--baseline));
+}
+
+/* Team highlight picker: titled block, set apart from the section above it. */
+.chip-block {
+  margin-top: 30px;
+}
+
+.chip-block .card-title {
+  margin-bottom: 10px;
+}
+
+/* ---------- chart card extras ---------- */
+.chart-box {
+  width: 100%;
+  height: 380px;
+}
+
+details.table-view {
+  margin-top: 10px;
+}
+
+details.table-view summary {
+  color: var(--muted);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+details.table-view[open] summary {
+  margin-bottom: 8px;
+}
+
+/* ---------- position cards ---------- */
+.pos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.pos-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.pos-card h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.pos-card ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pos-card li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--grid);
+  font-size: 13.5px;
+}
+
+.pos-card li:last-child {
+  border-bottom: none;
+}
+
+.pos-rank {
+  color: var(--muted);
+  width: 16px;
+  flex: none;
+}
+
+.pos-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-pts {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+/* Players of the week: one big score per card, filling the box */
+.potw .pos-card li {
+  align-items: center;
+  padding: 6px 0;
+}
+
+.potw .pos-pts {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* ---------- week selector pills ---------- */
+.week-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 18px;
+}
+
+.week-pills a {
+  padding: 4px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--baseline);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.week-pills a:hover {
+  background: var(--surface-2);
+}
+
+.week-pills a.active {
+  background: var(--accent-wash);
+  border-color: var(--focus-ring);
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.matchup-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.matchup-score {
+  font-size: 21px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.vs {
+  color: var(--muted);
+}
+
+/* ---------- matchup breakdown ---------- */
+.matchup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.matchup-card {
+  padding: 6px 6px;
+}
+
+.breakdown-table th {
+  font-size: 10.5px;
+}
+
+.breakdown-table td {
+  border-bottom: 1px solid var(--grid);
+}
+
+.breakdown-table td.strong {
+  font-weight: 700;
+}
+
+td.center,
+th.center {
+  text-align: center;
+}
+
+tr.winner-row td {
+  background: var(--good-wash-soft);
+}
+
+tr.winner-row .team-cell {
+  font-weight: 700;
+}
+
+.breakdown-table .badge {
+  margin-left: 8px;
+}
+
+/* ---------- playoff bracket ---------- */
+.bracket-wrap {
+  overflow-x: auto;
+}
+
+.bracket {
+  display: flex;
+  gap: 26px;
+  min-width: min-content;
+  padding: 4px 2px 8px;
+}
+
+.bracket-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 16px;
+  min-width: 210px;
+}
+
+.bracket-col-head {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  text-align: center;
+  padding-bottom: 4px;
+}
+
+.bracket-match {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.bracket-placement {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  text-align: center;
+  padding: 4px 0 2px;
+}
+
+.bracket-team {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  border-top: 1px solid var(--grid);
+}
+
+.bracket-team:first-of-type {
+  border-top: none;
+}
+
+.bracket-team.winner {
+  background: var(--good-wash-mid);
+  font-weight: 700;
+}
+
+.bracket-team.winner .bracket-team-name::after {
+  content: ' ▸';
+  color: var(--good);
+}
+
+.bracket-team.tbd {
+  color: var(--muted);
+}
+
+.bracket-team-score {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
+.bracket-team.winner .bracket-team-score {
+  color: var(--ink);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--ink-2);
+}
+
+.empty-state code {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 13px;
+}
+
+/* ============================================================
+   Mobile pass — compact spacing, 2-up tiles, tighter tables,
+   larger touch targets. Everything scoped to phone widths.
+   ============================================================ */
+@media (max-width: 640px) {
+  .site-header-inner {
+    padding: 0 12px;
+  }
+
+  .brand-row {
+    padding: 10px 0;
+    gap: 10px;
+  }
+
+  main {
+    padding: 18px 12px 48px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .page-subtitle {
+    font-size: 12.5px;
+    margin-bottom: 16px;
+  }
+
+  .dash-controls {
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+
+  /* Stat tiles: two per row instead of a tall single-file stack */
+  .tile-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .tile {
+    padding: 12px 13px;
+  }
+
+  .tile-label {
+    font-size: 10.5px;
+    letter-spacing: 0.4px;
+  }
+
+  .tile-value {
+    font-size: 21px;
+  }
+
+  .tile-sub {
+    font-size: 11.5px;
+  }
+
+  .card {
+    padding: 14px 13px;
+    border-radius: 10px;
+  }
+
+  .card + .card,
+  section + section {
+    margin-top: 16px;
+  }
+
+  .card-note {
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+
+  /* Tables: tighter cells so more columns fit before the sideways scroll */
+  table {
+    font-size: 12.5px;
+  }
+
+  th {
+    padding: 6px 7px;
+    font-size: 10px;
+    letter-spacing: 0.4px;
+  }
+
+  td {
+    padding: 7px 7px;
+  }
+
+  .slot-tag {
+    width: 38px;
+    font-size: 10.5px;
+  }
+
+  .pos-team {
+    font-size: 11px;
+  }
+
+  /* Chart legend chips */
+  .chip {
+    padding: 4px 10px;
+    font-size: 12.5px;
+  }
+
+  .chip-row {
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+
+  .chip-block {
+    margin-top: 24px;
+  }
+
+  .chart-box {
+    height: 300px;
+  }
+
+  /* Week pills: bigger tap targets */
+  .week-pills {
+    gap: 7px;
+  }
+
+  .week-pills a {
+    padding: 8px 13px;
+    font-size: 14px;
+  }
+
+  /* Position cards */
+  .pos-grid {
+    gap: 10px;
+  }
+
+  .pos-card {
+    padding: 12px 13px;
+  }
+
+  /* Drawer: comfier touch targets */
+  .drawer-link {
+    padding: 12px 8px;
+    font-size: 15px;
+  }
+
+  .drawer-section-toggle {
+    padding: 13px 8px;
+    font-size: 15px;
+  }
+
+  .drawer-sublink {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .drawer-sublist {
+    max-height: 320px;
+  }
+
+  /* Matchup breakdown + banner */
+  .matchup-score {
+    font-size: 18px;
+  }
+
+  .breakdown-table .badge {
+    margin-left: 6px;
+  }
+
+  .matchup-list {
+    gap: 10px;
+  }
+
+  /* Playoff bracket: narrower columns, less gap */
+  .bracket {
+    gap: 16px;
+  }
+
+  .bracket-col {
+    min-width: 176px;
+  }
+
+  .bracket-team {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
+
+/* Long/short column headers: full text on desktop, compact on phones */
+.th-short {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .th-full {
+    display: none;
+  }
+  .th-short {
+    display: inline;
+  }
+}
+
+/* Sortable table headers (standings) */
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+th.sortable:hover {
+  color: var(--ink-2);
+}
+
+th.sortable.sorted {
+  color: var(--ink);
+}
+
+.sort-caret {
+  font-size: 9px;
+  color: var(--series-1);
+}
+
+/* Lifetime page: trophy case */
+/* Kept deliberately compact — the case sits at the top of the page and every
+   new champion adds a tile, so height here pushes the actual stats down. The
+   150px track also gets phones to two columns instead of one. */
+.trophy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.trophy-tile {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.trophy-emojis {
+  font-size: 21px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.trophy-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* Head-to-head (Lifetime page) */
+.h2h-controls {
+  margin-bottom: 14px;
+}
+
+tr.h2h-row {
+  cursor: pointer;
+}
+
+tr.h2h-row:hover td {
+  background: var(--surface-2);
+}
+
+tr.h2h-row.open td {
+  background: var(--surface-2);
+}
+
+/* Direct child only — this is the wrapper cell holding the per-meeting table,
+   and a descendant selector would flatten that table's own cells too. */
+tr.h2h-detail-row > td {
+  padding: 0;
+  background: var(--sunken);
+}
+
+.h2h-detail {
+  padding: 4px 10px 12px;
+}
+
+.h2h-detail table {
+  font-size: 12.5px;
+}
+
+.h2h-detail th {
+  font-size: 10px;
+}
+
+/* Season champion: trophy sits beside the name in the Team column */
+.champ-trophy {
+  margin-left: 6px;
+  font-size: 12px;
+  vertical-align: 1px;
+}
+
+tr.champ-row td {
+  background: var(--champ-wash);
+}
+
+/* ---- Draft board ---------------------------------------------------------- */
+.draft-table td,
+.draft-table th {
+  white-space: nowrap;
+}
+.draft-pick {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.draft-no {
+  flex: none;
+  min-width: 34px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 12.5px;
+}
+.draft-player {
+  min-width: 0;
+}
+.draft-name {
+  font-weight: 600;
+}
+.draft-pos {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+/* Position color coding — tags only, everything else keeps its color. */
+.draft-pos-QB {
+  color: var(--pos-qb);
+} /* royal blue */
+.draft-pos-RB {
+  color: var(--pos-rb);
+} /* yellow */
+.draft-pos-WR {
+  color: var(--pos-wr);
+} /* mint green */
+.draft-pos-TE {
+  color: var(--pos-te);
+} /* light blue */
+.draft-mgr {
+  display: block;
+  color: var(--muted);
+  font-size: 11.5px;
+  margin-top: 1px;
+}
+/* Draft tiles: always two rows of two, at every width. */
+.draft-tiles {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.draft-rank-pick {
+  white-space: nowrap;
+}
+.draft-rank-season {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Finish-vs-draft arrow next to Pos Finish */
+.draft-arrow {
+  margin-left: 4px;
+  font-size: 10px;
+  vertical-align: 1px;
+}
+.draft-arrow.up {
+  color: var(--arrow-up);
+} /* green — outperformed draft slot */
+.draft-arrow.warn {
+  color: var(--arrow-warn);
+} /* orange — 1–10 spots below */
+.draft-arrow.down {
+  color: var(--arrow-down);
+} /* red — 10+ spots below */
+
+/* Compact variant (By Manager) — tighter so Pos Finish / Pos Drafted fit on
+   a phone without horizontal scrolling. */
+.draft-compact {
+  font-size: 12.5px;
+}
+.draft-compact th,
+.draft-compact td {
+  padding: 7px 5px;
+}
+.draft-compact th:first-child,
+.draft-compact td:first-child {
+  padding-left: 8px;
+}
+.draft-compact th {
+  white-space: normal; /* let "Pos Finish" / "Pos Drafted" wrap to two lines */
+}
+.draft-compact .draft-no {
+  min-width: 22px;
+  font-size: 11.5px;
+}
+.draft-compact .draft-pick {
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+/* Keep the whole player entry (name + position tag) on one line. The cell
+   sizes to its content, so a very long name widens the column and the table
+   scrolls inside .table-wrap rather than wrapping onto two rows. */
+.draft-compact .draft-player {
+  min-width: auto;
+  white-space: nowrap;
+}
+.draft-compact .draft-name {
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .draft-compact {
+    font-size: 12px;
+  }
+  .draft-compact th,
+  .draft-compact td {
+    padding: 6px 4px;
+  }
+}
+
+/* Compact matchup breakdown (dashboard's week view): short fixed headers and
+   tighter cells so all six columns fit a phone without scrolling. */
+.breakdown-compact {
+  font-size: 12.5px;
+}
+.breakdown-compact th,
+.breakdown-compact td {
+  padding: 6px 4px;
+  white-space: nowrap;
+}
+.breakdown-compact th:first-child,
+.breakdown-compact td:first-child {
+  padding-left: 6px;
+}
+.breakdown-compact th {
+  font-size: 10px;
+}
+.breakdown-compact .team-cell {
+  white-space: normal;
+  line-height: 1.25;
+}
+@media (max-width: 640px) {
+  .breakdown-compact {
+    font-size: 12px;
+  }
+  .breakdown-compact th,
+  .breakdown-compact td {
+    padding: 6px 3px;
+  }
+  .breakdown-compact th {
+    font-size: 9.5px;
+  }
+}
+
+/* ---- NFL team badges ------------------------------------------------------ */
+.nfl-team {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  line-height: 1.45;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+.nfl-team-plain {
+  color: var(--muted);
+  border-color: var(--grid);
+}
+
+/* Team + manager line under a drafted player's name */
+.draft-sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+}
+.draft-sub .draft-mgr {
+  display: inline;
+  margin-top: 0;
+}
+
+/* ---- Threshold highlights (standings Mgr % / Perf %) ---------------------- */
+.val-good,
+.val-warn,
+.val-bad {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.val-good {
+  color: var(--val-good-fg);
+  background: var(--val-good-bg);
+}
+.val-warn {
+  color: var(--val-warn-fg);
+  background: var(--val-warn-bg);
+}
+.val-bad {
+  color: var(--val-bad-fg);
+  background: var(--val-bad-bg);
+}
+
+/* ---- Player headshots ----------------------------------------------------- */
+.headshot {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  /* Sit the transparent ESPN cutout on a solid disc so the opaque Sleeper
+     fallback doesn't look boxed-in when it kicks in. */
+  background: linear-gradient(160deg, var(--surface-2), var(--headshot-bg));
+  border: 1px solid var(--baseline);
+}
+
+.headshot img {
+  /* ESPN cutouts carry a lot of their own padding, so at 100% the face ends up
+     tiny inside the circle. Draw the image oversized and anchored to the
+     bottom: the head fills the disc and the extra shoulder width crops at the
+     edges. Still `contain`, so nothing is squashed. */
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 140%;
+  height: 140%;
+  object-fit: contain;
+  object-position: center bottom;
+  display: block;
+}
+
+/* Team logos (DEF) are already tightly cropped — show them whole and centred
+   rather than oversized and bottom-anchored like the player cutouts. */
+.headshot-logo img {
+  width: 100%;
+  height: 100%;
+  bottom: auto;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  object-position: center;
+  padding: 4px;
+}
+
+.headshot-initials {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+
+/* Players of the week: headshot, name block, then the score. */
+.potw .pos-card li {
+  gap: 10px;
+}
+
+.potw .pos-name {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .potw .pos-card li {
+    gap: 8px;
+  }
+}
+
+/* ---- Light/dark toggle ---------------------------------------------------- */
+.theme-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: var(--muted);
+}
+
+/* The season picker used to claim the free space; the bell does now — it's
+   the first of the trailing controls, so pushing it right carries the toggle
+   and the season picker with it. */
+.season-picker {
+  margin-left: 8px;
+}
+
+@media (max-width: 640px) {
+  .theme-toggle {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .season-picker {
+    margin-left: 6px;
+  }
+}
+
+/* ---- Playoff final standings --------------------------------------------- */
+.finish-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.finish-tile {
+  background: var(--surface-2);
+  border: 1px solid var(--baseline);
+  border-radius: 10px;
+  padding: 14px 10px;
+  text-align: center;
+}
+
+.finish-tile.loser {
+  border-style: dashed;
+}
+
+.finish-medal {
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.finish-label {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.finish-name {
+  margin-top: 2px;
+  font-weight: 700;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.finish-name a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .finish-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .finish-medal {
+    font-size: 22px;
+  }
+  .finish-name {
+    font-size: 14px;
+  }
+}
+
+/* Playoff cutoff line in the standings (under 6th place) */
+tr.playoff-cut td {
+  border-bottom: 2px solid var(--critical);
+}
+
+/* Most-started cards carry more detail than Players of the Week, so the stats
+   line wraps under the name instead of being clipped. */
+.usage .pos-name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.usage .pos-team {
+  display: block;
+  margin-top: 1px;
+}
+
+/* ---- Recaps --------------------------------------------------------------- */
+.post-button {
+  flex: none;
+  padding: 9px 16px;
+  border-radius: 9px;
+  border: 1px solid var(--baseline);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.post-button:hover {
+  border-color: var(--muted);
+}
+
+.recap {
+  scroll-margin-top: 90px; /* clear the sticky header when deep-linked */
+}
+.recap-title {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 750;
+}
+.recap-preheader {
+  margin: 4px 0 0;
+  color: var(--ink-2);
+  font-size: 15px;
+}
+.recap-date {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.recap-body p {
+  margin: 12px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.recap-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.recap-images img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid var(--grid);
+  display: block;
+}
+
+/* Dashboard preview of the newest post */
+.recap-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--recap-tile-bg);
+  color: var(--recap-tile-ink);
+  border: 1px solid var(--recap-tile-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+.recap-preview:hover {
+  border-color: var(--recap-tile-ink);
+}
+.recap-preview-body {
+  min-width: 0;
+  flex: 1;
+}
+.recap-preview-label {
+  color: var(--recap-tile-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.recap-preview-title {
+  font-size: 16.5px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.recap-preview-sub {
+  color: var(--recap-tile-muted);
+  font-size: 13.5px;
+  margin-top: 1px;
+}
+.recap-preview-arrow {
+  flex: none;
+  font-size: 20px;
+  color: var(--recap-tile-ink);
+}
+
+/* ---- Modal ---------------------------------------------------------------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--backdrop);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal {
+  background: var(--surface-opaque);
+  border: 1px solid var(--baseline);
+  border-radius: 14px;
+  padding: 18px;
+  width: 100%;
+  max-width: 380px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal.wide {
+  max-width: 620px;
+}
+.modal-title {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.field {
+  display: block;
+  margin-top: 12px;
+}
+.field > span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.modal-input {
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid var(--baseline);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+}
+.modal-input:focus-visible {
+  outline: none;
+  border-color: var(--focus-ring);
+}
+.modal-textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+.modal-error {
+  margin: 10px 0 0;
+  color: var(--val-bad-fg);
+  font-size: 13px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.btn-primary,
+.btn-ghost {
+  padding: 8px 16px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  border: 1px solid var(--baseline);
+}
+.btn-primary {
+  background: var(--good);
+  border-color: var(--good);
+  color: #fff;
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+}
+
+/* Edit/delete controls on a post */
+.recap-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.post-action {
+  flex: none;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--baseline);
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.post-action:hover {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+.btn-danger {
+  padding: 8px 16px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  background: var(--critical);
+  border: 1px solid var(--critical);
+  color: #fff;
+}
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.modal-spacer {
+  flex: 1;
+}
+.edit-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.edit-image {
+  position: relative;
+  width: 88px;
+  height: 62px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--grid);
+}
+.edit-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.edit-image-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.66);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Trophy case: same inverted treatment as the latest-recap tile. The tiles
+   inside keep their own surface; only their text is re-pinned so it stays
+   readable once the container flips. */
+.trophy-case {
+  background: var(--recap-tile-bg);
+  color: var(--recap-tile-ink);
+  border-color: var(--recap-tile-border);
+}
+.trophy-case .card-title {
+  color: var(--recap-tile-ink);
+}
+.trophy-case .card-note {
+  color: var(--recap-tile-muted);
+}
+.trophy-tile {
+  color: var(--trophy-tile-ink);
+}
+.trophy-years {
+  margin-top: 1px;
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--trophy-tile-ink);
+}
+
+/* Drawer entries that are both a destination and a section (Lifetime Stats) */
+.drawer-link-row {
+  display: flex;
+  align-items: center;
+}
+
+.drawer-link-row .drawer-link {
+  flex: 1;
+  min-width: 0;
+}
+
+.drawer-caret-button {
+  flex: none;
+  padding: 10px 8px;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.drawer-caret-button:hover {
+  background: var(--surface-2);
+}
+
+/* "View top 50" link under each all-time position tile */
+.pos-more {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--series-1);
+}
+
+.pos-more:hover {
+  text-decoration: underline;
+}
+
+/* Best player rankings */
+.rank-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.rank-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.rank-filter select {
+  min-width: 132px;
+  padding: 7px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.rank-table td {
+  vertical-align: middle;
+}
+
+.rank-player {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.rank-ident {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rank-name {
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rank-ident .nfl-team {
+  align-self: flex-start;
+}
+
+.rank-manager {
+  white-space: nowrap;
+}
+
+/* Phones: squeeze the five columns onto one screen. Points is the whole point
+   of the list, so it must not be the thing that scrolls off the right edge. */
+@media (max-width: 640px) {
+  .rank-filter select {
+    min-width: 118px;
+  }
+
+  .rank-table th,
+  .rank-table td {
+    padding: 6px 3px;
+    font-size: 12.5px;
+  }
+
+  .rank-table th:first-child,
+  .rank-table td:first-child {
+    padding-left: 5px;
+  }
+
+  .rank-table th:last-child,
+  .rank-table td:last-child {
+    padding-right: 5px;
+  }
+
+  .rank-player {
+    gap: 6px;
+  }
+
+  .rank-player .headshot {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .rank-name {
+    font-size: 13px;
+    max-width: 108px;
+  }
+
+  .rank-manager {
+    max-width: 62px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* On-page sibling navigation (week → week, manager → manager) */
+.page-nav {
+  margin: -8px 0 20px;
+}
+
+/* ---------- loading state ---------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 55vh;
+  /* Held back briefly so a fast navigation doesn't flash the badge on and
+     straight back off again. */
+  animation: loadingFadeIn 0.3s ease 0.18s both;
+}
+
+.loading-logo {
+  width: min(190px, 48vw);
+  height: auto;
+  transform-origin: center;
+  filter: drop-shadow(0 10px 26px var(--sunken));
+  /* Only transform and opacity move, so the whole thing stays on the
+     compositor and can't stutter while the server render is in flight. */
+  animation: logoBreathe 2.2s ease-in-out infinite;
+}
+
+@keyframes loadingFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes logoBreathe {
+  0%,
+  100% {
+    transform: scale(0.94);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-screen {
+    animation: none;
+  }
+
+  .loading-logo {
+    animation: none;
+    opacity: 0.85;
+  }
+}
+
+/* ---------- season progress bar (dashboard) ---------- */
+.progress-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 18px 16px;
+  margin-bottom: 18px;
+}
+
+.progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.progress-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.progress-count {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* The dashes share the row equally, so the bar fits any season length. */
+.progress-bar {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+
+.progress-dash {
+  flex: 1;
+  min-width: 0;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--progress-empty);
+}
+
+.progress-dash.done {
+  background: var(--progress-fill);
+}
+
+.progress-dash.post.done {
+  background: var(--progress-post);
+}
+
+/* Empty postseason slots stay outlined, so the playoff weeks read as part of
+   the season rather than as trailing blanks. */
+.progress-dash.post {
+  box-shadow: inset 0 0 0 1.5px var(--progress-post);
+}
+
+.progress-pct {
+  flex: none;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .progress-tile {
+    padding: 12px 14px 14px;
+  }
+
+  .progress-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+  }
+
+  .progress-bar {
+    gap: 3px;
+  }
+
+  .progress-dash {
+    height: 12px;
+  }
+
+  .progress-pct {
+    text-align: right;
+  }
+}
+
+/* ---------- full box score (weekly scores page) ---------- */
+.box-toggle {
+  border-top: 1px solid var(--grid);
+  margin-top: 4px;
+}
+
+.box-toggle > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 2px 8px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 650;
+  list-style: none;
+}
+
+.box-toggle > summary::-webkit-details-marker {
+  display: none;
+}
+
+.box-toggle > summary:hover {
+  color: var(--ink);
+}
+
+.box-caret {
+  display: inline-block;
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+
+.box-toggle[open] .box-caret {
+  transform: rotate(90deg);
+}
+
+.box-score {
+  padding-bottom: 4px;
+}
+
+.box-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 12px;
+}
+
+.box-head-side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.box-head-side.away {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.box-head-name {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.box-head-score {
+  font-size: 21px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.box-head-side.won .box-head-name,
+.box-head-side.won .box-head-score {
+  color: var(--good);
+}
+
+.box-head-vs {
+  flex: none;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.box-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.box-table td {
+  padding: 5px 4px;
+  border-top: 1px solid var(--grid);
+  vertical-align: middle;
+}
+
+.box-player {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.box-right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.box-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.box-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.box-empty {
+  color: var(--muted);
+}
+
+.box-pts {
+  width: 1%;
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The slot column is the spine of the layout — fixed width so both sides stay
+   symmetrical however long the names are. */
+.box-slot {
+  width: 1%;
+  text-align: center;
+  white-space: nowrap;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+/* Bench sits on a recessed shade, so the starting lineup reads as the part
+   that actually counted. */
+.box-bench-row td {
+  background: var(--box-bench-bg);
+}
+
+.box-bench-row .box-name,
+.box-bench-row .box-pts {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.box-bench-first td {
+  border-top: 2px solid var(--baseline);
+}
+
+.box-table tfoot td {
+  border-top: 1px solid var(--baseline);
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.box-foot-label {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 10.5px;
+}
+
+.box-cell-right .box-foot-label {
+  display: block;
+  text-align: right;
+}
+
+@media (max-width: 560px) {
+  .box-table td {
+    padding: 5px 2px;
+  }
+
+  .box-name {
+    font-size: 12px;
+    max-width: 96px;
+  }
+
+  .box-pts {
+    font-size: 12px;
+  }
+
+  .box-slot {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+
+  .box-head-score {
+    font-size: 18px;
+  }
+}
+
+/* Dashboard week tiles: link through to the expanded box score */
+.box-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 8px 2px 2px;
+  border-top: 1px solid var(--grid);
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.box-link:hover {
+  color: var(--ink);
+}
+
+.box-link-arrow {
+  transition: transform 0.15s ease;
+}
+
+.box-link:hover .box-link-arrow {
+  transform: translateX(2px);
+}
+
+/* Keep an anchored matchup clear of the sticky header. */
+.matchup-card {
+  scroll-margin-top: 84px;
+}
+
+/* ---------- zebra striping on the long tables ---------- */
+/*
+ * Every selector here is wrapped in :where(), which contributes no
+ * specificity. That's deliberate: the stripe is the floor, and every existing
+ * row highlight — the champion row, a matchup winner, a benched player, an
+ * open head-to-head row — outranks it without needing !important or being
+ * reordered.
+ *
+ * The child chain (`>`) keeps this off tables nested inside another table's
+ * cell, which get their own rule below. The two-row matchup breakdown opts out
+ * entirely: at that length a stripe reads as a highlight rather than a guide.
+ */
+:where(
+    .table-wrap
+      > table:not(.breakdown-table):not(.h2h-table)
+      > tbody
+      > tr:nth-child(even)
+      > td
+  ) {
+  background: var(--row-stripe);
+}
+
+/* Head-to-head stripes itself by row index — see the component for why. */
+:where(.h2h-row.alt > td) {
+  background: var(--row-stripe);
+}
+
+/* The per-meeting table inside an expanded head-to-head row. */
+:where(.h2h-detail > table > tbody > tr:nth-child(even) > td) {
+  background: var(--row-stripe);
+}
+
+/* ---------- recap notification bell ---------- */
+.bell-wrap {
+  position: relative;
+  margin-left: auto;
+  flex: none;
+  display: inline-flex;
+}
+
+.bell-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  margin-right: 6px;
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bell-button:hover {
+  border-color: var(--muted);
+}
+
+.bell-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e6352b;
+  /* Ringed in the header colour so the dot reads on either theme. */
+  box-shadow: 0 0 0 2px var(--surface-opaque);
+}
+
+.bell-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: min(320px, calc(100vw - 28px));
+  padding: 12px 14px 14px;
+  background: var(--surface-opaque);
+  border: 1px solid var(--baseline);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px var(--backdrop);
+}
+
+.bell-popover-head {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 8px;
+}
+
+.bell-post {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bell-post-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bell-post-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.bell-post-sub {
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.35;
+  /* Two lines of preheader, then trail off. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bell-post-meta {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.bell-post-arrow {
+  flex: none;
+  font-size: 18px;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.bell-post:hover .bell-post-arrow {
+  transform: translateX(2px);
+  color: var(--ink);
+}
+
+.bell-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .bell-button {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  /* The bell isn't the right-most control, so anchoring the panel to it pushes
+     a 320px card off the left edge of a phone. Dropping the wrapper out of the
+     positioning flow hands that job to the sticky header, and the panel spans
+     the screen just underneath it — no hardcoded header height involved. */
+  .bell-wrap {
+    position: static;
+  }
+
+  .bell-popover {
+    top: calc(100% + 6px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+  }
+}
+
+/* Final standings (playoff bracket) borrows the trophy case's inverted
+   container — .trophy-case supplies the flipped background, title and note;
+   these pin the tiles inside it the way .trophy-tile is pinned. */
+.finish-case .finish-tile {
+  color: var(--trophy-tile-ink);
+  border-color: var(--border);
+}
+
+.finish-case .finish-label {
+  color: var(--trophy-tile-muted);
+}
+
+/* ---------- the record book ---------- */
+.record-section {
+  margin-bottom: 26px;
+}
+
+.record-group-label {
+  margin: 0 0 10px;
+  color: var(--record-label);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* auto-fill (not auto-fit) so every card is the same width whatever a group's
+   count is — a four-record group leaves space on the right rather than
+   stretching its cards wider than the six-record one below it. The track
+   width is sized so all six player records land on one row at full width. */
+.record-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.record-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--record-bg);
+  border: 1px solid var(--record-border);
+  border-radius: 12px;
+  padding: 13px 15px 11px;
+}
+
+.record-card-label {
+  color: var(--record-label);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  /* Floor of two lines, so a one-line label doesn't lift its value above the
+     cards beside it. Longer labels still push the card taller. */
+  min-height: 2.7em;
+}
+
+.record-card-value {
+  margin: 5px 0 7px;
+  color: var(--record-value);
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.record-card-holder {
+  color: var(--record-holder);
+  font-size: 14px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.record-card-line {
+  color: var(--record-line);
+  font-size: 11.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.record-more {
+  align-self: flex-start;
+  margin-top: 9px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--record-link);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.record-more:hover {
+  text-decoration: underline;
+}
+
+/* Top-25 popup */
+.record-modal {
+  max-width: 520px;
+  background: var(--record-modal-bg);
+  border-color: var(--record-border);
+}
+
+.record-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.record-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.record-modal-sub {
+  margin: 2px 0 0;
+  color: var(--record-label);
+  font-size: 12px;
+}
+
+.record-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.record-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--record-divider);
+}
+
+.record-list li:last-child {
+  border-bottom: none;
+}
+
+.record-list li:nth-child(even) {
+  background: var(--row-stripe);
+}
+
+.record-rank {
+  flex: none;
+  width: 22px;
+  color: var(--record-label);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.record-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.record-holder {
+  color: var(--record-holder);
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.record-lines {
+  color: var(--record-line);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.record-value {
+  flex: none;
+  color: var(--record-value);
+  font-size: 13.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .record-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .record-card {
+    padding: 11px 12px 10px;
+  }
+
+  .record-card-value {
+    font-size: 22px;
+  }
+}
+
+/* The page's own heading follows the record scheme, so the header doesn't sit
+   in the app's lavender while everything below it is neutral. */
+.record-page .page-subtitle {
+  color: var(--record-line);
+}
+
+/* "View the All-Time Records Here" tile, under the trophy case */
+.records-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 16px;
+  margin-bottom: 18px;
+}
+
+.records-link:hover {
+  border-color: var(--muted);
+}
+
+.records-link-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.records-link-arrow {
+  flex: none;
+  font-size: 20px;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.records-link:hover .records-link-arrow {
+  transform: translateX(3px);
+  color: var(--ink);
+}
+
+/* ---------- trades page ---------- */
+.trades-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.trade-card {
+  padding-top: 12px;
+}
+
+.trade-week {
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 10px;
+}
+
+/* One column per side, split by a rule down the middle. */
+.trade-sides {
+  display: grid;
+  grid-template-columns: repeat(var(--sides, 2), minmax(0, 1fr));
+}
+
+.trade-sides[data-sides='3'] {
+  --sides: 3;
+}
+
+.trade-side {
+  min-width: 0;
+  padding: 0 14px;
+  border-left: 1px solid var(--baseline);
+}
+
+.trade-side:first-child {
+  border-left: none;
+  padding-left: 2px;
+}
+
+.trade-side:last-child {
+  padding-right: 2px;
+}
+
+.trade-side-name {
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.trade-side-label {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 1px 0 8px;
+}
+
+.trade-side-players {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.trade-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.trade-player-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.trade-player-name {
+  font-size: 13.5px;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trade-player-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trade-player-avg {
+  font-size: 12px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.trade-avg-arrow {
+  color: var(--muted);
+}
+
+.trade-avg-label {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.trade-extra {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+@media (max-width: 560px) {
+  .trade-side {
+    padding: 0 10px;
+  }
+
+  .trade-player {
+    gap: 8px;
+  }
+
+  .trade-player .headshot {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .trade-player-name {
+    font-size: 12.5px;
+  }
+}
+
+/* ---------- frozen leading columns on wide tables ---------- */
+/*
+ * Offsets come from --sticky-N, measured in useStickyColumns: a pinned column
+ * has to clear the real width of the ones before it, and those depend on
+ * rendered content.
+ *
+ * The backgrounds are layered rather than set outright — an opaque base so
+ * scrolling cells can't show through, with the row's own tint painted over it
+ * as a background-image. Setting the tint as a plain colour would make the
+ * cell translucent again and defeat the whole thing.
+ */
+.sticky-table .sticky-col {
+  position: sticky;
+  z-index: 1;
+  background-color: var(--card-solid);
+}
+
+.sticky-table thead .sticky-col {
+  z-index: 2;
+}
+
+.sticky-table .sticky-col-0 {
+  left: var(--sticky-0, 0px);
+}
+
+.sticky-table .sticky-col-1 {
+  left: var(--sticky-1, 0px);
+}
+
+.sticky-table .sticky-col-2 {
+  left: var(--sticky-2, 0px);
+}
+
+/* The last pinned column carries the edge, so it reads as a seam rather than a
+   column that happens to have stopped moving — but only while the table is
+   actually scrolled, so a wide screen looks exactly as it did before. */
+.sticky-table.is-pinned .sticky-col-last {
+  box-shadow: 6px 0 8px -6px var(--sunken);
+  border-right: 1px solid var(--grid);
+}
+
+.sticky-table tbody tr:nth-child(even) > .sticky-col {
+  background-image: linear-gradient(var(--row-stripe), var(--row-stripe));
+}
+
+.sticky-table tbody tr.champ-row > .sticky-col {
+  background-color: var(--card-solid);
+  background-image: linear-gradient(var(--champ-wash), var(--champ-wash));
+}
+
+/* Head-to-head rows carry their own backgrounds (stripe, hover, expanded), all
+   of which are translucent. Restate them on the pinned cell as a tint over the
+   opaque base, or the row state would punch a hole in the frozen column. */
+.sticky-table tbody tr.h2h-row.alt > .sticky-col {
+  background-image: linear-gradient(var(--row-stripe), var(--row-stripe));
+}
+
+.sticky-table tbody tr.h2h-row:hover > .sticky-col,
+.sticky-table tbody tr.h2h-row.open > .sticky-col {
+  background-color: var(--card-solid);
+  background-image: linear-gradient(var(--surface-2), var(--surface-2));
+}
+
+/* ---------- trades page: leader tiles ---------- */
+/* Inverted against the page like the recap tile and trophy case — forest green
+   in light, white in dark — so they read as a header above the deals. */
+.feature-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+/* Inside a titled section the heading already supplies the top gap. */
+.card-note + .feature-tiles {
+  margin-top: 12px;
+}
+
+.feature-tile {
+  background: var(--recap-tile-bg);
+  color: var(--recap-tile-ink);
+  border: 1px solid var(--recap-tile-border);
+  border-radius: 12px;
+  padding: 13px 16px 14px;
+}
+
+.feature-tile-label {
+  color: var(--recap-tile-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.feature-tile-name {
+  margin-top: 3px;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.feature-tile-value {
+  margin-top: 1px;
+  font-size: 13.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--recap-tile-muted);
+}
+
+/* Direction marker beside a traded player's name */
+.trade-trend {
+  margin-left: 5px;
+  font-size: 9.5px;
+  vertical-align: 1px;
+}
+
+.trade-trend.up {
+  color: var(--arrow-up);
+}
+
+.trade-trend.down {
+  color: var(--arrow-down);
+}
+
+/* Four across on the team page, where each tile is a rank plus two figures. */
+.rank-tiles {
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+}
+
+/* The rank carries the tile on its own now, so it's sized to lead. */
+.rank-figure {
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+}
+
+/* Phones: the four rank tiles go 2x2 rather than a 475px stack, and shed the
+   padding and type size that made each one so tall. Forced to two columns
+   rather than left to auto-fit, which can't fit two 178px tracks on a phone
+   and would drop back to one. */
+@media (max-width: 640px) {
+  .rank-tiles {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .rank-tiles .feature-tile {
+    padding: 9px 11px 10px;
+  }
+
+  .rank-tiles .feature-tile-label {
+    font-size: 9.5px;
+    letter-spacing: 0.4px;
+  }
+
+  .rank-tiles .rank-figure {
+    margin-top: 1px;
+    font-size: 24px;
+  }
+
+  .rank-tiles .feature-tile-value {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+}
+
+/* "See full rankings" link, pinned to the bottom-right of each rank tile */
+.rank-tiles .feature-tile {
+  display: flex;
+  flex-direction: column;
+}
+
+.rank-more {
+  align-self: flex-end;
+  margin-top: auto;
+  padding: 6px 0 0;
+  border: none;
+  background: none;
+  color: var(--recap-tile-muted);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  text-align: right;
+}
+
+.rank-more:hover {
+  color: var(--recap-tile-ink);
+  text-decoration: underline;
+}
+
+/* Borrows the record book's list layout but not its palette — that neutral
+   near-black scheme is meant to be that page's identity, and it reads as a
+   foreign object over the purple team page. */
+.rank-modal {
+  background: var(--surface-opaque);
+  border-color: var(--baseline);
+}
+
+.rank-modal .record-modal-sub,
+.rank-modal .record-rank,
+.rank-modal .record-lines {
+  color: var(--muted);
+}
+
+.rank-modal .record-holder,
+.rank-modal .record-value {
+  color: var(--ink);
+}
+
+.rank-modal .record-list li {
+  border-bottom-color: var(--grid);
+}
+
+/* The team whose page opened the board */
+.rank-list .is-you {
+  background: var(--accent-wash);
+  box-shadow: inset 3px 0 0 var(--series-1);
+}
+
+.rank-list .is-you .record-holder {
+  color: var(--series-1);
+}
+
+.rank-you {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--series-1);
+  color: var(--surface-opaque);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  vertical-align: 1px;
+}
+
+@media (max-width: 640px) {
+  .rank-more {
+    font-size: 10px;
+    padding-top: 5px;
+  }
+}
+
+/* Trade leader tiles: two wide, and led by a name rather than a rank. */
+.trade-rank-tiles {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+/* Best/worst matchup tiles above the team page's head-to-head.
+   These are a plain div, so the `section + section` rhythm never reached them
+   and they sat flush against the weekly results table. The top gap is larger
+   than the bottom one on purpose: it separates them from the table above while
+   keeping them grouped with the head-to-head they introduce. */
+.matchup-tiles {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 26px;
+  margin-bottom: 14px;
+}
+
+/* Phones: let the plot bleed into part of the card's side padding. The chart
+   has no text hard against its edge — the y labels sit inside and the last x
+   label only overhangs by half its width — so this is free width where the
+   screen is tightest. */
+@media (max-width: 640px) {
+  .chart-box {
+    width: calc(100% + 14px);
+    margin-left: -7px;
+    margin-right: -7px;
+  }
+}
