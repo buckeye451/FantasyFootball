@@ -173,10 +173,12 @@ export default function DashboardPage({
 
       <section className="card">
         <h2 className="card-title">Standings</h2>
-        <p className="card-note">
-          Regular season through week {selectedWeek}. Arrows show movement since the prior week.
-        </p>
-        <StandingsTable standings={standings} season={season} champion={championOf(season)} />
+        <StandingsTable
+          standings={standings}
+          season={season}
+          champion={championOf(season)}
+          throughWeek={selectedWeek}
+        />
       </section>
 
       <section>

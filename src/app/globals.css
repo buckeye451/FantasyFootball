@@ -3603,3 +3603,84 @@ tr.playoff-cut td {
     margin-right: -7px;
   }
 }
+
+/* ---------- segmented Compact/Full control ---------- */
+.seg-tabs {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--baseline);
+}
+
+.seg-tab {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.seg-tab.active {
+  background: var(--series-1);
+  color: #fff;
+}
+
+.seg-tab:focus-visible {
+  outline: 2px solid var(--series-1);
+  outline-offset: 1px;
+}
+
+/* Header row that carries a section heading and its control. The note is
+   allowed to collapse away first — the heading and the control are what the
+   reader needs. */
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.section-head .section-note {
+  margin: 0 0 0 auto;
+  color: var(--muted);
+  font-size: 12.5px;
+  text-align: right;
+  max-width: 52ch;
+}
+
+@media (max-width: 640px) {
+  .seg-tab {
+    padding: 4px 9px;
+    font-size: 11px;
+  }
+
+  .section-head {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  /* On a phone the explanatory note costs a full band of vertical space
+     above the data; the column titles carry the same information. */
+  .section-head .section-note {
+    display: none;
+  }
+}
+
+/* Compact standings folds the movement arrow into the team cell, so it needs
+   a fixed gutter — otherwise the names ragged-left against varying arrow
+   widths (▲ 4 vs –). */
+.standings-move {
+  display: inline-block;
+  min-width: 30px;
+  margin-right: 6px;
+  font-size: 11.5px;
+}
