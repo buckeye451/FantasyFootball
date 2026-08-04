@@ -84,7 +84,7 @@ export default function LifetimePage({ searchParams }: { searchParams: { season?
         {[...playedSeasons].map((s) => s.season).sort().join(', ')}).
       </p>
 
-      <section className="card trophy-case">
+      <section className="card trophy-case" id="trophy-case">
         <h2 className="card-title">🏆 Trophy case</h2>
         <p className="card-note">League champions, one trophy per title.</p>
         <div className="trophy-grid">

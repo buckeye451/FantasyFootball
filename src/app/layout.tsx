@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Archivo, Barlow_Condensed } from 'next/font/google';
+import { BottomTabs } from '@/components/BottomTabs';
 import { defaultSeason, getSeasons, getTeams, playoffRounds, regularSeasonWeeks } from '@/lib/stats';
 import { ensureAutoSync } from '@/lib/autosync';
 import { SiteHeader, type HeaderSeason } from '@/components/SiteHeader';
@@ -70,6 +72,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <SiteHeader seasons={seasons} defaultSeason={fallbackSeason} newestRecap={bellRecap} />
         <main>{children}</main>
+        {/* Reads the season from the query string, which needs a boundary in
+            the app router even under force-dynamic. */}
+        <Suspense fallback={null}>
+          <BottomTabs />
+        </Suspense>
       </body>
     </html>
   );
