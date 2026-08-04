@@ -152,7 +152,7 @@ export default function DashboardPage({
           <LeadStory
             kicker={`👑 Week ${selectedWeek} · high score of the ${isSeasonHigh ? 'season' : 'week'}`}
             figure={highestScoring.score.toFixed(1)}
-            headline={recap?.title ?? `${highestScoring.team.displayName} posts ${highestScoring.score.toFixed(1)}`}
+            headline={`${highestScoring.team.displayName} posts this week's high score: ${highestScoring.score.toFixed(1)}`}
             blurb={
               isSeasonHigh
                 ? `Nobody has posted a bigger week in ${season}.`
