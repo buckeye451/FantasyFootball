@@ -125,6 +125,7 @@ export function SeasonHeat({
               <Link
                 className={`heat-team${row.rank > playoffSpots ? ' out' : ''}`}
                 href={`/team/${row.team.slug}?season=${season}`}
+                prefetch={false}
               >
                 {row.team.displayName}
               </Link>
@@ -139,6 +140,12 @@ export function SeasonHeat({
                     className={`heat-cell${isBest ? ' best' : ''}`}
                     style={cellStyle(strength(cell, encoding, scale))}
                     href={`/week/${w}?season=${season}${cell.matchupId != null ? `&box=${cell.matchupId}#matchup-${cell.matchupId}` : ''}`}
+                    // Every page is force-dynamic, so a prefetch is a full
+                    // server render. With ~140 cells on screen that floods both
+                    // the server and the browser's connection pool, and the
+                    // navigation the reader actually asked for queues behind
+                    // it. One matrix is not worth 140 speculative renders.
+                    prefetch={false}
                     title={label}
                     aria-label={label}
                   />
