@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTheme, type Theme } from '@/components/ThemeToggle';
 import { useStickyColumns } from '@/components/useStickyColumns';
+import { useIsMobile } from '@/components/useIsMobile';
 import {
   Bar,
   BarChart,
@@ -62,19 +63,6 @@ const MAX_SELECTED = 4;
 export interface ChartTeam {
   slug: string;
   name: string;
-}
-
-/** Phone-width media query — lets the charts trade margin/ticks for plot area. */
-function useIsMobile(): boolean {
-  const [mobile, setMobile] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 640px)');
-    const update = () => setMobile(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
-  }, []);
-  return mobile;
 }
 
 type Row = Record<string, number>;

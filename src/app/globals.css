@@ -23,6 +23,11 @@
   --context-line: #3f3f3b;
   --good: #0ca30c;
   --critical: #d03b3b;
+  /* Heat-matrix poles. Named separately from --good/--critical because the
+     matrix mixes them down to low alphas, and the pure status colours are
+     reserved for W/L and bench warnings. */
+  --heat-good: #0ca30c;
+  --heat-bad: #d03b3b;
   --critical-wash: rgba(208, 59, 59, 0.14);
   --accent-wash: rgba(57, 135, 229, 0.12);
   /* Semantic extras, so light mode is a single block of overrides. */
@@ -101,6 +106,8 @@
   --context-line: #cec5b1;
   --good: #1e6b42;
   --critical: #b3402f;
+  --heat-good: #1e6b42;
+  --heat-bad: #b3402f;
   --critical-wash: rgba(179, 64, 47, 0.12);
   --accent-wash: rgba(30, 107, 66, 0.1);
   --focus-ring: rgba(30, 107, 66, 0.45);
@@ -3935,5 +3942,138 @@ tr.playoff-cut td {
     grid-template-columns: 1fr 1fr;
     row-gap: 14px;
     column-gap: 12px;
+  }
+}
+
+/* ---------- season heat matrix ---------- */
+.heat-card {
+  overflow-x: auto;
+}
+
+.heat-grid {
+  display: grid;
+  grid-template-columns: 74px repeat(var(--heat-cols), minmax(18px, 1fr));
+  gap: 4px;
+  align-items: center;
+  min-width: 0;
+}
+
+.heat-week {
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.heat-corner {
+  min-height: 1px;
+}
+
+.heat-team {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Teams outside the playoff cut sit back a step, so the bracket picture is
+   readable straight off the matrix. */
+.heat-team.out {
+  color: var(--ink-2);
+}
+
+.heat-team:hover {
+  text-decoration: underline;
+}
+
+.heat-cell {
+  height: 24px;
+  border-radius: 3px;
+  display: block;
+}
+
+.heat-cell.empty {
+  background: var(--progress-empty);
+  opacity: 0.4;
+}
+
+.heat-cell.best {
+  box-shadow: 0 0 0 2px var(--progress-post);
+}
+
+.heat-cell:hover {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+
+.heat-cell:focus-visible {
+  outline: 2px solid var(--series-1);
+  outline-offset: 1px;
+}
+
+.heat-more {
+  margin-top: 12px;
+  padding: 7px 12px;
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.heat-more:hover {
+  border-color: var(--muted);
+}
+
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.heat-legend-bar {
+  width: 200px;
+  max-width: 42vw;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--heat-bad), transparent, var(--heat-good));
+}
+
+.heat-legend-chip {
+  padding: 2px 7px;
+  border-radius: 5px;
+  box-shadow: 0 0 0 1px var(--progress-post);
+  color: var(--progress-post);
+}
+
+@media (max-width: 640px) {
+  .heat-grid {
+    grid-template-columns: 52px repeat(var(--heat-cols), minmax(10px, 1fr));
+    gap: 2.5px;
+  }
+
+  .heat-cell {
+    height: 17px;
+  }
+
+  .heat-team {
+    font-size: 11.5px;
+  }
+
+  /* Every week number won't fit; the odd ones keep their column's width. */
+  .heat-week {
+    font-size: 10px;
+  }
+
+  .heat-week-alt {
+    visibility: hidden;
   }
 }
