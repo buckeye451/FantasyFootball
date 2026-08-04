@@ -4,6 +4,7 @@ import {
   getSeasons,
   getTeams,
   playersOfWeek,
+  playoffRounds,
   regularSeasonWeeks,
   resolveActiveLeague,
   seasonProgress,
@@ -19,8 +20,9 @@ import { MatchupBreakdownList } from '@/components/MatchupBreakdown';
 import { latestRecap } from '@/lib/recaps';
 import { PlayersOfWeek, TopSeasonPlayers } from '@/components/PlayerCards';
 import { StandingsTable } from '@/components/StandingsTable';
-import { WeekSelect } from '@/components/WeekSelect';
 import { SeasonProgressTile } from '@/components/SeasonProgress';
+import { WeekRail } from '@/components/WeekRail';
+import { LeadStory, LeadTile } from '@/components/LeadStory';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,56 +106,113 @@ export default function DashboardPage({
     null
   );
 
+  // Best single week anyone has posted so far, on the same "as of" basis as
+  // the rest of the page — so the lead story's claim can't outrun the standings
+  // the reader is looking at.
+  const seasonHigh = standings.reduce((max, s) => Math.max(max, s.highScore), 0);
+  const isSeasonHigh = highestScoring != null && highestScoring.score >= seasonHigh - 0.005;
+
+  // The rail shows the league's whole declared regular season, not just the
+  // weeks that have rows, so an in-progress season still reads as 17 weeks.
+  const totalRegularWeeks = league.playoffWeekStart != null ? league.playoffWeekStart - 1 : latestWeek;
+  const railWeeks = Array.from({ length: Math.max(totalRegularWeeks, latestWeek) }, (_, i) => i + 1);
+  const hasPlayoffs = playoffRounds(leagueId).length > 0;
+  // Seconds are noise on a rail that has to fit a phone.
+  const syncedLabel = league.lastSyncedAt
+    ? new Date(league.lastSyncedAt).toLocaleString(undefined, {
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    : null;
+
   return (
     <>
       <h1 className="page-title">{season} dashboard</h1>
-      <div className="dash-controls">
-        <p className="page-subtitle">
-          {league.name} · {standings.length} teams
-          {league.lastSyncedAt ? ` · data updated ${new Date(league.lastSyncedAt).toLocaleString()}` : ''}
-        </p>
-        <WeekSelect weeks={weeks} selected={selectedWeek} season={season} />
-      </div>
+      <p className="page-subtitle">
+        {league.name} · {standings.length} teams
+      </p>
 
-      <div className="tile-grid">
-        <div className="tile">
-          <div className="tile-label">👑 Highest Score</div>
-          <div className="tile-value">
-            {highestScoring ? highestScoring.score.toFixed(1) : '—'}
-          </div>
-          <div className="tile-sub">
-            {highestScoring
-              ? `${highestScoring.team.displayName} · week ${selectedWeek}`
-              : ''}
-          </div>
-        </div>
-        <div className="tile">
-          <div className="tile-label">✅ Highest Performance</div>
-          <div className="tile-value">
-            {highestPerf?.performancePct != null ? `${highestPerf.performancePct.toFixed(1)}%` : '—'}
-          </div>
-          <div className="tile-sub">
-            {highestPerf ? `${highestPerf.team.displayName} · ${highestPerf.score.toFixed(1)} pts` : 'no projections'}
-          </div>
-        </div>
-        <div className="tile">
-          <div className="tile-label">📋 Best Manager</div>
-          <div className="tile-value">
-            {bestManager ? `${bestManager.managerScorePct.toFixed(1)}%` : '—'}
-          </div>
-          <div className="tile-sub">
-            {bestManager ? `${bestManager.team.displayName} · ${bestManager.score.toFixed(1)} of ${bestManager.optimal.toFixed(1)}` : ''}
-          </div>
-        </div>
-        {pow.mvp && (
-          <div className="tile">
-            <div className="tile-label">🏈 Week {selectedWeek} MVP</div>
-            <div className="tile-value">{pow.mvp.points.toFixed(1)}</div>
-            <div className="tile-sub">
-              {pow.mvp.player.name} ({pow.mvp.player.position}) · {pow.mvp.manager}
-            </div>
+      <WeekRail
+        weeks={railWeeks}
+        selected={selectedWeek}
+        playedThrough={latestWeek}
+        season={season}
+        pct={progress?.pct}
+        syncedLabel={syncedLabel}
+        hasPlayoffs={hasPlayoffs}
+      />
+
+      <div className="dash-lead">
+        {highestScoring ? (
+          <LeadStory
+            kicker={`👑 Week ${selectedWeek} · high score of the ${isSeasonHigh ? 'season' : 'week'}`}
+            figure={highestScoring.score.toFixed(1)}
+            headline={recap?.title ?? `${highestScoring.team.displayName} posts ${highestScoring.score.toFixed(1)}`}
+            blurb={
+              isSeasonHigh
+                ? `Nobody has posted a bigger week in ${season}.`
+                : `Week ${selectedWeek}'s best score — ${(seasonHigh - highestScoring.score).toFixed(1)} off the season high.`
+            }
+            stats={[
+              {
+                label: 'Perf',
+                value:
+                  highestScoring.performancePct != null
+                    ? `${highestScoring.performancePct.toFixed(1)}%`
+                    : '—',
+              },
+              { label: 'Manager', value: `${highestScoring.managerScorePct.toFixed(1)}%` },
+              {
+                label: 'Left on bench',
+                value: (highestScoring.optimal - highestScoring.score).toFixed(1),
+              },
+              { label: 'ROL %', value: `${highestScoring.winPctVsLeague.toFixed(0)}%` },
+            ]}
+            href={`/team/${highestScoring.team.slug}?season=${season}&week=${selectedWeek}#week-detail`}
+          />
+        ) : (
+          <div className="lead-story">
+            <div className="kicker lead-story-kicker">Week {selectedWeek}</div>
+            <div className="lead-story-headline">No scored games this week yet.</div>
           </div>
         )}
+
+        <div className="dash-lead-tiles">
+          <LeadTile
+            label="✅ Highest Performance"
+            sub={
+              highestPerf
+                ? `${highestPerf.team.displayName} · ${highestPerf.score.toFixed(1)} pts`
+                : 'no projections'
+            }
+            value={
+              highestPerf?.performancePct != null ? `${highestPerf.performancePct.toFixed(1)}%` : '—'
+            }
+            tone="series"
+          />
+          <LeadTile
+            label="📋 Best Manager"
+            sub={
+              bestManager
+                ? `${bestManager.team.displayName} · ${bestManager.score.toFixed(1)} of ${bestManager.optimal.toFixed(1)}`
+                : undefined
+            }
+            value={bestManager ? `${bestManager.managerScorePct.toFixed(1)}%` : '—'}
+            tone="good"
+          />
+          <LeadTile
+            label={`🏈 Week ${selectedWeek} MVP`}
+            sub={
+              pow.mvp
+                ? `${pow.mvp.player.name} (${pow.mvp.player.position}) · ${pow.mvp.manager}`
+                : undefined
+            }
+            value={pow.mvp ? pow.mvp.points.toFixed(1) : '—'}
+            tone="ink"
+          />
+        </div>
       </div>
 
       {recap && (

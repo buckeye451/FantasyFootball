@@ -3684,3 +3684,256 @@ tr.playoff-cut td {
   margin-right: 6px;
   font-size: 11.5px;
 }
+
+/* ---------- dashboard week rail ---------- */
+.week-rail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.week-rail-title {
+  flex: none;
+}
+
+.week-rail-track {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.week-rail-track::-webkit-scrollbar {
+  display: none;
+}
+
+.week-rail-cell {
+  min-width: 30px;
+  flex: none;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.week-rail-cell.current {
+  background: var(--series-1);
+  color: #fff;
+  font-weight: 700;
+}
+
+.week-rail-cell.played {
+  color: var(--muted);
+}
+
+/* Weeks with no games yet: present, so the season's shape is visible, but
+   clearly not carrying data. */
+.week-rail-cell.unplayed {
+  color: var(--baseline);
+}
+
+.week-rail-cell:hover:not(.current) {
+  background: var(--accent-wash);
+}
+
+.week-rail-cell:focus-visible,
+.week-rail-playoffs:focus-visible {
+  outline: 2px solid var(--series-1);
+  outline-offset: 1px;
+}
+
+.week-rail-playoffs {
+  flex: none;
+  margin-left: 10px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--progress-post);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.week-rail-meta {
+  margin-left: auto;
+  flex: none;
+  color: var(--muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  /* The rail needs the full width to scroll in, so the label sits on its own
+     line above it and the meta drops to the bottom. The meta has to give up
+     `flex: none` here or it refuses to shrink and gets clipped off the edge. */
+  .week-rail {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .week-rail-track {
+    order: 2;
+    width: 100%;
+  }
+
+  .week-rail-meta {
+    order: 3;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    margin-left: 0;
+    font-size: 11px;
+    white-space: normal;
+  }
+}
+
+/* ---------- dashboard lead story ---------- */
+.dash-lead {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 22px;
+  margin-bottom: 18px;
+}
+
+.lead-story {
+  display: block;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  padding: 26px 28px;
+  /* Literal stops rather than token references: the tokens these were sampled
+     from invert between themes, so referencing them would paint the dark
+     gradient white in light mode. Each theme names its own pair instead. */
+  background: linear-gradient(115deg, #4a2a86 0%, #17102a 62%);
+  color: #fff;
+}
+
+:root[data-theme='light'] .lead-story {
+  background: linear-gradient(115deg, #1e6b42 0%, #14512f 70%);
+}
+
+.lead-story-kicker {
+  color: var(--progress-post);
+}
+
+.lead-story-figure {
+  font-size: 84px;
+  margin: 6px 0 2px;
+}
+
+.lead-story-headline {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.lead-story-blurb {
+  margin: 8px 0 0;
+  max-width: 44ch;
+  font-size: 13.5px;
+  line-height: 1.5;
+  /* Fixed rather than var(--ink-2): the gradient is dark in both themes, so
+     the body copy can't follow the page's ink. */
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.lead-story-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  margin-top: 20px;
+}
+
+.lead-story-stat .kicker {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.lead-story-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.dash-lead-tiles {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lead-tile {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.lead-tile-body {
+  min-width: 0;
+}
+
+.lead-tile-sub {
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.lead-tile-figure {
+  margin-left: auto;
+  font-size: 34px;
+  white-space: nowrap;
+}
+
+.lead-tile-figure.tone-series {
+  color: var(--series-1);
+}
+
+.lead-tile-figure.tone-good {
+  color: var(--good);
+}
+
+.lead-tile-figure.tone-ink {
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .dash-lead {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .lead-story {
+    padding: 20px 18px;
+    border-radius: 12px;
+  }
+
+  .lead-story-figure {
+    font-size: 64px;
+  }
+
+  .lead-story-headline {
+    font-size: 19px;
+  }
+
+  .lead-story-stats {
+    gap: 0;
+    /* Four stats across a phone would shrink past legibility; two rows of two
+       keeps the values at full size. */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 14px;
+    column-gap: 12px;
+  }
+}
