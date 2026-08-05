@@ -34,4 +34,9 @@ primary_region = 'ord'
 
 [[vm]]
   size = 'shared-cpu-1x'
-  memory = '512mb'
+  # Headroom, not a steady-state requirement: the server idles around 110MB,
+  # but a burst of concurrent dynamic renders was measured peaking at 270MB.
+  # Fly OOM-kills silently, and a kill mid-response surfaces as the proxy's
+  # "could not finish reading HTTP body" with the page loading forever, so the
+  # spare room turns a hard failure into a slow one.
+  memory = '1gb'
