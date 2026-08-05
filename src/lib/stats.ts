@@ -1990,6 +1990,276 @@ export function weekScoreBoard(leagueId: string, week: number): WeekScoreBoard {
   return { cards, sorted, leagueAvg, high, closest, blowout };
 }
 
+export interface CarriedPlayer {
+  usage: StarterUsage;
+  /** Share of this roster's started points, 0–1. */
+  share: number;
+}
+
+export interface CarriedBy {
+  players: CarriedPlayer[];
+  /** Combined share of started points held by the players above, 0–1. */
+  topShare: number;
+}
+
+/**
+ * The handful of players a roster actually rode, by points while started.
+ *
+ * Regular season only, so this agrees with the verdict it sits inside — which
+ * measures expected wins and above-median weeks over the same span.
+ */
+export function topStarters(leagueId: string, rosterId: number, n = 3): CarriedBy {
+  const league = getLeagueInfo(leagueId);
+  const meta = getPlayerMeta(league?.season);
+  const usage = new Map<string, StarterUsage>();
+  const regular = new Set(regularSeasonWeeks(leagueId));
+  let total = 0;
+
+  for (const m of getMatchups(leagueId)) {
+    if (m.rosterId !== rosterId || !regular.has(m.week)) continue;
+    for (const pid of m.starters) {
+      if (!pid || pid === '0') continue;
+      const player = meta.get(pid);
+      if (!player) continue;
+      const points = m.playersPoints[pid] ?? 0;
+      total += points;
+      let u = usage.get(pid);
+      if (!u) {
+        u = { player, weeksStarted: 0, pointsWhileStarting: 0, bestWeek: 0 };
+        usage.set(pid, u);
+      }
+      u.weeksStarted++;
+      u.pointsWhileStarting = round2(u.pointsWhileStarting + points);
+      u.bestWeek = Math.max(u.bestWeek, round2(points));
+    }
+  }
+
+  const ranked = [...usage.values()]
+    .sort((a, b) => b.pointsWhileStarting - a.pointsWhileStarting)
+    .slice(0, n);
+  const players = ranked.map((u) => ({
+    usage: u,
+    share: total > 0 ? u.pointsWhileStarting / total : 0,
+  }));
+  return {
+    players,
+    topShare: players.reduce((s, p) => s + p.share, 0),
+  };
+}
+
+export type GradeTone = 'good' | 'warn' | 'bad';
+
+export interface CaseCard {
+  key: 'scoring' | 'management' | 'luck';
+  label: string;
+  grade: string;
+  tone: GradeTone;
+  /** Headline number, already formatted. */
+  figure: string;
+  unit: string;
+  /** Bar fill, 0–100 — always this manager's percentile on that axis. */
+  fill: number;
+  evidence: string;
+}
+
+export interface VerdictWeek {
+  week: number;
+  points: number;
+  opponent: string | null;
+  opponentPoints: number | null;
+  won: boolean;
+  /** Bar height as a share of the season's score range, 0–1. */
+  height: number;
+}
+
+export interface ManagerVerdict {
+  headline: string;
+  sub: string;
+  chips: string[];
+  cards: CaseCard[];
+  weeks: VerdictWeek[];
+}
+
+/**
+ * Rank → letter, as a percentile of the league so one rule covers every axis.
+ * Bands are deliberately generous at the top: in a ten-team league, being
+ * first at anything is an A+.
+ */
+function gradeFor(rank: number, size: number): { grade: string; tone: GradeTone; pct: number } {
+  const pct = size > 1 ? (size - rank) / (size - 1) : 1;
+  const grade =
+    pct >= 0.95 ? 'A+' : pct >= 0.85 ? 'A' : pct >= 0.75 ? 'B+' : pct >= 0.6 ? 'B' : pct >= 0.45 ? 'C+' : pct >= 0.3 ? 'C' : pct >= 0.15 ? 'D+' : 'D';
+  const tone: GradeTone = pct >= 0.75 ? 'good' : pct >= 0.45 ? 'warn' : 'bad';
+  return { grade, tone, pct: Math.round(pct * 100) };
+}
+
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/** Rank of `value` in `all`, highest first, competition-style. */
+function rankOf(value: number, all: number[]): number {
+  return all.filter((v) => v > value).length + 1;
+}
+
+/**
+ * The season reduced to a verdict: one claim, the three axes behind it, and
+ * the week-by-week shape.
+ *
+ * Every sentence is templated from the numbers — nothing here is written by
+ * hand per manager, so it stays true when the data changes.
+ */
+export function managerVerdict(leagueId: string, rosterId: number): ManagerVerdict | null {
+  const season = teamSeason(leagueId, rosterId);
+  const standings = currentStandings(leagueId);
+  const me = standings.find((s) => s.team.rosterId === rosterId);
+  if (!season || !me) return null;
+
+  const size = standings.length;
+  const regular = new Set(regularSeasonWeeks(leagueId));
+  const weeks = season.weeks.filter((w) => regular.has(w.week));
+  const medians = new Map(weeklyMedians(leagueId).map((m) => [m.week, m.median]));
+
+  // Expected wins: winPctVsLeague is already "share of the league this score
+  // beat", so summing it is the number of wins a neutral schedule would give.
+  const expected = weeks.reduce((sum, w) => sum + w.winPctVsLeague / 100, 0);
+  const luck = me.wins - expected;
+
+  // Everyone's luck, so this manager's can be ranked rather than judged against
+  // an arbitrary threshold.
+  const allLuck = standings.map((s) => {
+    const ts = teamSeason(leagueId, s.team.rosterId);
+    const ws = ts ? ts.weeks.filter((w) => regular.has(w.week)) : [];
+    return s.wins - ws.reduce((sum, w) => sum + w.winPctVsLeague / 100, 0);
+  });
+
+  const pfRank = rankOf(me.pointsFor, standings.map((s) => s.pointsFor));
+  const mgrRank = rankOf(me.managerPerformance, standings.map((s) => s.managerPerformance));
+  const perfRank = rankOf(me.performance ?? -1, standings.map((s) => s.performance ?? -1));
+  const luckRank = rankOf(luck, allLuck);
+
+  const scoring = gradeFor(pfRank, size);
+  const management = gradeFor(mgrRank, size);
+  const luckGrade = gradeFor(luckRank, size);
+
+  const aboveMedian = weeks.filter((w) => w.points > (medians.get(w.week) ?? 0)).length;
+  const blwLosses = weeks.filter((w) => w.result === 'L' && w.bestLineupWins === 'yes').length;
+  const losses = weeks.filter((w) => w.result === 'L').length;
+  const bench = round2(weeks.reduce((sum, w) => sum + w.benchPointsLost, 0));
+
+  // Gap to the next team in points, either direction.
+  const pf = standings.map((s) => s.pointsFor).sort((a, b) => b - a);
+  const gap = pfRank === 1 ? round2(pf[0] - pf[1]) : round2(pf[0] - me.pointsFor);
+
+  const best = weeks.reduce<(typeof weeks)[number] | null>(
+    (m, w) => (m == null || w.points > m.points ? w : m),
+    null
+  );
+  // The loss that most deserved to be a win.
+  const unlucky = weeks
+    .filter((w) => w.result === 'L')
+    .reduce<(typeof weeks)[number] | null>(
+      (m, w) => (m == null || w.winPctVsLeague > m.winPctVsLeague ? w : m),
+      null
+    );
+
+  const cards: CaseCard[] = [
+    {
+      key: 'scoring',
+      label: 'Scoring',
+      grade: scoring.grade,
+      tone: scoring.tone,
+      figure: me.avgPoints.toFixed(1),
+      unit: 'per game',
+      fill: scoring.pct,
+      evidence:
+        (pfRank === 1
+          ? `Most points in the league, ${gap.toFixed(0)} clear of 2nd.`
+          : `${ordinal(pfRank)} in points, ${gap.toFixed(0)} behind the leader.`) +
+        ` Scored above the weekly median in ${aboveMedian} of ${weeks.length} weeks.`,
+    },
+    {
+      key: 'management',
+      label: 'Management',
+      grade: management.grade,
+      tone: management.tone,
+      figure: `${me.managerPerformance.toFixed(1)}%`,
+      unit: ordinal(mgrRank),
+      fill: management.pct,
+      evidence:
+        `${bench.toFixed(1)} points left on the bench.` +
+        (blwLosses > 0
+          ? ` ${blwLosses} of the ${losses} ${losses === 1 ? 'loss' : 'losses'} would have been ${blwLosses === 1 ? 'a win' : 'wins'} with the optimal lineup.`
+          : ' No loss would have turned into a win with the optimal lineup.'),
+    },
+    {
+      key: 'luck',
+      label: 'Luck',
+      grade: luckGrade.grade,
+      tone: luckGrade.tone,
+      figure: `${luck >= 0 ? '+' : '−'}${Math.abs(luck).toFixed(1)}`,
+      unit: 'wins vs expected',
+      fill: luckGrade.pct,
+      evidence:
+        `${expected.toFixed(1)} wins expected from these scores, ${me.wins} banked.` +
+        (unlucky
+          ? ` Week ${unlucky.week} lost with ${unlucky.points.toFixed(1)} — a score that beat ${unlucky.winPctVsLeague.toFixed(0)}% of the league.`
+          : ''),
+    },
+  ];
+
+  // Bar heights scale against this season's own range rather than a fixed
+  // window, so a low-scoring league still fills the strip.
+  const scores = weeks.map((w) => w.points);
+  const lo = scores.length ? Math.min(...scores) : 0;
+  const hi = scores.length ? Math.max(...scores) : 1;
+  const floor = Math.max(0, lo - (hi - lo) * 0.15);
+  const span = hi - floor || 1;
+
+  const verdictWeeks: VerdictWeek[] = weeks.map((w) => ({
+    week: w.week,
+    points: w.points,
+    opponent: w.opponent?.displayName ?? null,
+    opponentPoints: w.opponentPoints,
+    won: w.result === 'W',
+    height: Math.max(0.06, (w.points - floor) / span),
+  }));
+
+  const name = season.team.displayName;
+  const headline =
+    pfRank === 1 && me.rank === 1
+      ? luck < 0
+        ? "Best team in the league — and it wasn't luck."
+        : 'Best team in the league, top to bottom.'
+      : me.rank === 1
+        ? 'First place, however you count it.'
+        : pfRank === 1
+          ? 'Scored more than anyone. Finished ' + ordinal(me.rank) + '.'
+          : luck < -1
+            ? `${ordinal(me.rank)} place, and the record undersells it.`
+            : luck > 1
+              ? `${ordinal(me.rank)} place, with the schedule helping.`
+              : `${ordinal(me.rank)} place — about what the scores earned.`;
+
+  const sub =
+    `${name} ${pfRank === 1 ? `led the league in points by ${gap.toFixed(0)}` : `finished ${ordinal(pfRank)} in points`}, ` +
+    `${me.performance != null ? `scored ${me.performance.toFixed(1)}% of projection` : 'played the season out'}` +
+    (best ? `, and peaked at ${best.points.toFixed(2)} in week ${best.week}.` : '.');
+
+  const chips = [
+    `${ordinal(me.rank)} · ${me.wins}–${me.losses}${me.ties ? `–${me.ties}` : ''}`,
+    `${me.pointsFor.toFixed(1)} points · ${ordinal(pfRank)}`,
+    me.performance != null
+      ? `${me.performance.toFixed(1)}% of projection · ${ordinal(perfRank)}`
+      : 'no projections',
+    `${me.managerPerformance.toFixed(1)}% manager · ${ordinal(mgrRank)}`,
+  ];
+
+  return { headline, sub, chips, cards, weeks: verdictWeeks };
+}
+
 // ---------------------------------------------------------------------------
 // Lifetime (all-seasons) stats
 // ---------------------------------------------------------------------------

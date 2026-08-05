@@ -4947,3 +4947,254 @@ tr.playoff-cut td {
     font-size: 24px;
   }
 }
+
+/* ---------- manager page: verdict ---------- */
+.verdict {
+  background: var(--recap-tile-bg);
+  color: var(--recap-tile-ink);
+  border: 1px solid var(--recap-tile-border);
+  border-radius: 14px;
+  padding: 22px 20px 20px;
+}
+
+.verdict-kicker {
+  color: var(--recap-tile-muted);
+}
+
+.verdict-headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1.06;
+  letter-spacing: 0.3px;
+  margin: 6px 0 4px;
+  text-wrap: pretty;
+}
+
+.verdict-sub {
+  margin: 0;
+  font-size: 14px;
+  color: var(--recap-tile-muted);
+  max-width: 52ch;
+  text-wrap: pretty;
+}
+
+.verdict-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.verdict-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--recap-tile-border);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* ---------- manager page: the case ---------- */
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.case-card {
+  padding: 16px 16px 14px;
+}
+
+.case-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.case-grade {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.case-figure {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1.05;
+  margin-top: 4px;
+}
+
+.case-unit {
+  font-family: var(--font-ui);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.case-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--sunken);
+  margin: 10px 0 8px;
+  overflow: hidden;
+}
+
+.case-bar-fill {
+  display: block;
+  height: 100%;
+}
+
+.case-evidence {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* Grade bands share one colour scale with the threshold pills. */
+.tone-good {
+  color: var(--val-good-fg);
+}
+.tone-warn {
+  color: var(--val-warn-fg);
+}
+.tone-bad {
+  color: var(--val-bad-fg);
+}
+.case-bar-fill.tone-good {
+  background: var(--val-good-fg);
+}
+.case-bar-fill.tone-warn {
+  background: var(--val-warn-fg);
+}
+.case-bar-fill.tone-bad {
+  background: var(--val-bad-fg);
+}
+
+/* ---------- manager page: season strip ---------- */
+.season-strip {
+  display: grid;
+  grid-template-columns: repeat(var(--strip-cols), 1fr);
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.strip-col {
+  text-align: center;
+  min-width: 0;
+}
+
+.strip-track {
+  height: 96px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.strip-bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+}
+
+.strip-bar.won {
+  background: var(--good);
+}
+
+.strip-bar.lost {
+  background: var(--critical);
+}
+
+.strip-score {
+  font-size: 9.5px;
+  color: var(--ink-2);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.strip-week {
+  font-size: 9px;
+}
+
+/* ---------- manager page: who carried it ---------- */
+.carried-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.carried-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.carried-body {
+  min-width: 0;
+}
+
+.carried-name {
+  font-weight: 650;
+  font-size: 14px;
+}
+
+.carried-meta {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.carried-points {
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+/* The disclosures hold full tables, so they get room to breathe. */
+.card > details.table-view + details.table-view {
+  margin-top: 14px;
+}
+
+.card > details.table-view > summary {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--series-1);
+}
+
+@media (max-width: 640px) {
+  .verdict {
+    padding: 18px 15px 16px;
+  }
+
+  .verdict-headline {
+    font-size: 26px;
+  }
+
+  .verdict-sub {
+    font-size: 13px;
+  }
+
+  .strip-track {
+    height: 74px;
+  }
+
+  .season-strip {
+    gap: 2.5px;
+  }
+}
+
+/* The strip stays N-across on a phone — it's a sparkline — but the per-bar
+   score labels stop fitting well before the bars do. */
+@media (max-width: 400px) {
+  .strip-score {
+    display: none;
+  }
+}

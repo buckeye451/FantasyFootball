@@ -5,20 +5,18 @@ import {
   getTeamBySlug,
   getTeams,
   headToHead,
+  managerVerdict,
   matchupExtremes,
-  mostStartedByPosition,
-  rankBoards,
   resolveActiveLeague,
   teamSeason,
+  topStarters,
   teamWeekDetail,
   weeklyMedians,
 } from '@/lib/stats';
-import { TeamWeeklyChart } from '@/components/FocusCharts';
 import { LineupAsSet, OptimalLineup } from '@/components/RosterTables';
-import { MostStartedPlayers } from '@/components/PlayerCards';
 import { TeamWeekPicker } from '@/components/TeamWeekPicker';
 import { PageNav } from '@/components/PageNav';
-import { RankTiles, type RankTile } from '@/components/RankTiles';
+import { CarriedByCard, CaseCards, SeasonStrip, VerdictBanner } from '@/components/ManagerVerdict';
 import { HeadToHead } from '@/components/HeadToHead';
 import { WeeklyResultsTable } from '@/components/WeeklyResultsTable';
 
@@ -48,99 +46,6 @@ export default function TeamPage({
   // played for that year, not their current one.
   const meta = getPlayerMeta(seasonYear);
 
-  const mostStarted = mostStartedByPosition(leagueId, team.rosterId);
-  // Where this team sits in the league on each headline metric, plus the full
-  // board behind each one for the popups. Every figure comes from the
-  // standings rather than teamSeason: teamSeason sums points across the
-  // postseason while its record and rank are regular-season only, so pairing
-  // its totals with a league rank would show one number and rank on another.
-  const boards = rankBoards(leagueId);
-  const rankOf = (rows: typeof boards.place) =>
-    rows.find((r) => r.rosterId === team.rosterId)?.rank ?? null;
-  const bench = (s: (typeof boards.place)[number]['standing']) =>
-    Math.max(0, s.optimalPoints - s.pointsFor);
-  const standing = boards.place.find((r) => r.rosterId === team.rosterId)?.standing ?? null;
-
-  const tiles: RankTile[] = [
-    {
-      key: 'place',
-      label: 'Current Place',
-      headline: `#${rankOf(boards.place) ?? '—'}`,
-      big: true,
-      lines: standing
-        ? [`${standing.wins}-${standing.losses}${standing.ties ? `-${standing.ties}` : ''}`]
-        : ['—'],
-      note: 'League standings, best record first',
-      board: boards.place.map((r) => ({
-        key: String(r.rosterId),
-        rank: r.rank,
-        name: r.name,
-        value: `${r.standing.wins}-${r.standing.losses}${r.standing.ties ? `-${r.standing.ties}` : ''}`,
-        detail: `${r.standing.pointsFor.toFixed(1)} points for`,
-      })),
-    },
-    {
-      key: 'points',
-      label: 'Points Per Game',
-      headline: `#${rankOf(boards.points) ?? '—'}`,
-      big: true,
-      lines: standing
-        ? [`${standing.avgPoints.toFixed(1)} per game`, `${standing.pointsFor.toFixed(1)} total`]
-        : ['—'],
-      note: 'Ranked on total points scored this season',
-      board: boards.points.map((r) => ({
-        key: String(r.rosterId),
-        rank: r.rank,
-        name: r.name,
-        value: `${r.standing.pointsFor.toFixed(1)}`,
-        detail: `${r.standing.avgPoints.toFixed(1)} per game`,
-      })),
-    },
-    {
-      key: 'manager',
-      label: 'Manager Rank',
-      headline: `#${rankOf(boards.manager) ?? '—'}`,
-      big: true,
-      lines: standing
-        ? [
-            `${standing.managerPerformance.toFixed(1)}% manager`,
-            `${bench(standing).toFixed(1)} left on the bench`,
-          ]
-        : ['—'],
-      note: 'Points scored ÷ best-possible lineup',
-      board: boards.manager.map((r) => ({
-        key: String(r.rosterId),
-        rank: r.rank,
-        name: r.name,
-        value: `${r.standing.managerPerformance.toFixed(1)}%`,
-        detail: `${bench(r.standing).toFixed(1)} left on the bench`,
-      })),
-    },
-    {
-      key: 'performance',
-      label: 'Performance %',
-      headline: `#${rankOf(boards.performance) ?? '—'}`,
-      big: true,
-      lines:
-        standing && standing.perfProjected > 0
-          ? [
-              `${standing.perfPoints.toFixed(1)} scored`,
-              `${standing.perfProjected.toFixed(1)} projected`,
-            ]
-          : ['no projections'],
-      note: 'Points scored ÷ points projected',
-      board: boards.performance.map((r) => ({
-        key: String(r.rosterId),
-        rank: r.rank,
-        name: r.name,
-        value: r.standing.performance == null ? '—' : `${r.standing.performance.toFixed(1)}%`,
-        detail:
-          r.standing.perfProjected > 0
-            ? `${r.standing.perfPoints.toFixed(1)} of ${r.standing.perfProjected.toFixed(1)} projected`
-            : 'no projections',
-      })),
-    },
-  ];
 
   // All-time head to head, pinned to this manager. Keyed by owner so it
   // follows the person across seasons, not the roster slot.
@@ -159,6 +64,20 @@ export default function TeamPage({
     median: medians.get(w.week) ?? 0,
   }));
 
+  // A ?week= deep link points at a specific lineup, so it can't arrive collapsed.
+  const openLineups = searchParams.week != null;
+  const verdict = managerVerdict(leagueId, team.rosterId);
+  const carried = topStarters(leagueId, team.rosterId);
+
+  // The strip's caption, templated from the run itself rather than written.
+  const stripNote = (() => {
+    if (!verdict || verdict.weeks.length === 0) return 'Every week of the regular season.';
+    const w = verdict.weeks;
+    const best = w.reduce((m, x) => (x.points > m.points ? x : m), w[0]);
+    const wins = w.filter((x) => x.won).length;
+    return `${wins}-${w.length - wins} across ${w.length} weeks — best was ${best.points.toFixed(0)} in week ${best.week}.`;
+  })();
+
   // Helpers that preserve the selected season across links.
   const sq = `?season=${seasonYear}`;
 
@@ -167,8 +86,7 @@ export default function TeamPage({
       <div className="manager-head">
         <div className="manager-head-id">
           <div className="kicker">
-            Manager · {seasonYear}
-            {season.rank ? ` · #${season.rank} in the league` : ''}
+            Manager · {seasonYear} season · {verdict ? verdict.weeks.length : weeks.length} weeks
           </div>
           <h1 className="manager-name">{team.displayName}</h1>
           <p className="page-subtitle">{team.teamName}</p>
@@ -188,66 +106,55 @@ export default function TeamPage({
         />
       </div>
 
-      <RankTiles tiles={tiles} highlightKey={String(team.rosterId)} />
+      {verdict && <VerdictBanner verdict={verdict} />}
+      {verdict && <CaseCards verdict={verdict} />}
+      {verdict && <SeasonStrip verdict={verdict} note={stripNote} />}
 
-      <section className="card">
-        <h2 className="card-title">Season, week by week</h2>
-        <p className="card-note">Weekly score against the league median.</p>
-        <TeamWeeklyChart data={chartData} teamName={team.displayName} />
-      </section>
+      <CarriedByCard carried={carried} name={team.displayName} />
 
-      {mostStarted.size > 0 && (
-        <section>
-          <h2 className="card-title">Most-started players</h2>
-          <p className="card-note">
-            Who {team.displayName} leaned on at each position — points scored in the weeks they
-            were started.
-          </p>
-          <MostStartedPlayers byPosition={mostStarted} />
-        </section>
-      )}
-
-      <section className="card">
-        <h2 className="card-title">Weekly results</h2>
-        <WeeklyResultsTable weeks={season.weeks} slug={team.slug} season={seasonYear} />
-      </section>
-
-      {mine && mine.opponents.length > 0 && (
-        <>
-          {(best || worst) && (
-            <div className="feature-tiles matchup-tiles">
-              {best && (
-                <div className="feature-tile">
-                  <div className="feature-tile-label">😎 Best Matchup</div>
-                  <div className="feature-tile-name">{best.opponent.displayName}</div>
-                  <div className="feature-tile-value">{seriesLine(best.opponent)}</div>
-                  <div className="feature-tile-value">{diffLine(best.differential)}</div>
-                </div>
-              )}
-              {worst && (
-                <div className="feature-tile">
-                  <div className="feature-tile-label">😤 Worst Matchup</div>
-                  <div className="feature-tile-name">{worst.opponent.displayName}</div>
-                  <div className="feature-tile-value">{seriesLine(worst.opponent)}</div>
-                  <div className="feature-tile-value">{diffLine(worst.differential)}</div>
-                </div>
-              )}
+      {mine && mine.opponents.length > 0 && (best || worst) && (
+        <div className="feature-tiles matchup-tiles">
+          {best && (
+            <div className="feature-tile">
+              <div className="feature-tile-label">😎 Owns</div>
+              <div className="feature-tile-name">{best.opponent.displayName}</div>
+              <div className="feature-tile-value">
+                {seriesLine(best.opponent)} · {diffLine(best.differential)} a meeting
+              </div>
             </div>
           )}
-
-          <section className="card">
-            <h2 className="card-title">Head to head</h2>
-            <p className="card-note">
-              {team.displayName}&rsquo;s all-time record against each opponent, across every
-              season — expand a row for every meeting in order.
-            </p>
-            <HeadToHead data={h2h} fixedKey={ownerKey} />
-          </section>
-        </>
+          {worst && (
+            <div className="feature-tile">
+              <div className="feature-tile-label">😤 Owned by</div>
+              <div className="feature-tile-name">{worst.opponent.displayName}</div>
+              <div className="feature-tile-value">
+                {seriesLine(worst.opponent)} · {diffLine(worst.differential)} a meeting
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
-      <section className="card" id="week-detail">
-        <h2 className="card-title">Week {selectedWeek} lineup</h2>
+      <section className="card">
+        <h2 className="card-title">Everything else</h2>
+        <p className="card-note">
+          The full numbers are still here — one tap away instead of six screens down.
+        </p>
+
+        <details className="table-view">
+          <summary>Weekly results — all 12 columns</summary>
+          <WeeklyResultsTable weeks={season.weeks} slug={team.slug} season={seasonYear} />
+        </details>
+
+        {mine && mine.opponents.length > 0 && (
+          <details className="table-view">
+            <summary>Head to head — all-time, every opponent</summary>
+            <HeadToHead data={h2h} fixedKey={ownerKey} />
+          </details>
+        )}
+
+        <details className="table-view" id="week-detail" open={openLineups}>
+          <summary>Week-by-week lineups &amp; optimal lineups</summary>
         <div className="week-picker-row">
           <TeamWeekPicker slug={team.slug} weeks={weeks} selected={selectedWeek} season={seasonYear} />
         </div>
@@ -287,7 +194,10 @@ export default function TeamPage({
         ) : (
           <p className="card-note">No matchup data for this week.</p>
         )}
+        </details>
       </section>
+
+
     </>
   );
 }
