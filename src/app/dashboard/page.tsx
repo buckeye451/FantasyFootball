@@ -129,10 +129,12 @@ export default function DashboardPage({
 
   return (
     <>
-      <h1 className="page-title">{season} dashboard</h1>
-      <p className="page-subtitle">
-        {league.name} · {standings.length} teams
-      </p>
+      <div className="dash-head">
+        <h1 className="page-title">{season} dashboard</h1>
+        <p className="page-subtitle">
+          {league.name} · {standings.length} teams
+        </p>
+      </div>
 
       <WeekRail
         weeks={railWeeks}
