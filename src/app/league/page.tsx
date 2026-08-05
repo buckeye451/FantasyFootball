@@ -4,11 +4,9 @@ import {
   playoffRounds,
   regularSeasonWeeks,
   resolveActiveLeague,
-  seasonHeat,
   seasonTrades,
 } from '@/lib/stats';
 import { HubList, type HubRow } from '@/components/HubList';
-import { SeasonHeat } from '@/components/SeasonHeat';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +34,6 @@ export default function LeaguePage({ searchParams }: { searchParams: { season?: 
   const standings = currentStandings(leagueId);
   const rounds = playoffRounds(leagueId);
   const trades = seasonTrades(leagueId);
-  const heat = seasonHeat(leagueId);
 
   const leader = standings[0];
   const nextRound = rounds.find((r) => r.week != null);
@@ -95,10 +92,6 @@ export default function LeaguePage({ searchParams }: { searchParams: { season?: 
       </p>
 
       <HubList rows={rows} />
-
-      {heat.rows.length > 0 && heat.weeks.length > 0 && (
-        <SeasonHeat weeks={heat.weeks} rows={heat.rows} season={season} />
-      )}
     </>
   );
 }

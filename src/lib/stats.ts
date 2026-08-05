@@ -1751,59 +1751,6 @@ export function weeklyMedians(leagueId: string): Array<{ week: number; median: n
   });
 }
 
-export interface HeatCell {
-  week: number;
-  score: number;
-  /** That week's league median, so a cell can be read without its neighbours. */
-  median: number;
-  managerPct: number;
-  /** Lets a cell link straight to its own box score. */
-  matchupId: number | null;
-}
-
-export interface HeatRow {
-  team: TeamInfo;
-  rank: number;
-  cells: HeatCell[];
-}
-
-/**
- * Every team's regular season as a grid: one row per team, one cell per week.
- *
- * Rows come back in standings order so the matrix and the table above it tell
- * the same story, and each cell carries its own median rather than the caller
- * re-deriving one per column.
- */
-export function seasonHeat(leagueId: string): { weeks: number[]; rows: HeatRow[] } {
-  const weeks = regularSeasonWeeks(leagueId);
-  const medians = new Map(weeklyMedians(leagueId).map((m) => [m.week, m.median]));
-  const byRoster = new Map<number, HeatCell[]>();
-
-  for (const week of weeks) {
-    for (const matchup of weekBreakdown(leagueId, week)) {
-      for (const t of matchup.teams) {
-        const list = byRoster.get(t.team.rosterId) ?? [];
-        list.push({
-          week,
-          score: t.score,
-          median: medians.get(week) ?? 0,
-          managerPct: t.managerScorePct,
-          matchupId: matchup.matchupId,
-        });
-        byRoster.set(t.team.rosterId, list);
-      }
-    }
-  }
-
-  const rows = currentStandings(leagueId).map((s) => ({
-    team: s.team,
-    rank: s.rank,
-    cells: byRoster.get(s.team.rosterId) ?? [],
-  }));
-
-  return { weeks, rows };
-}
-
 // ---------------------------------------------------------------------------
 // Lifetime (all-seasons) stats
 // ---------------------------------------------------------------------------

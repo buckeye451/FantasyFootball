@@ -7,7 +7,6 @@ import {
   playoffRounds,
   regularSeasonWeeks,
   resolveActiveLeague,
-  seasonHeat,
   seasonProgress,
   standingsThroughWeek,
   topSeasonPlayersByPosition,
@@ -24,7 +23,6 @@ import { StandingsTable } from '@/components/StandingsTable';
 import { SeasonProgressTile } from '@/components/SeasonProgress';
 import { WeekRail } from '@/components/WeekRail';
 import { LeadStory, LeadTile } from '@/components/LeadStory';
-import { SeasonHeat } from '@/components/SeasonHeat';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,7 +117,6 @@ export default function DashboardPage({
   const totalRegularWeeks = league.playoffWeekStart != null ? league.playoffWeekStart - 1 : latestWeek;
   const railWeeks = Array.from({ length: Math.max(totalRegularWeeks, latestWeek) }, (_, i) => i + 1);
   const hasPlayoffs = playoffRounds(leagueId).length > 0;
-  const heat = seasonHeat(leagueId);
   // Seconds are noise on a rail that has to fit a phone.
   const syncedLabel = league.lastSyncedAt
     ? new Date(league.lastSyncedAt).toLocaleString(undefined, {
@@ -257,10 +254,6 @@ export default function DashboardPage({
           boxLinkWeek={selectedWeek}
         />
       </section>
-
-      {heat.rows.length > 0 && heat.weeks.length > 0 && (
-        <SeasonHeat weeks={heat.weeks} rows={heat.rows} season={season} />
-      )}
 
       <section>
         <h2 className="card-title">Players of the week</h2>

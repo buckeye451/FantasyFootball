@@ -61,6 +61,10 @@ export function WeekRail({
               key={w}
               className={`week-rail-cell ${state}`}
               href={`/dashboard?season=${season}&week=${w}`}
+              // Each of these is a full dashboard render, and the whole rail
+              // sits on screen at once — prefetching all of them would cost a
+              // dozen of the app's most expensive renders to save one.
+              prefetch={false}
               aria-current={w === selected ? 'page' : undefined}
             >
               {w}
