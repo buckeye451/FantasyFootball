@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import type { WeekScoreBoard } from '@/lib/stats';
 import { useIsMobile } from '@/components/useIsMobile';
+import { SortedScores } from '@/components/SortedScores';
 
 /** Matchup cards shown before the "see all" link kicks in on a phone. */
 const PHONE_CARDS = 4;
@@ -92,32 +93,7 @@ export function WeekScoresCompact({
         </p>
       )}
 
-      <div className="sorted-head">
-        <span className="kicker">All {board.sorted.length} scores, sorted</span>
-        <span className="sorted-sub">highest to lowest, regardless of who played whom</span>
-      </div>
-
-      <div className="card sorted-card">
-        <div className="sorted-list">
-          {board.sorted.map((r) => (
-            <div key={r.team.rosterId} className="sorted-row">
-              <Link className="sorted-name" href={`/team/${r.team.slug}${q}`} prefetch={false}>
-                {r.team.displayName}
-              </Link>
-              <span className="sorted-track">
-                <span
-                  className={`sorted-bar${r.isTop ? ' top' : r.won ? ' won' : ' lost'}`}
-                  style={{ width: `${(r.share * 100).toFixed(1)}%` }}
-                />
-              </span>
-              <span className={`figure sorted-score${r.isTop ? ' top' : r.won ? '' : ' lost'}`}>
-                {r.score.toFixed(1)}
-              </span>
-              <span className={`sorted-wl ${r.won ? 'w' : 'l'}`}>{r.won ? 'W' : 'L'}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <SortedScores rows={board.sorted} season={season} />
     </>
   );
 }

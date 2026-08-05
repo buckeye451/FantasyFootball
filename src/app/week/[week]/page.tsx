@@ -10,6 +10,7 @@ import type { BoxScore } from '@/lib/stats';
 import { matchupKey } from '@/components/MatchupBreakdown';
 import { WeekScoreboard } from '@/components/WeekScoreboard';
 import { WeekRail } from '@/components/WeekRail';
+import { SortedScores } from '@/components/SortedScores';
 import { ScrollToHash } from '@/components/ScrollToHash';
 
 export const dynamic = 'force-dynamic';
@@ -97,6 +98,8 @@ export default function WeekPage({
         boxScores={boxScores}
         openBox={searchParams.box}
       />
+
+      <SortedScores rows={board.sorted} season={league.season} />
     </>
   );
 }

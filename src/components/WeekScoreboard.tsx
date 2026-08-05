@@ -21,22 +21,32 @@ export function WeekScoreboard({
   /** Matchup key to render already expanded, from `?box=` on the URL. */
   openBox?: string;
 }) {
+  const anyBlw = board.cards.some((c) => c.loser.bestLineupWins === 'yes');
   return (
-    <div className="scoreboard">
-      {board.cards.map((c, i) => {
-        const key = c.matchupId != null ? String(c.matchupId) : `solo-${i}`;
-        return (
-          <ScoreCard
-            key={key}
-            card={c}
-            season={season}
-            matchKey={key}
-            box={boxScores.get(key) ?? null}
-            openBox={openBox === key}
-          />
-        );
-      })}
-    </div>
+    <>
+      <div className="scoreboard">
+        {board.cards.map((c, i) => {
+          const key = c.matchupId != null ? String(c.matchupId) : `solo-${i}`;
+          return (
+            <ScoreCard
+              key={key}
+              card={c}
+              season={season}
+              matchKey={key}
+              box={boxScores.get(key) ?? null}
+              openBox={openBox === key}
+            />
+          );
+        })}
+      </div>
+
+      {/* A bare asterisk means nothing on a phone, where there's no hover. */}
+      {anyBlw && (
+        <p className="score-legend">
+          <span className="score-blw">*</span> would have won with their best-possible lineup
+        </p>
+      )}
+    </>
   );
 }
 
@@ -82,6 +92,7 @@ function ScoreCard({
           won={false}
           q={q}
           highlight={card.loser.bestLineupWins === 'yes'}
+          blw={card.loser.bestLineupWins === 'yes'}
         />
       </div>
 
@@ -143,12 +154,15 @@ function SideRow({
   won,
   q,
   highlight,
+  blw,
 }: {
   team: TeamWeekStat;
   note: string;
   won: boolean;
   q: string;
   highlight?: boolean;
+  /** Lost, but their best-possible lineup would have won it. */
+  blw?: boolean;
 }) {
   return (
     <div className={`score-side${won ? ' won' : ' lost'}`}>
@@ -159,6 +173,15 @@ function SideRow({
             {team.team.displayName}
           </Link>
           <span className={`badge ${won ? 'w' : 'l'}`}>{won ? 'W' : 'L'}</span>
+          {blw && (
+            <span
+              className="score-blw"
+              title="Would have won with their best-possible lineup"
+              aria-label="would have won with their best-possible lineup"
+            >
+              *
+            </span>
+          )}
         </span>
         <span className={`score-side-note${highlight ? ' flagged' : ''}`}>{note}</span>
       </span>
