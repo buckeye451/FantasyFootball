@@ -4680,3 +4680,270 @@ tr.playoff-cut td {
     font-size: 10px;
   }
 }
+
+/* ---------- weekly scores: head, tiles, scoreboard ---------- */
+.week-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.week-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 4px 0 0;
+}
+
+.week-head-avg {
+  text-align: right;
+  flex: none;
+}
+
+.week-avg-value {
+  font-size: 19px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.week-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.week-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  min-width: 0;
+}
+
+.week-tile-value {
+  margin-top: 3px;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.week-tile-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scoreboard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* The card owns its own padding per band, so the disclosures can run edge to
+   edge with a rule above them. */
+.score-match {
+  padding: 0;
+  overflow: hidden;
+}
+
+.score-match-head {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 15px 15px 12px;
+}
+
+.score-side {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.score-side-bar {
+  flex: none;
+  width: 3px;
+  height: 30px;
+  border-radius: 2px;
+  background: var(--baseline);
+}
+
+.score-side.won .score-side-bar {
+  background: var(--series-1);
+}
+
+.score-side-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.score-side-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 17px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.score-side-name a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score-side-name a:hover {
+  text-decoration: underline;
+}
+
+.score-side.lost .score-side-name {
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.score-side-note {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* A note that says something notable happened gets the accent. */
+.score-side-note.flagged {
+  color: var(--series-1);
+}
+
+.score-side-score {
+  flex: none;
+  font-size: 28px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-side.lost .score-side-score {
+  color: var(--muted);
+}
+
+.score-fold > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 15px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--series-1);
+  cursor: pointer;
+  list-style: none;
+}
+
+.score-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.score-fold > summary:hover {
+  background: var(--accent-wash);
+}
+
+.score-fold > summary:focus-visible {
+  outline: 2px solid var(--series-1);
+  outline-offset: -2px;
+}
+
+.score-caret {
+  display: inline-block;
+  transition: transform 0.18s ease;
+}
+
+.score-fold[open] > summary .score-caret {
+  transform: rotate(90deg);
+}
+
+.score-fold-body {
+  padding: 0 15px 15px;
+}
+
+.adv-grid {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.adv-grid > * {
+  padding: 7px 0;
+}
+
+.adv-grid > .num {
+  padding-left: 12px;
+  text-align: right;
+}
+
+/* Every cell of a data row gets the rule, so it reads as one line. */
+.adv-grid > .adv-team,
+.adv-grid > .adv-team ~ .num {
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.adv-team {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adv-note {
+  margin: 9px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.adv-note-flag {
+  color: var(--series-1);
+}
+
+.adv-note-key {
+  color: var(--ink-2);
+}
+
+@media (max-width: 640px) {
+  .week-title {
+    font-size: 34px;
+  }
+
+  .week-tiles {
+    gap: 7px;
+  }
+
+  .week-tile {
+    padding: 8px 10px;
+  }
+
+  .week-tile-value {
+    font-size: 15px;
+  }
+
+  .week-tile-sub {
+    font-size: 10.5px;
+  }
+
+  .score-side-name {
+    font-size: 15.5px;
+  }
+
+  .score-side-score {
+    font-size: 24px;
+  }
+}

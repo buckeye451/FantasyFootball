@@ -1895,11 +1895,20 @@ export interface WeekMatchupCard {
   margin: number;
   isHigh: boolean;
   isClosest: boolean;
+  /** Widest margin of the week. */
+  isBlowout: boolean;
+  /** The loser posted the week's lowest score. */
+  loserLowest: boolean;
 }
 
 export interface WeekScoreBoard {
   cards: WeekMatchupCard[];
   sorted: WeekScoreRow[];
+  /** Mean score across every team that played — the week's baseline. */
+  leagueAvg: number;
+  high: { team: TeamInfo; score: number } | null;
+  closest: { pair: string; margin: number } | null;
+  blowout: { pair: string; margin: number } | null;
 }
 
 /**
@@ -1925,20 +1934,45 @@ export function weekScoreBoard(leagueId: string, week: number): WeekScoreBoard {
         margin: round2(winner.score - loser.score),
         isHigh: false,
         isClosest: false,
+        isBlowout: false,
+        loserLowest: false,
       };
     })
     .sort((x, y) => y.winner.score - x.winner.score);
 
-  if (cards.length > 0) {
-    const high = cards.reduce((m, c) => (c.winner.score > m.winner.score ? c : m), cards[0]);
-    high.isHigh = true;
-    const closest = cards.reduce((m, c) => (c.margin < m.margin ? c : m), cards[0]);
-    // Don't double-badge: the high-score card keeps its own label.
-    if (closest !== high) closest.isClosest = true;
-  }
-
   const all = breakdowns.flatMap((m) => m.teams);
   const top = all.reduce((max, t) => Math.max(max, t.score), 0) || 1;
+  const low = all.length ? all.reduce((min, t) => Math.min(min, t.score), Infinity) : 0;
+
+  let high: WeekScoreBoard['high'] = null;
+  let closest: WeekScoreBoard['closest'] = null;
+  let blowout: WeekScoreBoard['blowout'] = null;
+
+  if (cards.length > 0) {
+    const hi = cards.reduce((m, c) => (c.winner.score > m.winner.score ? c : m), cards[0]);
+    hi.isHigh = true;
+    high = { team: hi.winner.team, score: hi.winner.score };
+
+    const cl = cards.reduce((m, c) => (c.margin < m.margin ? c : m), cards[0]);
+    // High score and closest game are different claims about the same card, so
+    // only suppress the one that would read as a contradiction.
+    if (cl !== hi) cl.isClosest = true;
+    closest = {
+      pair: `${cl.winner.team.displayName} / ${cl.loser.team.displayName}`,
+      margin: cl.margin,
+    };
+
+    const bl = cards.reduce((m, c) => (c.margin > m.margin ? c : m), cards[0]);
+    // Widest and narrowest can only collide when there's a single matchup.
+    if (bl !== cl) bl.isBlowout = true;
+    blowout = {
+      pair: `${bl.winner.team.displayName} / ${bl.loser.team.displayName}`,
+      margin: bl.margin,
+    };
+
+    for (const c of cards) c.loserLowest = c.loser.score <= low;
+  }
+
   const sorted = [...all]
     .sort((a, b) => b.score - a.score)
     .map((t) => ({
@@ -1949,7 +1983,11 @@ export function weekScoreBoard(leagueId: string, week: number): WeekScoreBoard {
       isTop: t.score >= top,
     }));
 
-  return { cards, sorted };
+  const leagueAvg = all.length
+    ? round2(all.reduce((sum, t) => sum + t.score, 0) / all.length)
+    : 0;
+
+  return { cards, sorted, leagueAvg, high, closest, blowout };
 }
 
 // ---------------------------------------------------------------------------

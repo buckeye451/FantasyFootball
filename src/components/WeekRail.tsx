@@ -15,6 +15,7 @@ export function WeekRail({
   selected,
   playedThrough,
   season,
+  linkTo = 'dashboard',
   pct,
   syncedLabel,
   hasPlayoffs,
@@ -24,6 +25,9 @@ export function WeekRail({
   /** Last week with scored games — weeks past this read as not yet played. */
   playedThrough: number;
   season: string;
+  /** Where a week cell points. The dashboard rewinds itself with ?week=; the
+      week page is its own route. */
+  linkTo?: 'dashboard' | 'week';
   pct?: number;
   /** Preformatted on the server — formatting a date here would render with the
       server's locale first and the browser's on hydration, which mismatches. */
@@ -60,7 +64,11 @@ export function WeekRail({
             <Link
               key={w}
               className={`week-rail-cell ${state}`}
-              href={`/dashboard?season=${season}&week=${w}`}
+              href={
+                linkTo === 'week'
+                  ? `/week/${w}?season=${season}`
+                  : `/dashboard?season=${season}&week=${w}`
+              }
               // Each of these is a full dashboard render, and the whole rail
               // sits on screen at once — prefetching all of them would cost a
               // dozen of the app's most expensive renders to save one.
