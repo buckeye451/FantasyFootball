@@ -94,7 +94,8 @@ export default function DashboardPage({
   const progress = seasonProgress(leagueId);
   const weekMatchups = weekBreakdown(leagueId, selectedWeek);
   const scoreBoard = weekScoreBoard(leagueId, selectedWeek);
-  const board = seedBoard(leagueId);
+  // Rewinds with the week selector, same as the full standings table.
+  const board = seedBoard(leagueId, selectedWeek);
   const weekTeams = weekMatchups.flatMap((m) => m.teams);
   const highestScoring = weekTeams.reduce<(typeof weekTeams)[number] | null>(
     (best, t) => (best == null || t.score > best.score ? t : best),

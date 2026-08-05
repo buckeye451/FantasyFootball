@@ -59,7 +59,18 @@ export function WeekScoresCompact({
                 <span className="figure score-value">{c.winner.score.toFixed(1)}</span>
               </span>
               <span className="score-row lose">
-                <span className="score-team">{c.loser.team.displayName}</span>
+                <span className="score-team">
+                  {c.loser.team.displayName}
+                  {/* Lost, but their best-possible lineup would have won it. */}
+                  {c.loser.bestLineupWins === 'yes' && (
+                    <span
+                      className="score-blw"
+                      title="Would have won with their best-possible lineup"
+                    >
+                      *
+                    </span>
+                  )}
+                </span>
                 <span className="figure score-value">{c.loser.score.toFixed(1)}</span>
               </span>
               <span className="score-margin">by {c.margin.toFixed(1)}</span>
@@ -72,6 +83,13 @@ export function WeekScoresCompact({
         <button type="button" className="score-more" onClick={() => setShowAll(true)}>
           See all {board.cards.length} matchups →
         </button>
+      )}
+
+      {/* A bare asterisk means nothing on a phone, where there's no hover. */}
+      {cards.some((c) => c.loser.bestLineupWins === 'yes') && (
+        <p className="score-legend">
+          <span className="score-blw">*</span> would have won with their best-possible lineup
+        </p>
       )}
 
       <div className="sorted-head">
@@ -97,17 +115,6 @@ export function WeekScoresCompact({
               </span>
               <span className={`sorted-wl ${r.won ? 'w' : 'l'}`}>{r.won ? 'W' : 'L'}</span>
             </div>
-          ))}
-        </div>
-
-        <div className="sorted-footer">
-          {board.cards.map((c) => (
-            <span key={`${c.winner.team.rosterId}-f`} className="sorted-result">
-              {c.winner.team.displayName} def. {c.loser.team.displayName}{' '}
-              <span className={`sorted-by${c.isClosest ? ' close' : ''}`}>
-                by {c.margin.toFixed(1)}
-              </span>
-            </span>
           ))}
         </div>
       </div>

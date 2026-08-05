@@ -1791,8 +1791,14 @@ export interface SeedBoard {
  * mathematically safe on tiebreaks before this says so), which is the safer
  * direction to be wrong in.
  */
-export function seedBoard(leagueId: string, spots = PLAYOFF_SPOTS): SeedBoard {
-  const standings = currentStandings(leagueId);
+export function seedBoard(
+  leagueId: string,
+  /** Rewind the board to "as of" this week, matching the dashboard's selector. */
+  throughWeek?: number,
+  spots = PLAYOFF_SPOTS
+): SeedBoard {
+  const standings =
+    throughWeek != null ? standingsThroughWeek(leagueId, throughWeek) : currentStandings(leagueId);
   const league = getLeagueInfo(leagueId);
   const totalWeeks =
     league?.playoffWeekStart != null
