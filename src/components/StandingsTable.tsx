@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { Standing } from '@/lib/types';
+import type { SeedBoard } from '@/lib/stats';
 import { managerClass, performanceClass } from '@/lib/thresholds';
 import { useStickyColumns } from '@/components/useStickyColumns';
 import { useCompactFull } from '@/components/SegTabs';
+import { StandingsCompact } from '@/components/StandingsCompact';
 
 /** Teams that make the playoffs — the red line sits under this place. */
 const PLAYOFF_SPOTS = 6;
@@ -79,12 +81,15 @@ export function StandingsTable({
   season,
   champion,
   throughWeek,
+  board,
 }: {
   standings: Standing[];
   season?: string;
   champion?: string | null;
   /** Latest week reflected in these figures, shown in the section note. */
   throughWeek?: number;
+  /** Seeded playoff picture — Compact renders this instead of a table. */
+  board?: SeedBoard;
 }) {
   const q = season ? `?season=${season}` : '';
   const champKey = champion?.toLowerCase() ?? null;
@@ -127,17 +132,33 @@ export function StandingsTable({
     </th>
   );
 
+  const head = (
+    <div className="section-head">
+      {control}
+      <p className="section-note">
+        {compact && board
+          ? board.gamesRemaining > 0
+            ? `${board.gamesRemaining} week${board.gamesRemaining === 1 ? '' : 's'} left · top ${board.playoffSpots} make the playoffs`
+            : `Final · top ${board.playoffSpots} made the playoffs`
+          : `${throughWeek != null ? `Through week ${throughWeek} · ` : ''}click a column to sort · arrows show movement since the prior week`}
+      </p>
+    </div>
+  );
+
+  // Compact drops the table entirely for the seed board — the question it
+  // answers is "am I in?", which a narrow table answers badly.
+  if (compact && board) {
+    return (
+      <>
+        {head}
+        <StandingsCompact board={board} season={season} />
+      </>
+    );
+  }
+
   return (
     <>
-      <div className="section-head">
-        {control}
-        <p className="section-note">
-          {throughWeek != null && `Through week ${throughWeek} · `}
-          {compact
-            ? 'rank, record and the two headline rates · Full adds the other eight columns'
-            : 'click a column to sort · arrows show movement since the prior week'}
-        </p>
-      </div>
+      {head}
       <div className="table-wrap">
         <table className="sticky-table" ref={tableRef}>
           <thead>

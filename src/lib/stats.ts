@@ -1751,6 +1751,201 @@ export function weeklyMedians(leagueId: string): Array<{ week: number; median: n
   });
 }
 
+/** Teams that make the playoffs. */
+export const PLAYOFF_SPOTS = 6;
+/** Top seeds that get a first-round bye. */
+const BYE_SEEDS = 2;
+
+export type SeedState =
+  | 'bye-clinched'
+  | 'clinched'
+  | 'must-win'
+  | 'bubble'
+  | 'in-hunt'
+  | 'eliminated'
+  | 'toilet-bowl';
+
+export interface SeedRow {
+  standing: Standing;
+  rank: number;
+  state: SeedState;
+  /** Short chip under the record, e.g. "clinched", "must win wk 15". */
+  chip: string;
+  /** One line under the team name explaining where they sit. */
+  note: string;
+}
+
+export interface SeedBoard {
+  rows: SeedRow[];
+  playoffSpots: number;
+  gamesRemaining: number;
+}
+
+/**
+ * The playoff race as a set of seeded rows: who is in, who is out, and the one
+ * fact that explains each position.
+ *
+ * Clinch and elimination both use deliberately conservative tests — a team is
+ * only called clinched when it cannot be caught even if it loses out and the
+ * chasing team wins out. That can under-call late in a season (a team may be
+ * mathematically safe on tiebreaks before this says so), which is the safer
+ * direction to be wrong in.
+ */
+export function seedBoard(leagueId: string, spots = PLAYOFF_SPOTS): SeedBoard {
+  const standings = currentStandings(leagueId);
+  const league = getLeagueInfo(leagueId);
+  const totalWeeks =
+    league?.playoffWeekStart != null
+      ? league.playoffWeekStart - 1
+      : regularSeasonWeeks(leagueId).length;
+
+  const played = standings[0] ? standings[0].wins + standings[0].losses + standings[0].ties : 0;
+  const gamesRemaining = Math.max(0, totalWeeks - played);
+  const nextWeek = played + 1;
+
+  // Wins of the last team in and the first team out — the two bars a team has
+  // to clear or fall below.
+  const lastIn = standings[spots - 1];
+  const firstOut = standings[spots];
+
+  const rows = standings.map((s): SeedRow => {
+    const rank = s.rank;
+    const inPlayoffs = rank <= spots;
+    const isLast = rank === standings.length;
+
+    const clinched =
+      gamesRemaining === 0
+        ? inPlayoffs
+        : firstOut != null && s.wins > firstOut.wins + gamesRemaining;
+    const eliminated =
+      gamesRemaining === 0
+        ? !inPlayoffs
+        : lastIn != null && s.wins + gamesRemaining < lastIn.wins;
+
+    let state: SeedState;
+    if (clinched && rank <= BYE_SEEDS) state = 'bye-clinched';
+    else if (clinched) state = 'clinched';
+    else if (isLast && eliminated) state = 'toilet-bowl';
+    else if (eliminated) state = 'eliminated';
+    else if (rank === spots) state = gamesRemaining > 0 ? 'must-win' : 'clinched';
+    else if (inPlayoffs) state = 'bubble';
+    else state = 'in-hunt';
+
+    const chip =
+      state === 'bye-clinched'
+        ? 'bye clinched'
+        : state === 'clinched'
+          ? 'clinched'
+          : state === 'must-win'
+            ? `must win wk ${nextWeek}`
+            : state === 'toilet-bowl'
+              ? 'toilet bowl'
+              : state === 'eliminated'
+                ? 'eliminated'
+                : state === 'in-hunt' && lastIn != null
+                  ? gamesBack(s, lastIn)
+                  : '';
+
+    // The note carries the one fact the removed columns used to supply.
+    let note = `${s.avgPoints.toFixed(1)} per game · ${s.managerPerformance.toFixed(1)}% managed`;
+    if (rank === spots && firstOut != null) {
+      const gap = s.wins - firstOut.wins;
+      note =
+        gap > 0
+          ? `holds the last spot by ${gap} game${gap === 1 ? '' : 's'}`
+          : 'holds the last spot on a tiebreak';
+    } else if (rank === BYE_SEEDS + 1 && standings[BYE_SEEDS - 1] != null) {
+      // The team chasing the last bye — not one already holding it.
+      const gap = standings[BYE_SEEDS - 1].wins - s.wins;
+      if (gap > 0) note = `${gap} back of the bye`;
+    }
+
+    return { standing: s, rank, state, chip, note };
+  });
+
+  return { rows, playoffSpots: spots, gamesRemaining };
+}
+
+/** "2 games out" / "1 game out" against the last playoff seed. */
+function gamesBack(s: Standing, lastIn: Standing): string {
+  const back = lastIn.wins - s.wins;
+  if (back <= 0) return 'on the bubble';
+  return `${back} game${back === 1 ? '' : 's'} out`;
+}
+
+export interface WeekScoreRow {
+  team: TeamInfo;
+  score: number;
+  won: boolean;
+  /** Share of the week's top score, 0–1, for the bar width. */
+  share: number;
+  isTop: boolean;
+}
+
+export interface WeekMatchupCard {
+  matchupId: number | null;
+  winner: TeamWeekStat;
+  loser: TeamWeekStat;
+  margin: number;
+  isHigh: boolean;
+  isClosest: boolean;
+}
+
+export interface WeekScoreBoard {
+  cards: WeekMatchupCard[];
+  sorted: WeekScoreRow[];
+}
+
+/**
+ * The week reduced to its storylines: one card per matchup with the high score
+ * and closest game flagged, plus every score in one sorted list so a
+ * high-scoring loss is visible without opening a box score.
+ */
+export function weekScoreBoard(leagueId: string, week: number): WeekScoreBoard {
+  const breakdowns = weekBreakdown(leagueId, week);
+
+  const cards = breakdowns
+    .filter((m) => m.teams.length === 2)
+    .map((m) => {
+      // A tie has no winner; show the higher-listed team first and let the
+      // margin fall out as 0 rather than inventing a result.
+      const [a, b] = m.teams;
+      const winner = a.score >= b.score ? a : b;
+      const loser = winner === a ? b : a;
+      return {
+        matchupId: m.matchupId,
+        winner,
+        loser,
+        margin: round2(winner.score - loser.score),
+        isHigh: false,
+        isClosest: false,
+      };
+    })
+    .sort((x, y) => y.winner.score - x.winner.score);
+
+  if (cards.length > 0) {
+    const high = cards.reduce((m, c) => (c.winner.score > m.winner.score ? c : m), cards[0]);
+    high.isHigh = true;
+    const closest = cards.reduce((m, c) => (c.margin < m.margin ? c : m), cards[0]);
+    // Don't double-badge: the high-score card keeps its own label.
+    if (closest !== high) closest.isClosest = true;
+  }
+
+  const all = breakdowns.flatMap((m) => m.teams);
+  const top = all.reduce((max, t) => Math.max(max, t.score), 0) || 1;
+  const sorted = [...all]
+    .sort((a, b) => b.score - a.score)
+    .map((t) => ({
+      team: t.team,
+      score: t.score,
+      won: t.result === 'W',
+      share: t.score / top,
+      isTop: t.score >= top,
+    }));
+
+  return { cards, sorted };
+}
+
 // ---------------------------------------------------------------------------
 // Lifetime (all-seasons) stats
 // ---------------------------------------------------------------------------

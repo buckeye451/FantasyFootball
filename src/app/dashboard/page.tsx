@@ -8,21 +8,23 @@ import {
   regularSeasonWeeks,
   resolveActiveLeague,
   seasonProgress,
+  seedBoard,
   standingsThroughWeek,
   topSeasonPlayersByPosition,
   weekBreakdown,
   weeklyRankSeries,
+  weekScoreBoard,
   weeklyScoreSeries,
 } from '@/lib/stats';
 import Link from 'next/link';
 import { LeagueChartsBoard } from '@/components/FocusCharts';
-import { MatchupBreakdownList } from '@/components/MatchupBreakdown';
 import { latestRecap } from '@/lib/recaps';
 import { PlayersOfWeek, TopSeasonPlayers } from '@/components/PlayerCards';
 import { StandingsTable } from '@/components/StandingsTable';
 import { SeasonProgressTile } from '@/components/SeasonProgress';
 import { WeekRail } from '@/components/WeekRail';
 import { LeadStory, LeadTile } from '@/components/LeadStory';
+import { WeekScoresSection } from '@/components/WeekScoresSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,6 +93,8 @@ export default function DashboardPage({
   // Real calendar progress, so it doesn't rewind with the week selector above.
   const progress = seasonProgress(leagueId);
   const weekMatchups = weekBreakdown(leagueId, selectedWeek);
+  const scoreBoard = weekScoreBoard(leagueId, selectedWeek);
+  const board = seedBoard(leagueId);
   const weekTeams = weekMatchups.flatMap((m) => m.teams);
   const highestScoring = weekTeams.reduce<(typeof weekTeams)[number] | null>(
     (best, t) => (best == null || t.score > best.score ? t : best),
@@ -239,23 +243,16 @@ export default function DashboardPage({
           season={season}
           champion={championOf(season)}
           throughWeek={selectedWeek}
+          board={board}
         />
       </section>
 
-      <section>
-        <h2 className="card-title">Week {selectedWeek} scores</h2>
-        <p className="card-note">
-          Every matchup that week. ROL % = share of the rest of the league this score beats · Perf %
-          = score ÷ projected · Manager % = score ÷ best-possible lineup · BLW? = would the optimal
-          lineup have won.
-        </p>
-        <MatchupBreakdownList
-          breakdowns={weekMatchups}
-          season={season}
-          compact
-          boxLinkWeek={selectedWeek}
-        />
-      </section>
+      <WeekScoresSection
+        week={selectedWeek}
+        season={season}
+        breakdowns={weekMatchups}
+        board={scoreBoard}
+      />
 
       <section>
         <h2 className="card-title">Players of the week</h2>
