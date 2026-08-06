@@ -19,6 +19,7 @@ import {
 import Link from 'next/link';
 import { LeagueChartsBoard } from '@/components/FocusCharts';
 import { latestRecap } from '@/lib/recaps';
+import { managerClass, performanceClass } from '@/lib/thresholds';
 import { PlayersOfWeek, TopSeasonPlayers } from '@/components/PlayerCards';
 import { StandingsTable } from '@/components/StandingsTable';
 import { SeasonProgressTile } from '@/components/SeasonProgress';
@@ -169,8 +170,13 @@ export default function DashboardPage({
                   highestScoring.performancePct != null
                     ? `${highestScoring.performancePct.toFixed(1)}%`
                     : '—',
+                tone: performanceClass(highestScoring.performancePct),
               },
-              { label: 'Manager', value: `${highestScoring.managerScorePct.toFixed(1)}%` },
+              {
+                label: 'Manager',
+                value: `${highestScoring.managerScorePct.toFixed(1)}%`,
+                tone: managerClass(highestScoring.managerScorePct),
+              },
               {
                 label: 'Left on bench',
                 value: (highestScoring.optimal - highestScoring.score).toFixed(1),

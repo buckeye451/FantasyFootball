@@ -3,6 +3,9 @@ import Link from 'next/link';
 export interface LeadStoryStat {
   label: string;
   value: string;
+  /** Threshold pill class (val-good / val-warn / val-bad), where the metric
+      has the same bands the tables use. */
+  tone?: string;
 }
 
 /**
@@ -37,7 +40,9 @@ export function LeadStory({
         {stats.map((s) => (
           <div key={s.label} className="lead-story-stat">
             <div className="kicker">{s.label}</div>
-            <div className="lead-story-stat-value">{s.value}</div>
+            <div className="lead-story-stat-value">
+              {s.tone ? <span className={s.tone}>{s.value}</span> : s.value}
+            </div>
           </div>
         ))}
       </div>

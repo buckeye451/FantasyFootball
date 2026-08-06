@@ -3919,16 +3919,24 @@ tr.playoff-cut td {
 
 @media (max-width: 640px) {
   .lead-story {
-    padding: 20px 18px;
+    padding: 17px 16px 15px;
     border-radius: 12px;
   }
 
   .lead-story-figure {
-    font-size: 64px;
+    font-size: 58px;
+    margin: 4px 0 2px;
   }
 
   .lead-story-headline {
-    font-size: 19px;
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .lead-story-blurb {
+    margin-top: 5px;
+    font-size: 12.5px;
+    line-height: 1.4;
   }
 
   .lead-story-stats {
@@ -3937,8 +3945,13 @@ tr.playoff-cut td {
        keeps the values at full size. */
     display: grid;
     grid-template-columns: 1fr 1fr;
-    row-gap: 14px;
+    row-gap: 11px;
     column-gap: 12px;
+    margin-top: 16px;
+  }
+
+  .lead-story-stat-value {
+    font-size: 19px;
   }
 }
 
@@ -5203,4 +5216,29 @@ tr.playoff-cut td {
    rather than riding on the leader outline. */
 .seed-card.champion {
   background-image: linear-gradient(var(--champ-wash), var(--champ-wash));
+}
+
+/* The lead story's gradient is dark in both themes, so its threshold pills
+   can't follow the theme tokens — light mode's --val-*-fg are dark inks meant
+   for pale cards and would vanish here. Pin them to the light-on-dark set. */
+.lead-story .val-good,
+.lead-story .val-warn,
+.lead-story .val-bad {
+  padding: 0 5px;
+  border-radius: 5px;
+}
+
+.lead-story .val-good {
+  color: #6ff0a4;
+  background: rgba(72, 209, 122, 0.2);
+}
+
+.lead-story .val-warn {
+  color: #ffb877;
+  background: rgba(245, 160, 78, 0.2);
+}
+
+.lead-story .val-bad {
+  color: #ff8f8f;
+  background: rgba(255, 107, 107, 0.2);
 }
