@@ -2847,6 +2847,7 @@ export interface DraftRankRow {
   drafts: number; // how many drafts this covers (1 per season)
   worstEarly: DraftRankPick | null; // lowest-value pick among their first 7
   bestPick: DraftRankPick | null; // highest-value pick
+  steals: number; // picks that finished above positional replacement
 }
 
 /** How many of a manager's own selections count as "early". */
@@ -2883,11 +2884,13 @@ function buildDraftRankings(
       .filter((e) => e.pick.vsReplacement != null);
 
     let score = 0;
+    let steals = 0;
     let worstEarly: DraftRankPick | null = null;
     let bestPick: DraftRankPick | null = null;
     for (const e of own) {
       const value = round2(e.pick.vsReplacement!);
       score += value;
+      if (value > 0) steals++;
       const entry: DraftRankPick = {
         name: e.pick.name,
         position: e.pick.position,
@@ -2907,6 +2910,7 @@ function buildDraftRankings(
       drafts: 1,
       worstEarly,
       bestPick,
+      steals,
     };
   });
   return rows.sort((a, b) => b.score - a.score);
@@ -2934,11 +2938,13 @@ export function lifetimeDraftRankings(): DraftRankRow[] {
           drafts: 0,
           worstEarly: null,
           bestPick: null,
+          steals: 0,
         };
         agg.set(key, cur);
       }
       cur.score = round2(cur.score + row.score);
       cur.drafts += 1;
+      cur.steals += row.steals;
       if (row.worstEarly && (!cur.worstEarly || row.worstEarly.value < cur.worstEarly.value)) {
         cur.worstEarly = row.worstEarly;
       }

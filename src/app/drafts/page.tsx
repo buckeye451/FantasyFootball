@@ -1,5 +1,10 @@
-import { draftBoard, getSeasons, resolveActiveLeague } from '@/lib/stats';
-import { DraftBoardView } from '@/components/DraftBoardView';
+import {
+  draftBoard,
+  getSeasons,
+  lifetimeDraftRankings,
+  resolveActiveLeague,
+} from '@/lib/stats';
+import { DraftsView } from '@/components/DraftsView';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,8 +40,7 @@ export default function DraftsPage({ searchParams }: { searchParams: { season?: 
 
   return (
     <>
-      <h1 className="page-title">{league.name} draft</h1>
-      <DraftBoardView board={board} />
+      <DraftsView board={board} allTime={lifetimeDraftRankings()} season={league.season} />
     </>
   );
 }

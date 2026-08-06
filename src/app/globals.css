@@ -5242,3 +5242,260 @@ tr.playoff-cut td {
   color: #ff8f8f;
   background: rgba(255, 107, 107, 0.2);
 }
+
+/* ---------- drafts: steals & busts ---------- */
+.drafts-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.drafts-head .page-title {
+  margin: 0;
+}
+
+.drafts-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.drafts-card-head .card-title {
+  margin: 0;
+}
+
+.rail-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.rail-title {
+  font-size: 18px;
+}
+
+.rail-title.tone-up {
+  color: var(--arrow-up);
+}
+
+.rail-title.tone-down {
+  color: var(--arrow-down);
+}
+
+.rail-hint {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+/* Negative side margins let the cards bleed to the screen edge while the
+   first one still lines up with the page gutter. */
+.pick-rail {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 0 20px 6px;
+  margin: 0 -20px 20px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.pick-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.pick-card {
+  flex: none;
+  width: 206px;
+  scroll-snap-align: start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 13px;
+}
+
+.pick-card.tone-down {
+  border-color: var(--critical-wash);
+}
+
+.pick-card-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pick-card-meta {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pick-card-name {
+  font-size: 17px;
+  font-weight: 700;
+  margin-top: 3px;
+  line-height: 1.2;
+}
+
+.pick-card-move {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.pick-card-from {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.pick-card-arrow.tone-up,
+.pick-card-to.tone-up {
+  color: var(--arrow-up);
+}
+
+.pick-card-arrow.tone-down,
+.pick-card-to.tone-down {
+  color: var(--arrow-down);
+}
+
+.pick-card-to {
+  font-size: 24px;
+}
+
+.pick-card-foot {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--grid);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pick-card-pts {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* ---------- drafts: who won ---------- */
+.draft-verdict {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin: 4px 0 14px;
+}
+
+.draft-verdict-best {
+  border-color: var(--focus-ring);
+}
+
+.draft-verdict-name {
+  font-family: var(--font-display);
+}
+
+/* ---------- drafts: grade bars ---------- */
+.grade-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.grade-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+}
+
+.grade-rank {
+  width: 16px;
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.grade-name {
+  width: 56px;
+  flex: none;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grade-track {
+  flex: 1;
+  height: 8px;
+  background: var(--progress-empty);
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Negative scores draw from the same left edge in the down colour — they're
+   the outliers, which is the point of the chart. */
+.grade-fill {
+  display: block;
+  height: 100%;
+}
+
+.grade-fill.up {
+  background: var(--arrow-up);
+}
+
+.grade-fill.down {
+  background: var(--arrow-down);
+}
+
+.grade-score {
+  width: 60px;
+  flex: none;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+/* ---------- drafts: collapsible rows ---------- */
+.draft-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.draft-hub {
+  width: 100%;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  text-align: left;
+}
+
+.draft-panel {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--sunken);
+  padding: 10px 8px 8px;
+}
+
+.draft-mgr-select {
+  padding-left: 4px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+  .pick-rail {
+    padding: 0 12px 6px;
+    margin: 0 -12px 20px;
+  }
+}
