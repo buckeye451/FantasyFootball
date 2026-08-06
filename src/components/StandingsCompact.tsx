@@ -6,8 +6,18 @@ import type { SeedBoard, SeedRow } from '@/lib/stats';
  * groups answering "am I in the playoffs?" at a glance, with one line per team
  * explaining why they sit where they do.
  */
-export function StandingsCompact({ board, season }: { board: SeedBoard; season?: string }) {
+export function StandingsCompact({
+  board,
+  season,
+  champion,
+}: {
+  board: SeedBoard;
+  season?: string;
+  /** Display name of the season's champion, if the title has been decided. */
+  champion?: string | null;
+}) {
   const q = season ? `?season=${season}` : '';
+  const champKey = champion?.toLowerCase() ?? null;
   const inPlayoffs = board.rows.filter((r) => r.rank <= board.playoffSpots);
   const outside = board.rows.filter((r) => r.rank > board.playoffSpots);
 
@@ -19,7 +29,13 @@ export function StandingsCompact({ board, season }: { board: SeedBoard; season?:
           <span className="seed-col-sub">seeds 1 – {board.playoffSpots}</span>
         </div>
         {inPlayoffs.map((r) => (
-          <SeedCard key={r.standing.team.rosterId} row={r} q={q} spots={board.playoffSpots} />
+          <SeedCard
+            key={r.standing.team.rosterId}
+            row={r}
+            q={q}
+            spots={board.playoffSpots}
+            champKey={champKey}
+          />
         ))}
       </div>
 
@@ -31,17 +47,37 @@ export function StandingsCompact({ board, season }: { board: SeedBoard; season?:
           </span>
         </div>
         {outside.map((r) => (
-          <SeedCard key={r.standing.team.rosterId} row={r} q={q} spots={board.playoffSpots} />
+          <SeedCard
+            key={r.standing.team.rosterId}
+            row={r}
+            q={q}
+            spots={board.playoffSpots}
+            champKey={champKey}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function SeedCard({ row, q, spots }: { row: SeedRow; q: string; spots: number }) {
+function SeedCard({
+  row,
+  q,
+  spots,
+  champKey,
+}: {
+  row: SeedRow;
+  q: string;
+  spots: number;
+  champKey: string | null;
+}) {
   const s = row.standing;
+  // The trophy marks who actually won the title, which need not be the top
+  // seed — the gold outline below is a separate claim about seeding.
+  const isChamp = champKey != null && s.team.displayName.toLowerCase() === champKey;
   const classes = ['seed-card', `state-${row.state}`];
   if (row.rank === 1) classes.push('leader');
+  if (isChamp) classes.push('champion');
   if (row.rank === spots) classes.push('bubble-seed');
   // Rows fade with distance below the cut rather than stopping at a hard line.
   if (row.rank > spots) classes.push(row.rank - spots >= 3 ? 'far-out' : 'just-out');
@@ -52,8 +88,8 @@ function SeedCard({ row, q, spots }: { row: SeedRow; q: string; spots: number })
       <span className="seed-body">
         <span className="seed-name">
           {s.team.displayName}
-          {row.rank === 1 && (
-            <span className="seed-trophy" aria-hidden="true">
+          {isChamp && (
+            <span className="seed-trophy" title="Season champion">
               {' '}
               🏆
             </span>

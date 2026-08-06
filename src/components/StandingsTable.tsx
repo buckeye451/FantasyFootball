@@ -151,7 +151,7 @@ export function StandingsTable({
     return (
       <>
         {head}
-        <StandingsCompact board={board} season={season} />
+        <StandingsCompact board={board} season={season} champion={champion} />
       </>
     );
   }

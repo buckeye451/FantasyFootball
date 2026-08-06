@@ -5198,3 +5198,9 @@ tr.playoff-cut td {
     display: none;
   }
 }
+
+/* The champion isn't always the top seed, so the title marker is its own tint
+   rather than riding on the leader outline. */
+.seed-card.champion {
+  background-image: linear-gradient(var(--champ-wash), var(--champ-wash));
+}
