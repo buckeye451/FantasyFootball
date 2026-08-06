@@ -1,12 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { DraftBoard, DraftPick, DraftRankRow } from '@/lib/stats';
+import type { DraftBoard, DraftPick, LifetimeDrafts } from '@/lib/stats';
 import { SegTabs } from '@/components/SegTabs';
 import { NflTeam } from '@/components/NflTeam';
 
 type Scope = 'season' | 'all';
 type Mode = 'compact' | 'full';
+
+/** A pick as the rails show it: slot resolved, season only when it isn't obvious. */
+type RailPick = DraftPick & { slot: string; season?: string };
 
 /** Positional rank as "RB8", or a dash when the player never scored. */
 function posRank(position: string, n: number | null): string {
@@ -27,7 +30,7 @@ export function DraftsView({
   season,
 }: {
   board: DraftBoard;
-  allTime: DraftRankRow[];
+  allTime: LifetimeDrafts;
   season: string;
 }) {
   const [scope, setScope] = useState<Scope>('season');
@@ -37,21 +40,38 @@ export function DraftsView({
 
   const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
 
-  // Only picks that actually produced a value can be called a steal or a bust.
-  const graded = useMemo(
-    () => board.picks.filter((p) => p.vsReplacement != null),
-    [board.picks]
+  // Round.pick, so a pick reads as its slot rather than a flat ordinal.
+  const perRound = board.managers.length || 1;
+  const slotOf = (p: DraftPick) => {
+    const inRound = ((p.pickNo - 1) % perRound) + 1;
+    return `${p.round}.${String(inRound).padStart(2, '0')}`;
+  };
+
+  // Only picks that actually produced a value can be called a gem or a bust.
+  const graded = useMemo<RailPick[]>(
+    () =>
+      board.picks
+        .filter((p) => p.vsReplacement != null)
+        .map((p) => ({
+          ...p,
+          slot: `${p.round}.${String(((p.pickNo - 1) % perRound) + 1).padStart(2, '0')}`,
+        })),
+    [board.picks, perRound]
   );
-  const steals = useMemo(
+  const seasonGems = useMemo(
     () => [...graded].sort((a, b) => b.vsReplacement! - a.vsReplacement!).slice(0, 5),
     [graded]
   );
-  const busts = useMemo(
+  const seasonBusts = useMemo(
     () => [...graded].sort((a, b) => a.vsReplacement! - b.vsReplacement!).slice(0, 5),
     [graded]
   );
 
-  const rows = scope === 'all' ? allTime : board.rankings;
+  // All-time rails arrive pre-sorted and already carry their own season.
+  const gems = scope === 'all' ? allTime.gems : seasonGems;
+  const busts = scope === 'all' ? allTime.busts : seasonBusts;
+
+  const rows = scope === 'all' ? allTime.rankings : board.rankings;
   const best = rows[0] ?? null;
   const worst = rows[rows.length - 1] ?? null;
   const maxAbs = Math.max(1, ...rows.map((r) => Math.abs(r.score)));
@@ -63,13 +83,6 @@ export function DraftsView({
         .sort((a, b) => a.pickNo - b.pickNo),
     [board.picks, manager]
   );
-
-  // Round.pick, so a pick reads as its slot rather than a flat ordinal.
-  const slotOf = (p: DraftPick) => {
-    const perRound = board.managers.length || 1;
-    const inRound = ((p.pickNo - 1) % perRound) + 1;
-    return `${p.round}.${String(inRound).padStart(2, '0')}`;
-  };
 
   return (
     <>
@@ -86,10 +99,18 @@ export function DraftsView({
         />
       </div>
 
-      {scope === 'season' && steals.length > 0 && (
+      {gems.length > 0 && (
         <>
-          <PickRail label="Steals" tone="up" picks={steals} slotOf={slotOf} />
-          <PickRail label="Busts" tone="down" picks={busts} slotOf={slotOf} />
+          <PickRail
+            label={scope === 'all' ? 'Gems, all-time' : 'Gems'}
+            tone="up"
+            picks={gems}
+          />
+          <PickRail
+            label={scope === 'all' ? 'Busts, all-time' : 'Busts'}
+            tone="down"
+            picks={busts}
+          />
         </>
       )}
 
@@ -161,7 +182,7 @@ export function DraftsView({
                   <th className="num">Score</th>
                   {scope === 'season' && (
                     <th className="num" title="Picks that finished above positional replacement">
-                      Steals
+                      Gems
                     </th>
                   )}
                   <th>Best Pick</th>
@@ -176,7 +197,7 @@ export function DraftsView({
                     <td className="num strong">
                       <span className={r.score >= 0 ? 'up' : 'down'}>{signed(r.score)}</span>
                     </td>
-                    {scope === 'season' && <td className="num">{r.steals}</td>}
+                    {scope === 'season' && <td className="num">{r.gems}</td>}
                     <td>
                       {r.bestPick ? (
                         <>
@@ -273,12 +294,10 @@ function PickRail({
   label,
   tone,
   picks,
-  slotOf,
 }: {
   label: string;
   tone: 'up' | 'down';
-  picks: DraftPick[];
-  slotOf: (p: DraftPick) => string;
+  picks: RailPick[];
 }) {
   return (
     <section aria-label={label}>
@@ -290,11 +309,12 @@ function PickRail({
       </div>
       <div className="pick-rail">
         {picks.map((p) => (
-          <article className={`pick-card tone-${tone}`} key={p.playerId + p.pickNo}>
+          <article className={`pick-card tone-${tone}`} key={`${p.season ?? ''}${p.playerId}${p.pickNo}`}>
             <div className="pick-card-top">
               <span className={`draft-pos draft-pos-${p.position}`}>{p.position}</span>
               <span className="pick-card-meta">
-                {p.team ? <NflTeam code={p.team} /> : null} {p.manager} · {slotOf(p)}
+                {p.team ? <NflTeam code={p.team} /> : null} {p.manager} · {p.slot}
+                {p.season ? ` · ${p.season}` : ''}
               </span>
             </div>
             <div className="pick-card-name">{p.name}</div>

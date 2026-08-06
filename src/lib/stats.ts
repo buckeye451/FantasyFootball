@@ -2847,7 +2847,7 @@ export interface DraftRankRow {
   drafts: number; // how many drafts this covers (1 per season)
   worstEarly: DraftRankPick | null; // lowest-value pick among their first 7
   bestPick: DraftRankPick | null; // highest-value pick
-  steals: number; // picks that finished above positional replacement
+  gems: number; // picks that finished above positional replacement
 }
 
 /** How many of a manager's own selections count as "early". */
@@ -2884,13 +2884,13 @@ function buildDraftRankings(
       .filter((e) => e.pick.vsReplacement != null);
 
     let score = 0;
-    let steals = 0;
+    let gems = 0;
     let worstEarly: DraftRankPick | null = null;
     let bestPick: DraftRankPick | null = null;
     for (const e of own) {
       const value = round2(e.pick.vsReplacement!);
       score += value;
-      if (value > 0) steals++;
+      if (value > 0) gems++;
       const entry: DraftRankPick = {
         name: e.pick.name,
         position: e.pick.position,
@@ -2910,23 +2910,53 @@ function buildDraftRankings(
       drafts: 1,
       worstEarly,
       bestPick,
-      steals,
+      gems,
     };
   });
   return rows.sort((a, b) => b.score - a.score);
 }
 
+/** A graded pick carrying the season it came from, for all-time rails. */
+export interface LifetimePick extends DraftPick {
+  season: string;
+  slot: string; // round.pick within that season's draft, e.g. "2.09"
+}
+
+export interface LifetimeDrafts {
+  rankings: DraftRankRow[]; // best career draft score first
+  gems: LifetimePick[]; // biggest value over replacement, all seasons
+  busts: LifetimePick[]; // biggest shortfall, all seasons
+}
+
+/** How many picks each all-time rail shows. */
+const LIFETIME_RAIL_SIZE = 5;
+
 /**
- * Career draft rankings: every season's draft score summed per manager (keyed
- * by Sleeper user id so a rename still counts as the same person), with their
- * single worst early pick and best pick across all drafts.
+ * Everything the all-time draft view needs, from a single pass over the
+ * seasons: career rankings per manager (keyed by Sleeper user id so a rename
+ * still counts as the same person) plus the best and worst individual picks
+ * anyone has ever made.
  */
-export function lifetimeDraftRankings(): DraftRankRow[] {
+export function lifetimeDrafts(limit = LIFETIME_RAIL_SIZE): LifetimeDrafts {
   const agg = new Map<string, DraftRankRow>();
+  const graded: LifetimePick[] = [];
+
   for (const s of getSeasons()) {
     // getSeasons() is newest-first, so the first name seen is the current one.
     const board = draftBoard(s.leagueId);
     if (!board) continue;
+
+    const perRound = board.managers.length || 1;
+    for (const p of board.picks) {
+      if (p.vsReplacement == null) continue;
+      const inRound = ((p.pickNo - 1) % perRound) + 1;
+      graded.push({
+        ...p,
+        season: board.season,
+        slot: `${p.round}.${String(inRound).padStart(2, '0')}`,
+      });
+    }
+
     for (const row of board.rankings) {
       const key = row.ownerId || row.manager.toLowerCase();
       let cur = agg.get(key);
@@ -2938,13 +2968,13 @@ export function lifetimeDraftRankings(): DraftRankRow[] {
           drafts: 0,
           worstEarly: null,
           bestPick: null,
-          steals: 0,
+          gems: 0,
         };
         agg.set(key, cur);
       }
       cur.score = round2(cur.score + row.score);
       cur.drafts += 1;
-      cur.steals += row.steals;
+      cur.gems += row.gems;
       if (row.worstEarly && (!cur.worstEarly || row.worstEarly.value < cur.worstEarly.value)) {
         cur.worstEarly = row.worstEarly;
       }
@@ -2953,7 +2983,19 @@ export function lifetimeDraftRankings(): DraftRankRow[] {
       }
     }
   }
-  return [...agg.values()].sort((a, b) => b.score - a.score);
+
+  const byValue = graded.sort((a, b) => b.vsReplacement! - a.vsReplacement!);
+  return {
+    rankings: [...agg.values()].sort((a, b) => b.score - a.score),
+    gems: byValue.slice(0, limit),
+    // Worst first, and never reaching back into the picks the gems rail shows.
+    busts: byValue.slice(Math.max(limit, byValue.length - limit)).reverse(),
+  };
+}
+
+/** Career draft rankings only — the shape the lifetime page has always used. */
+export function lifetimeDraftRankings(): DraftRankRow[] {
+  return lifetimeDrafts().rankings;
 }
 
 /**
